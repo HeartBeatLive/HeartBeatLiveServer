@@ -1,0 +1,22 @@
+schema {
+    query: Query,
+    mutation: Mutation
+}
+
+type Query {
+    applicationMinVersion: ApplicationMinVersion
+}
+
+type Mutation {
+    addHeartRate(heartRate: Int): AddHeartRateResponse
+}
+
+type AddHeartRateResponse {
+    ok: Boolean
+}
+
+type ApplicationMinVersion {
+    versionNumber: String
+    required: Boolean
+    description: String
+}

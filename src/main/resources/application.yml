@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: heart-beat-live
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/heart-beat-app
+      username: mongodb
+      password: password
