@@ -5,13 +5,15 @@ schema {
 
 type Query {
     applicationMinVersion: ApplicationMinVersion
+    getSubscription: String
 }
 
 type Mutation {
-    addHeartRate(heartRate: Int): AddHeartRateResponse
+    addHeartRate(heartRate: Int): StatusResponse
+    updateSubscription(subscriptionPlan: String): StatusResponse
 }
 
-type AddHeartRateResponse {
+type StatusResponse {
     ok: Boolean
 }
 
