@@ -1,0 +1,21 @@
+schema {
+    query: Query,
+    mutation: Mutation
+}
+
+type Query {
+    checkEmailReserved(email: String): Boolean
+}
+
+type Mutation {
+    firebaseCreateUser(request: FirebaseCreateUserRequest): Boolean
+    firebaseDeleteUser(userId: String): Boolean
+    updateDisplayName(displayName: String): Boolean
+    logout: Boolean
+}
+
+input FirebaseCreateUserRequest {
+    id: String
+    email: String
+    emailVerified: Boolean
+}

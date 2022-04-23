@@ -1,4 +1,4 @@
-package com.munoon.heartbeatlive.server.auth
+package com.munoon.heartbeatlive.server.profile
 
 import org.springframework.security.core.GrantedAuthority
 

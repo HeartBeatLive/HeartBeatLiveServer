@@ -23,6 +23,7 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters
 import org.springframework.security.oauth2.jwt.JwtValidationException
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder
 import org.springframework.security.web.server.SecurityWebFilterChain
+import org.springframework.web.filter.reactive.ServerWebExchangeContextFilter
 import reactor.core.publisher.Mono
 import java.time.Instant
 
@@ -84,4 +85,7 @@ class WebSecurityConfig {
                     .let { Mono.just(it) }
             }
         }
+
+    @Bean
+    fun serverWebExchangeContextFilter() = ServerWebExchangeContextFilter()
 }

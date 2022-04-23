@@ -1,10 +1,12 @@
 package com.munoon.heartbeatlive.server.auth
 
+import com.munoon.heartbeatlive.server.profile.UserRole
 import com.munoon.heartbeatlive.server.subscription.JwtUserSubscription
+import com.munoon.heartbeatlive.server.subscription.SubscriptionUtils.getActiveSubscriptionPlan
+import com.munoon.heartbeatlive.server.subscription.UserSubscriptionPlan
 import org.slf4j.LoggerFactory
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
-import java.time.Instant
 import java.util.*
 
 class CustomJwtAuthenticationToken(jwt: Jwt) : JwtAuthenticationToken(jwt, jwt.getAuthorities()) {
@@ -15,13 +17,7 @@ class CustomJwtAuthenticationToken(jwt: Jwt) : JwtAuthenticationToken(jwt, jwt.g
         ?: JwtUserSubscription.DEFAULT
 
     val actualUserSubscriptionPlan: UserSubscriptionPlan
-        get() {
-            return when {
-                userSubscription.expirationTime == null -> UserSubscriptionPlan.FREE
-                Instant.now().isAfter(userSubscription.expirationTime) -> UserSubscriptionPlan.FREE
-                else -> userSubscription.plan
-            }
-        }
+        get() = userSubscription.getActiveSubscriptionPlan()
 
     companion object {
         private val logger = LoggerFactory.getLogger(CustomJwtAuthenticationToken::class.java)

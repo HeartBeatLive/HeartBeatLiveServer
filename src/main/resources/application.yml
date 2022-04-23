@@ -8,6 +8,8 @@ spring:
       username: mongodb
       password: password
 
-#auth:
-#  firebase:
+auth:
+  firebase:
+    function:
+      token: "simple-firebase-function-token"
 #    service-account-file: classpath:service-account.json
