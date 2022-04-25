@@ -1,10 +1,11 @@
 package com.munoon.heartbeatlive.server.user
 
-import com.munoon.heartbeatlive.server.user.model.PublicProfileTo
+import com.munoon.heartbeatlive.server.user.model.GraphqlProfileTo
 
-fun User.asPublicProfile() = PublicProfileTo(
+fun User.asGraphqlProfile() = GraphqlProfileTo(
     id = id,
     displayName = displayName,
     email = email,
-    emailVerified = emailVerified
+    emailVerified = emailVerified,
+    roles = roles
 )

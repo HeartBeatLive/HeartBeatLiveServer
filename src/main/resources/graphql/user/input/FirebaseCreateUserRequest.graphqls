@@ -1,0 +1,5 @@
+input FirebaseCreateUserRequest {
+    id: String!
+    email: String
+    emailVerified: Boolean!
+}

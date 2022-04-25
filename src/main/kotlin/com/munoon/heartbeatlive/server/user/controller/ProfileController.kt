@@ -1,8 +1,8 @@
 package com.munoon.heartbeatlive.server.user.controller
 
 import com.munoon.heartbeatlive.server.auth.AuthUtils.authUserId
-import com.munoon.heartbeatlive.server.user.asPublicProfile
-import com.munoon.heartbeatlive.server.user.model.PublicProfileTo
+import com.munoon.heartbeatlive.server.user.asGraphqlProfile
+import com.munoon.heartbeatlive.server.user.model.GraphqlProfileTo
 import com.munoon.heartbeatlive.server.user.service.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.graphql.data.method.annotation.Argument
@@ -24,9 +24,9 @@ class ProfileController(private val userService: UserService) {
 
     @MutationMapping
     @PreAuthorize("isAuthenticated()")
-    suspend fun updateDisplayName(@Argument displayName: String): PublicProfileTo {
+    suspend fun updateProfileDisplayName(@Argument displayName: String): GraphqlProfileTo {
         logger.info("Updating user '${authUserId()}' display name to '$displayName'")
         return userService.updateUserDisplayName(authUserId()!!, displayName)
-            .asPublicProfile()
+            .asGraphqlProfile()
     }
 }
