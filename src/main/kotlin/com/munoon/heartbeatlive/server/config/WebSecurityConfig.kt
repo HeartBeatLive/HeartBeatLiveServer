@@ -11,6 +11,7 @@ import com.nimbusds.jose.util.Base64URL
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Profile
 import org.springframework.core.convert.converter.Converter
 import org.springframework.core.io.Resource
 import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity
@@ -19,7 +20,6 @@ import org.springframework.security.config.web.server.ServerHttpSecurity
 import org.springframework.security.config.web.server.invoke
 import org.springframework.security.oauth2.core.OAuth2Error
 import org.springframework.security.oauth2.jwt.Jwt
-import org.springframework.security.oauth2.jwt.JwtEncoderParameters
 import org.springframework.security.oauth2.jwt.JwtValidationException
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder
 import org.springframework.security.web.server.SecurityWebFilterChain
@@ -49,6 +49,7 @@ class WebSecurityConfig {
     }
 
     @Bean
+    @Profile("!test")
     fun firebaseAuth(
         @Value("\${auth.firebase.service-account-file}") serviceAccount: Resource
     ): FirebaseAuth {

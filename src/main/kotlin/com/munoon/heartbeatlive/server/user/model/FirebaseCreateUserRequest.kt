@@ -1,4 +1,4 @@
-package com.munoon.heartbeatlive.server.profile.model
+package com.munoon.heartbeatlive.server.user.model
 
 data class FirebaseCreateUserRequest(
     val id: String,

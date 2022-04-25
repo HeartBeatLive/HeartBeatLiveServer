@@ -24,7 +24,7 @@ data class JwtUserSubscription(
         }
     }
 
-    fun asMap() = mapOf(
+    fun asClaimsMap() = mapOf(
         "plan" to plan.name,
         "exp" to expirationTime?.epochSecond
     )
