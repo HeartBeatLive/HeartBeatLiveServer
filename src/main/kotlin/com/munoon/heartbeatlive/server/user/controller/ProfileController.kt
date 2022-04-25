@@ -29,4 +29,11 @@ class ProfileController(private val userService: UserService) {
         return userService.updateUserDisplayName(authUserId()!!, displayName)
             .asGraphqlProfile()
     }
+
+    @QueryMapping
+    @PreAuthorize("isAuthenticated()")
+    suspend fun getProfile(): GraphqlProfileTo {
+        logger.info("User '${authUserId()}' requested his profile")
+        return userService.getUserById(authUserId()!!).asGraphqlProfile()
+    }
 }
