@@ -17,7 +17,7 @@ data class User(
 
     val emailVerified: Boolean,
 
-    val created: Instant = Instant.now(), // TODO change?
+    val created: Instant = Instant.now(),
 
     val roles: Set<UserRole> = emptySet()
 ) {
