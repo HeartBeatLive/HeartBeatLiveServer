@@ -28,7 +28,7 @@ class ProfileController(private val userService: UserService) {
     @PreAuthorize("isAuthenticated()")
     suspend fun updateProfileDisplayName(@Argument @Length(min = 2, max = 60) displayName: String): GraphqlProfileTo {
         logger.info("Updating user '${authUserId()}' display name to '$displayName'")
-        return userService.updateUserDisplayName(authUserId()!!, displayName)
+        return userService.updateUserDisplayName(authUserId(), displayName)
             .asGraphqlProfile()
     }
 
@@ -36,6 +36,6 @@ class ProfileController(private val userService: UserService) {
     @PreAuthorize("isAuthenticated()")
     suspend fun getProfile(): GraphqlProfileTo {
         logger.info("User '${authUserId()}' requested his profile")
-        return userService.getUserById(authUserId()!!).asGraphqlProfile()
+        return userService.getUserById(authUserId()).asGraphqlProfile()
     }
 }

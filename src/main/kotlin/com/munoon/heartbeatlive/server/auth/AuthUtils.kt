@@ -8,5 +8,7 @@ object AuthUtils {
         .map { it.authentication as CustomJwtAuthenticationToken }
         .awaitSingleOrNull()
 
-    suspend fun authUserId() = authUser()?.userId
+    suspend fun optionalAuthUserId(): String? = authUser()?.userId
+
+    suspend fun authUserId(): String = optionalAuthUserId()!!
 }

@@ -38,8 +38,9 @@ dependencies {
 	}
 	testImplementation("io.projectreactor:reactor-test")
 	testImplementation("org.springframework.graphql:spring-graphql-test")
+	testImplementation("org.springframework.security:spring-security-test")
 	testImplementation("com.ninja-squad:springmockk:3.1.1")
-	testImplementation("de.flapdoodle.embed:de.flapdoodle.embed.mongo.spring:1.0.2-spring26x")
+	testImplementation("de.flapdoodle.embed:de.flapdoodle.embed.mongo")
 }
 
 tasks.withType<KotlinCompile> {

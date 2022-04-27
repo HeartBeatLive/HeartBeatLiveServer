@@ -10,9 +10,9 @@ import org.springframework.stereotype.Service
 @Service
 class FirebaseAuthService(private val firebaseAuth: FirebaseAuth) {
     suspend fun updateFirebaseUser(newUser: User, oldUser: User) {
-        val updateRequest = newUser.generateUpdateRequest()
-        if (updateRequest == oldUser.generateUpdateRequest()) return
+        if (newUser.roles == oldUser.roles && newUser.displayName == oldUser.displayName) return
 
+        val updateRequest = newUser.generateUpdateRequest()
         firebaseAuth.updateUserAsync(updateRequest).await()
     }
 
