@@ -1,6 +1,6 @@
 package com.munoon.heartbeatlive.server.user.controller
 
-import com.munoon.heartbeatlive.server.auth.AuthUtils.authUserId
+import com.munoon.heartbeatlive.server.auth.utils.AuthUtils.authUserId
 import com.munoon.heartbeatlive.server.user.asGraphqlProfile
 import com.munoon.heartbeatlive.server.user.model.GraphqlProfileTo
 import com.munoon.heartbeatlive.server.user.service.UserService

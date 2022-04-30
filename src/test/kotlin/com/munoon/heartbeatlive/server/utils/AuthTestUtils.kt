@@ -1,6 +1,6 @@
 package com.munoon.heartbeatlive.server.utils
 
-import com.munoon.heartbeatlive.server.auth.CustomJwtAuthenticationToken
+import com.munoon.heartbeatlive.server.auth.jwt.CustomJwtAuthenticationToken
 import com.munoon.heartbeatlive.server.user.UserRole
 import org.springframework.graphql.test.tester.HttpGraphQlTester
 import org.springframework.security.oauth2.jwt.Jwt

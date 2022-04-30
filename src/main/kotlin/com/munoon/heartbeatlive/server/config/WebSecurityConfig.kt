@@ -5,15 +5,14 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
-import com.munoon.heartbeatlive.server.auth.CustomJwtAuthenticationToken
+import com.munoon.heartbeatlive.server.auth.jwt.CustomJwtAuthenticationToken
+import com.munoon.heartbeatlive.server.config.properties.FirebaseAuthenticationProperties
 import com.nimbusds.jose.Header
 import com.nimbusds.jose.util.Base64URL
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.core.convert.converter.Converter
-import org.springframework.core.io.Resource
 import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity
 import org.springframework.security.config.web.server.ServerHttpSecurity
@@ -52,11 +51,9 @@ class WebSecurityConfig {
 
     @Bean
     @Profile("!test")
-    fun firebaseAuth(
-        @Value("\${auth.firebase.service-account-file}") serviceAccount: Resource
-    ): FirebaseAuth {
+    fun firebaseAuth(properties: FirebaseAuthenticationProperties): FirebaseAuth {
         val options = FirebaseOptions.builder()
-            .setCredentials(GoogleCredentials.fromStream(serviceAccount.inputStream))
+            .setCredentials(GoogleCredentials.fromStream(properties.serviceAccountFile.inputStream))
             .build()
 
         val firebaseApp = FirebaseApp.initializeApp(options)

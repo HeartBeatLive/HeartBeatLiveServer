@@ -2,7 +2,7 @@ package com.munoon.heartbeatlive.server.user.firebase
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserRecord
-import com.munoon.heartbeatlive.server.auth.CustomJwtAuthenticationToken
+import com.munoon.heartbeatlive.server.auth.jwt.CustomJwtAuthenticationToken
 import com.munoon.heartbeatlive.server.user.User
 import com.munoon.heartbeatlive.server.user.firebase.FirebaseUtils.await
 import org.springframework.stereotype.Service

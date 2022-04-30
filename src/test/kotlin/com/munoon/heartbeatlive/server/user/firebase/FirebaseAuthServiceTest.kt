@@ -3,7 +3,7 @@ package com.munoon.heartbeatlive.server.user.firebase
 import com.google.api.core.SettableApiFuture
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserRecord
-import com.munoon.heartbeatlive.server.auth.CustomJwtAuthenticationToken
+import com.munoon.heartbeatlive.server.auth.jwt.CustomJwtAuthenticationToken
 import com.munoon.heartbeatlive.server.user.User
 import com.munoon.heartbeatlive.server.user.UserRole
 import io.mockk.MockKVerificationScope

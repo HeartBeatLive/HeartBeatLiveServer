@@ -1,5 +1,6 @@
-package com.munoon.heartbeatlive.server.auth
+package com.munoon.heartbeatlive.server.auth.utils
 
+import com.munoon.heartbeatlive.server.auth.jwt.CustomJwtAuthenticationToken
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.security.core.context.ReactiveSecurityContextHolder
 

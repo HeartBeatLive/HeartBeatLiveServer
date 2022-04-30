@@ -1,4 +1,4 @@
-package com.munoon.heartbeatlive.server.auth
+package com.munoon.heartbeatlive.server.auth.jwt
 
 import com.munoon.heartbeatlive.server.subscription.JwtUserSubscription
 import com.munoon.heartbeatlive.server.subscription.SubscriptionUtils.getActiveSubscriptionPlan
