@@ -1,8 +1,10 @@
 package com.munoon.heartbeatlive.server.user.controller
 
+import com.munoon.heartbeatlive.server.auth.utils.AuthUtils.authUser
 import com.munoon.heartbeatlive.server.auth.utils.AuthUtils.authUserId
 import com.munoon.heartbeatlive.server.user.asGraphqlProfile
 import com.munoon.heartbeatlive.server.user.model.GraphqlProfileTo
+import com.munoon.heartbeatlive.server.user.model.UpdateUserInfoFromJwtTo
 import com.munoon.heartbeatlive.server.user.service.UserService
 import org.hibernate.validator.constraints.Length
 import org.slf4j.LoggerFactory
@@ -29,6 +31,15 @@ class ProfileController(private val userService: UserService) {
     suspend fun updateProfileDisplayName(@Argument @Length(min = 2, max = 60) displayName: String): GraphqlProfileTo {
         logger.info("Updating user '${authUserId()}' display name to '$displayName'")
         return userService.updateUserDisplayName(authUserId(), displayName)
+            .asGraphqlProfile()
+    }
+
+    @MutationMapping
+    @PreAuthorize("isAuthenticated()")
+    suspend fun updateProfileInfo(): GraphqlProfileTo {
+        logger.info("Updating user '${authUserId()}' info, provided by JWT token")
+        val updateUserInfo = UpdateUserInfoFromJwtTo(emailVerified = authUser()!!.emailVerified)
+        return userService.updateUserInfoFromJwt(authUserId(), updateUserInfo)
             .asGraphqlProfile()
     }
 

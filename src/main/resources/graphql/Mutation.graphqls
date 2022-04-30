@@ -3,6 +3,7 @@ type Mutation {
     firebaseDeleteUser(userId: String): Boolean
 
     updateProfileDisplayName(displayName: String): Profile
+    updateProfileInfo: Profile
 
     logout: Boolean
 }

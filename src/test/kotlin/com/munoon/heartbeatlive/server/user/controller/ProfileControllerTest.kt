@@ -5,8 +5,10 @@ import com.munoon.heartbeatlive.server.user.User
 import com.munoon.heartbeatlive.server.user.UserRole
 import com.munoon.heartbeatlive.server.user.asGraphqlProfile
 import com.munoon.heartbeatlive.server.user.model.GraphqlProfileTo
+import com.munoon.heartbeatlive.server.user.model.UpdateUserInfoFromJwtTo
 import com.munoon.heartbeatlive.server.user.service.UserService
 import com.munoon.heartbeatlive.server.utils.AuthTestUtils.withUser
+import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.isEqualsTo
 import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.satisfyNoErrors
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.coEvery
@@ -88,6 +90,39 @@ internal class ProfileControllerTest : AbstractGraphqlHttpTest() {
     @Test
     @Disabled("Test will be implemented when error schema will be specified")
     fun `updateProfileDisplayName - user not authenticated`() {
+        // TODO impl this when error schema will be ready
+    }
+
+    @Test
+    fun updateProfileInfo() {
+        val user = User(
+            id = "1",
+            displayName = "New Name",
+            email = "email@example.com",
+            emailVerified = true,
+            roles = setOf(UserRole.ADMIN)
+        )
+        coEvery { userService.updateUserInfoFromJwt("1", any()) } returns user
+
+        graphqlTester.withUser(emailVerified = true)
+            .document("""
+                mutation {
+                    updateProfileInfo {
+                        id, displayName, email, emailVerified, roles
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .satisfyNoErrors()
+            .path("updateProfileInfo").isEqualsTo(user.asGraphqlProfile())
+
+        val expectedUpdateUserInfo = UpdateUserInfoFromJwtTo(emailVerified = true)
+        coVerify(exactly = 1) { userService.updateUserInfoFromJwt("1", expectedUpdateUserInfo) }
+    }
+
+    @Test
+    @Disabled("Test will be implemented when error schema will be specified")
+    fun `updateProfileInfo - user not authenticated`() {
         // TODO impl this when error schema will be ready
     }
 

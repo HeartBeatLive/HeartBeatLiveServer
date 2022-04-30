@@ -1,7 +1,7 @@
 package com.munoon.heartbeatlive.server.user.controller
 
 import com.munoon.heartbeatlive.server.auth.function.FirebaseFunctionAuthentication
-import com.munoon.heartbeatlive.server.user.model.FirebaseCreateUserRequest
+import com.munoon.heartbeatlive.server.user.model.GraphqlFirebaseCreateUserInput
 import com.munoon.heartbeatlive.server.user.service.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.graphql.data.method.annotation.Argument
@@ -18,7 +18,7 @@ class FirebaseUserController(
 
     @MutationMapping
     @PreAuthorize("permitAll()")
-    suspend fun firebaseCreateUser(@Argument request: FirebaseCreateUserRequest): Boolean {
+    suspend fun firebaseCreateUser(@Argument request: GraphqlFirebaseCreateUserInput): Boolean {
         firebaseFunctionAuthentication.checkIsFirebaseFunction()
         logger.info("Received new user from firebase: $request")
         userService.createUser(request)

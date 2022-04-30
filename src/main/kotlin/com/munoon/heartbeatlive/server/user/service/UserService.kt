@@ -3,7 +3,8 @@ package com.munoon.heartbeatlive.server.user.service
 import com.munoon.heartbeatlive.server.user.User
 import com.munoon.heartbeatlive.server.user.UserNotFoundByIdException
 import com.munoon.heartbeatlive.server.user.firebase.FirebaseAuthService
-import com.munoon.heartbeatlive.server.user.model.FirebaseCreateUserRequest
+import com.munoon.heartbeatlive.server.user.model.GraphqlFirebaseCreateUserInput
+import com.munoon.heartbeatlive.server.user.model.UpdateUserInfoFromJwtTo
 import com.munoon.heartbeatlive.server.user.repository.UserRepository
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
@@ -18,7 +19,7 @@ class UserService(
         return userRepository.existsByEmail(email)
     }
 
-    suspend fun createUser(request: FirebaseCreateUserRequest): User {
+    suspend fun createUser(request: GraphqlFirebaseCreateUserInput): User {
         val user = userRepository.save(User(
             id = request.id,
             displayName = null,
@@ -42,6 +43,12 @@ class UserService(
 
         firebaseAuthService.updateFirebaseUser(updatedUser, user)
         return updatedUser
+    }
+
+    suspend fun updateUserInfoFromJwt(userId: String, updateUserInfo: UpdateUserInfoFromJwtTo): User {
+        val user = getUserById(userId)
+        return userRepository.save(user.copy(emailVerified = updateUserInfo.emailVerified))
+            .awaitSingle()
     }
 
     suspend fun getUserById(userId: String): User = userRepository.findById(userId).awaitSingleOrNull()

@@ -19,11 +19,16 @@ class CustomJwtAuthenticationToken(jwt: Jwt) : JwtAuthenticationToken(jwt, jwt.g
     val actualUserSubscriptionPlan: UserSubscriptionPlan
         get() = userSubscription.getActiveSubscriptionPlan()
 
+    val email: String = jwt.getClaimAsString(EMAIL_CLAIM)
+    val emailVerified: Boolean = jwt.getClaimAsBoolean(EMAIL_VERIFIED_CLAIM) ?: false
+
     companion object {
         private val logger = LoggerFactory.getLogger(CustomJwtAuthenticationToken::class.java)
 
         const val SUBSCRIPTION_PLAN_CLAIM = "subscription_plan"
         const val ROLES_CLAIM = "roles"
+        const val EMAIL_CLAIM = "email"
+        const val EMAIL_VERIFIED_CLAIM = "email_verified"
 
         private fun Jwt.getAuthorities(): Set<UserRole> = (safeGetClaim<Set<String>>(ROLES_CLAIM) ?: emptySet())
             .mapTo(EnumSet.noneOf(UserRole::class.java)) { UserRole.valueOf(it) }

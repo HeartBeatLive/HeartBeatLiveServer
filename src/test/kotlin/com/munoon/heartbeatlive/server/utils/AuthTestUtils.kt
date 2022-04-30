@@ -12,6 +12,8 @@ import java.time.Instant
 object AuthTestUtils {
     fun HttpGraphQlTester.withUser(
         id: String = "1",
+        email: String = "email@exmaple.com",
+        emailVerified: Boolean = false,
         roles: Set<UserRole> = emptySet()
     ): HttpGraphQlTester = mutate()
         .webTestClient {
@@ -20,6 +22,8 @@ object AuthTestUtils {
                 .subject(id)
                 .claim("uid", id)
                 .claim(CustomJwtAuthenticationToken.ROLES_CLAIM, roles.map(UserRole::name))
+                .claim(CustomJwtAuthenticationToken.EMAIL_CLAIM, email)
+                .claim(CustomJwtAuthenticationToken.EMAIL_VERIFIED_CLAIM, emailVerified)
                 .claim(JwtClaimNames.IAT, Instant.now())
                 .claim(JwtClaimNames.EXP, Instant.now() + Duration.ofDays(1))
                 .build()

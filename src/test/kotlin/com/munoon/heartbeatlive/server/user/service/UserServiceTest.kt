@@ -5,7 +5,8 @@ import com.munoon.heartbeatlive.server.user.User
 import com.munoon.heartbeatlive.server.user.UserNotFoundByIdException
 import com.munoon.heartbeatlive.server.user.UserTestUtils.userArgumentMatch
 import com.munoon.heartbeatlive.server.user.firebase.FirebaseAuthService
-import com.munoon.heartbeatlive.server.user.model.FirebaseCreateUserRequest
+import com.munoon.heartbeatlive.server.user.model.GraphqlFirebaseCreateUserInput
+import com.munoon.heartbeatlive.server.user.model.UpdateUserInfoFromJwtTo
 import com.munoon.heartbeatlive.server.user.repository.UserRepository
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.coVerify
@@ -34,7 +35,7 @@ class UserServiceTest : AbstractMongoDBTest() {
     @Test
     fun `checkEmailReserved - true`() {
         val email = "testemail@gmail.com"
-        runBlocking { userService.createUser(FirebaseCreateUserRequest(id = "1", email, emailVerified = true)) }
+        runBlocking { userService.createUser(GraphqlFirebaseCreateUserInput(id = "1", email, emailVerified = true)) }
         val resp = runBlocking { userService.checkEmailReserved(email) }
         assertThat(resp).isTrue
     }
@@ -58,7 +59,7 @@ class UserServiceTest : AbstractMongoDBTest() {
 
         runBlocking {
             assertThat(userRepository.count().awaitSingle()).isZero
-            userService.createUser(FirebaseCreateUserRequest(id = "1", email = "testemail@gmail.com", emailVerified = true))
+            userService.createUser(GraphqlFirebaseCreateUserInput(id = "1", email = "testemail@gmail.com", emailVerified = true))
 
             assertThat(userRepository.findAll().asFlow().toList(arrayListOf()))
                 .usingRecursiveComparison().ignoringFields("created")
@@ -71,7 +72,7 @@ class UserServiceTest : AbstractMongoDBTest() {
     fun deleteUserByIdFirebaseTrigger() {
         runBlocking {
             val userId = "1"
-            userService.createUser(FirebaseCreateUserRequest(id = userId, email = "testemail@gmail.com", emailVerified = true))
+            userService.createUser(GraphqlFirebaseCreateUserInput(id = userId, email = "testemail@gmail.com", emailVerified = true))
             userService.deleteUserByIdFirebaseTrigger(userId)
             assertThat(userRepository.count().awaitSingle()).isZero
         }
@@ -90,9 +91,10 @@ class UserServiceTest : AbstractMongoDBTest() {
 
         val userId = "1"
         runBlocking {
-            userService.createUser(FirebaseCreateUserRequest(id = userId, email = "testemail@gmail.com", emailVerified = true))
-            userService.updateUserDisplayName(userId, "Test Name")
+            userService.createUser(GraphqlFirebaseCreateUserInput(id = userId, email = "testemail@gmail.com", emailVerified = true))
+            val updatedUser = userService.updateUserDisplayName(userId, "Test Name")
 
+            assertThat(updatedUser).usingRecursiveComparison().ignoringFields("created").isEqualTo(expectedUser)
             assertThat(userRepository.findAll().asFlow().toList(arrayListOf()))
                 .usingRecursiveComparison().ignoringFields("created")
                 .isEqualTo(listOf(expectedUser))
@@ -113,6 +115,34 @@ class UserServiceTest : AbstractMongoDBTest() {
     }
 
     @Test
+    fun updateUserInfoFromJwt() {
+        val userId = "1"
+        val expectedUser = User(
+            id = userId,
+            displayName = null,
+            email = "testemail@gmail.com",
+            emailVerified = true
+        )
+
+        runBlocking { userService.createUser(GraphqlFirebaseCreateUserInput(id = userId, email = "testemail@gmail.com", emailVerified = false)) }
+
+        val updatedUser = runBlocking { userService.updateUserInfoFromJwt(userId, UpdateUserInfoFromJwtTo(emailVerified = true)) }
+        assertThat(updatedUser).usingRecursiveComparison().ignoringFields("created").isEqualTo(expectedUser)
+        runBlocking {
+            assertThat(userRepository.findAll().asFlow().toList(arrayListOf()))
+                .usingRecursiveComparison().ignoringFields("created")
+                .isEqualTo(listOf(expectedUser))
+        }
+    }
+
+    @Test
+    fun `updateUserInfoFromJwt - user not found`() {
+        assertThatThrownBy {
+            runBlocking { userService.updateUserInfoFromJwt("abc", UpdateUserInfoFromJwtTo(emailVerified = true)) }
+        }.isEqualTo(UserNotFoundByIdException("abc"))
+    }
+
+    @Test
     fun getUserById() {
         val expectedUser = User(
             id = "1",
@@ -123,7 +153,7 @@ class UserServiceTest : AbstractMongoDBTest() {
             roles = emptySet()
         )
         runBlocking {
-            userService.createUser(FirebaseCreateUserRequest(id = "1", email = "testemail@gmail.com", emailVerified = true))
+            userService.createUser(GraphqlFirebaseCreateUserInput(id = "1", email = "testemail@gmail.com", emailVerified = true))
         }
 
         val user = runBlocking { userService.getUserById("1") }

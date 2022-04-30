@@ -2,7 +2,7 @@ package com.munoon.heartbeatlive.server.user.controller
 
 import com.munoon.heartbeatlive.server.AbstractGraphqlHttpTest
 import com.munoon.heartbeatlive.server.user.User
-import com.munoon.heartbeatlive.server.user.model.FirebaseCreateUserRequest
+import com.munoon.heartbeatlive.server.user.model.GraphqlFirebaseCreateUserInput
 import com.munoon.heartbeatlive.server.user.service.UserService
 import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.isEqualsTo
 import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.satisfyNoErrors
@@ -25,7 +25,7 @@ internal class FirebaseUserControllerTest : AbstractGraphqlHttpTest() {
 
     @Test
     fun firebaseCreateUser() {
-        val request = FirebaseCreateUserRequest("1", "email@gmail.com", true)
+        val request = GraphqlFirebaseCreateUserInput("1", "email@gmail.com", true)
         coEvery { userService.createUser(any()) } returns User(id = "1", null, null, false)
 
         graphqlTester.mutate()
