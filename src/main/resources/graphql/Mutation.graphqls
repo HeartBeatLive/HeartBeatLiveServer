@@ -2,8 +2,11 @@ type Mutation {
     firebaseCreateUser(request: FirebaseCreateUserRequest): Boolean
     firebaseDeleteUser(userId: String): Boolean
 
-    updateProfileDisplayName(displayName: String): Profile
+    "Update authenticated user display name. Require authentication."
+    updateProfileDisplayName("User's new display name. Validating by length from 2 to 60 symbols." displayName: String): Profile
+    "Update authenticated user profile info, taken from JWT token. Require authentication."
     updateProfileInfo: Profile
 
+    "Run this method when user logged out. Require authentication."
     logout: Boolean
 }
