@@ -1,0 +1,7 @@
+type Profile {
+    id: String!
+    displayName: String
+    email: String
+    emailVerified: Boolean!
+    roles: [UserRole!]!
+}

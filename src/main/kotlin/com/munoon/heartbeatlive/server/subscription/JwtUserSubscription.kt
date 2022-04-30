@@ -1,6 +1,5 @@
 package com.munoon.heartbeatlive.server.subscription
 
-import com.munoon.heartbeatlive.server.auth.UserSubscriptionPlan
 import java.time.Instant
 
 data class JwtUserSubscription(
@@ -25,7 +24,7 @@ data class JwtUserSubscription(
         }
     }
 
-    fun asMap() = mapOf(
+    fun asClaimsMap() = mapOf(
         "plan" to plan.name,
         "exp" to expirationTime?.epochSecond
     )

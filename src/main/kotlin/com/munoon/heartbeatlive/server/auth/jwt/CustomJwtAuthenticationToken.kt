@@ -1,10 +1,12 @@
-package com.munoon.heartbeatlive.server.auth
+package com.munoon.heartbeatlive.server.auth.jwt
 
 import com.munoon.heartbeatlive.server.subscription.JwtUserSubscription
+import com.munoon.heartbeatlive.server.subscription.SubscriptionUtils.getActiveSubscriptionPlan
+import com.munoon.heartbeatlive.server.subscription.UserSubscriptionPlan
+import com.munoon.heartbeatlive.server.user.UserRole
 import org.slf4j.LoggerFactory
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
-import java.time.Instant
 import java.util.*
 
 class CustomJwtAuthenticationToken(jwt: Jwt) : JwtAuthenticationToken(jwt, jwt.getAuthorities()) {
@@ -15,19 +17,18 @@ class CustomJwtAuthenticationToken(jwt: Jwt) : JwtAuthenticationToken(jwt, jwt.g
         ?: JwtUserSubscription.DEFAULT
 
     val actualUserSubscriptionPlan: UserSubscriptionPlan
-        get() {
-            return when {
-                userSubscription.expirationTime == null -> UserSubscriptionPlan.FREE
-                Instant.now().isAfter(userSubscription.expirationTime) -> UserSubscriptionPlan.FREE
-                else -> userSubscription.plan
-            }
-        }
+        get() = userSubscription.getActiveSubscriptionPlan()
+
+    val email: String = jwt.getClaimAsString(EMAIL_CLAIM)
+    val emailVerified: Boolean = jwt.getClaimAsBoolean(EMAIL_VERIFIED_CLAIM) ?: false
 
     companion object {
         private val logger = LoggerFactory.getLogger(CustomJwtAuthenticationToken::class.java)
 
         const val SUBSCRIPTION_PLAN_CLAIM = "subscription_plan"
         const val ROLES_CLAIM = "roles"
+        const val EMAIL_CLAIM = "email"
+        const val EMAIL_VERIFIED_CLAIM = "email_verified"
 
         private fun Jwt.getAuthorities(): Set<UserRole> = (safeGetClaim<Set<String>>(ROLES_CLAIM) ?: emptySet())
             .mapTo(EnumSet.noneOf(UserRole::class.java)) { UserRole.valueOf(it) }

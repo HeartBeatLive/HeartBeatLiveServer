@@ -1,0 +1,4 @@
+type Query {
+    checkEmailReserved(email: String): Boolean
+    getProfile: Profile
+}

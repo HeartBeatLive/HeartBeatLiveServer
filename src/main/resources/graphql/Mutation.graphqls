@@ -1,0 +1,9 @@
+type Mutation {
+    firebaseCreateUser(request: FirebaseCreateUserRequest): Boolean
+    firebaseDeleteUser(userId: String): Boolean
+
+    updateProfileDisplayName(displayName: String): Profile
+    updateProfileInfo: Profile
+
+    logout: Boolean
+}

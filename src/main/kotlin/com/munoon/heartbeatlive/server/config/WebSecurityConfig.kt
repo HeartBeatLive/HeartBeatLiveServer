@@ -5,25 +5,27 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
-import com.munoon.heartbeatlive.server.auth.CustomJwtAuthenticationToken
+import com.munoon.heartbeatlive.server.auth.jwt.CustomJwtAuthenticationToken
+import com.munoon.heartbeatlive.server.config.properties.FirebaseAuthenticationProperties
 import com.nimbusds.jose.Header
 import com.nimbusds.jose.util.Base64URL
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Profile
 import org.springframework.core.convert.converter.Converter
-import org.springframework.core.io.Resource
 import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity
 import org.springframework.security.config.web.server.ServerHttpSecurity
 import org.springframework.security.config.web.server.invoke
 import org.springframework.security.oauth2.core.OAuth2Error
 import org.springframework.security.oauth2.jwt.Jwt
-import org.springframework.security.oauth2.jwt.JwtEncoderParameters
+import org.springframework.security.oauth2.jwt.JwtClaimNames
 import org.springframework.security.oauth2.jwt.JwtValidationException
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder
 import org.springframework.security.web.server.SecurityWebFilterChain
+import org.springframework.web.filter.reactive.ServerWebExchangeContextFilter
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toMono
 import java.time.Instant
 
 @Configuration
@@ -40,7 +42,7 @@ class WebSecurityConfig {
 
             oauth2ResourceServer {
                 jwt {
-                    this.jwtAuthenticationConverter = Converter { Mono.just(CustomJwtAuthenticationToken(it)) }
+                    this.jwtAuthenticationConverter = Converter { CustomJwtAuthenticationToken(it).toMono() }
                     this.jwtDecoder = jwtDecoder
                 }
             }
@@ -48,11 +50,10 @@ class WebSecurityConfig {
     }
 
     @Bean
-    fun firebaseAuth(
-        @Value("\${auth.firebase.service-account-file}") serviceAccount: Resource
-    ): FirebaseAuth {
+    @Profile("!test")
+    fun firebaseAuth(properties: FirebaseAuthenticationProperties): FirebaseAuth {
         val options = FirebaseOptions.builder()
-            .setCredentials(GoogleCredentials.fromStream(serviceAccount.inputStream))
+            .setCredentials(GoogleCredentials.fromStream(properties.serviceAccountFile.inputStream))
             .build()
 
         val firebaseApp = FirebaseApp.initializeApp(options)
@@ -78,10 +79,15 @@ class WebSecurityConfig {
                 return Jwt.withTokenValue(token)
                     .claims { it.putAll(firebaseToken.claims) }
                     .headers { it.putAll(Header.parse(tokenHeader).toJSONObject()) }
-                    .claim("iat", Instant.ofEpochSecond(firebaseToken.claims["iat"] as Long))
-                    .claim("exp", Instant.ofEpochSecond(firebaseToken.claims["exp"] as Long))
+                    .subject(firebaseToken.uid)
+                    .claim(JwtClaimNames.IAT, Instant.ofEpochSecond(firebaseToken.claims["iat"] as Long))
+                    .claim(JwtClaimNames.EXP, Instant.ofEpochSecond(firebaseToken.claims["exp"] as Long))
+                    .claim("auth_time", Instant.ofEpochSecond(firebaseToken.claims["auth_time"] as Long))
                     .build()
-                    .let { Mono.just(it) }
+                    .toMono()
             }
         }
+
+    @Bean
+    fun serverWebExchangeContextFilter() = ServerWebExchangeContextFilter()
 }

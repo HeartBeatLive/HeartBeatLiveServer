@@ -29,18 +29,25 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
 	implementation("org.springframework.boot:spring-boot-starter-data-mongodb-reactive")
 	implementation("org.springframework.boot:spring-boot-starter-graphql")
+	implementation("org.springframework.boot:spring-boot-starter-validation")
 
 	implementation("com.google.firebase:firebase-admin:8.1.0")
 
-	testImplementation("org.springframework.boot:spring-boot-starter-test")
+	testImplementation("org.springframework.boot:spring-boot-starter-test") {
+		exclude(module = "mockito-core")
+	}
 	testImplementation("io.projectreactor:reactor-test")
 	testImplementation("org.springframework.graphql:spring-graphql-test")
+	testImplementation("org.springframework.security:spring-security-test")
+	testImplementation("com.ninja-squad:springmockk:3.1.1")
+	testImplementation("de.flapdoodle.embed:de.flapdoodle.embed.mongo")
 }
 
 tasks.withType<KotlinCompile> {
 	kotlinOptions {
 		freeCompilerArgs = listOf("-Xjsr305=strict")
 		jvmTarget = "17"
+		allWarningsAsErrors = true
 	}
 }
 

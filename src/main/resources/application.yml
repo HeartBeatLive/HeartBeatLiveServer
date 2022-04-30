@@ -4,10 +4,15 @@ spring:
 
   data:
     mongodb:
-      uri: mongodb://localhost:27017/heart-beat-app
+      host: localhost
+      port: 27017
+      authentication-database: admin
+      database: heart-beat-app
       username: mongodb
       password: password
 
-#auth:
-#  firebase:
+auth:
+  firebase:
+    function:
+      token: "simple-firebase-function-token"
 #    service-account-file: classpath:service-account.json
