@@ -1,7 +1,17 @@
+"User profile info."
 type Profile {
+    "Unique identifier of user."
     id: String!
+
+    "Display name, that should be printed to users."
     displayName: String
+
+    "Email, that user register with."
     email: String
+
+    "Email verified flag."
     emailVerified: Boolean!
+
+    "User roles array."
     roles: [UserRole!]!
 }

@@ -1,0 +1,34 @@
+introspection:
+  schemaFile:
+    - ../src/main/resources/graphql/Schema.graphqls
+    - ../src/main/resources/graphql/Query.graphqls
+    - ../src/main/resources/graphql/Mutation.graphqls
+    - ../src/main/resources/graphql/user/input/FirebaseCreateUserRequest.graphqls
+    - ../src/main/resources/graphql/user/model/Profile.graphqls
+    - ../src/main/resources/graphql/user/model/UserRole.graphqls
+  metadataFile: ./metadata.json
+
+info:
+  title: HeartBeatLive GraphQL API
+  description: API documentation of HeartBeatLive server
+
+servers:
+  - url: http://localhost:8080/graphql
+    description: Local Server
+    production: false
+    headers:
+      - name: Content-Type
+        example: application/graphql+json
+        comment: Content type must be provided
+      - name: Authorization
+        example: Bearer <USER_TOKEN>
+        comment: Your authentication token (Optional)
+      - name: X-Application-Type
+        example: <USER_APPLICATION_TYPE>
+        comment: Application type, from which user makes requests (Optional)
+      - name: X-Application-Version
+        example: <USER_APPLICATION_VERSION>
+        comment: Application version, from which user makes requests (Optional)
+      - name: X-Platform
+        example: <USER_PLATFORM>
+        comment: Platform, from which user makes requests (Optional)

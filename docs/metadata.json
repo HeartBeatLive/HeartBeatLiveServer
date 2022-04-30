@@ -1,0 +1,34 @@
+{
+  "OBJECT": {
+    "Query": {
+      "fields": {
+        "checkEmailReserved": {
+          "args": {
+            "email": { "documentation": { "example": "email@example.com" } }
+          }
+        }
+      }
+    },
+    "Mutation": {
+      "fields": {
+        "updateProfileDisplayName": {
+          "args": {
+            "displayName": { "documentation": { "example": "John Doe" } }
+          }
+        },
+        "firebaseCreateUser": { "documentation": { "undocumented": true } },
+        "firebaseDeleteUser": { "documentation": { "undocumented": true } }
+      }
+    },
+    "Profile": {
+      "fields": {
+        "id": { "documentation": { "example": "FWY4dumZFuOKs4aT3dL3RVsmVkr1" } },
+        "displayName": { "documentation": { "example": "John Doe" } },
+        "email": { "documentation": { "example": "email@example.com" } }
+      }
+    }
+  },
+  "INPUT_OBJECT": {
+    "FirebaseCreateUserRequest": { "documentation": { "undocumented": true } }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "docs",
+  "version": "1.0.0",
+  "description": "HeartBeatApp server documentation",
+  "main": "index.js",
+  "scripts": {
+    "build": "npx spectaql config.yml"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "spectaql": "^1.1.1"
+  }
+}
