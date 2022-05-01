@@ -1,0 +1,38 @@
+name: Build docs
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build-docs-and-deploy:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [12.x, 14.x, 16.x]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      - name: Build documentations
+        run: |
+          cd docs
+          npm ci
+          npm run build
+      - name: Prepare documentation server files
+        run: |
+          mv public/index.html public/index.php
+          cp authenticate-user.php public
+          echo -e "<?php include 'authenticate-user.php' ?>\n$(cat public/index.php)" > public/index.php
+      - name: Deploy documentation to Heroku
+        run: |
+          cd public
+          apt-get update -qy
+          apt-get install -y ruby-dev
+          gem install dpl --pre
+          dpl heroku api --app=${{ secrets.HEROKU_API_DOCS_APP }} --api-key=${{ secrets.HEROKU_API_KEY }}
