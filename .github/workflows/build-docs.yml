@@ -17,18 +17,19 @@ jobs:
           cache: 'npm'
           cache-dependency-path: docs/package-lock.json
       - name: Build documentations
+        working-directory: docs
         run: |
-          cd docs
           npm ci
           npm run build
       - name: Prepare documentation server files
+        working-directory: docs
         run: |
           mv public/index.html public/index.php
           cp authenticate-user.php public
           echo -e "<?php include 'authenticate-user.php' ?>\n$(cat public/index.php)" > public/index.php
       - name: Deploy documentation to Heroku
+        working-directory: docs/public
         run: |
-          cd public
           apt-get update -qy
           apt-get install -y ruby-dev
           gem install dpl --pre
