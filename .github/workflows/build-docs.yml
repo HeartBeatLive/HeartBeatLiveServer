@@ -28,9 +28,9 @@ jobs:
           cp authenticate-user.php public
           echo -e "<?php include 'authenticate-user.php' ?>\n$(cat public/index.php)" > public/index.php
       - name: Deploy documentation to Heroku
-        working-directory: docs/public
-        run: |
-          apt-get update -qy
-          apt-get install -y ruby-dev
-          gem install dpl --pre
-          dpl heroku api --app=${{ secrets.HEROKU_API_DOCS_APP }} --api-key=${{ secrets.HEROKU_API_KEY }}
+        uses: tiagogouvea/github-dpl-action@master
+        with:
+          provider: 'heroku'
+          base-dir: docs/public
+          app: ${{ secrets.HEROKU_API_DOCS_APP }}
+          api-key: ${{ secrets.HEROKU_API_KEY }}
