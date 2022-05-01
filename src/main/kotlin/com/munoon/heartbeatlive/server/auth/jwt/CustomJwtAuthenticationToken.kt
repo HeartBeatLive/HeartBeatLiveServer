@@ -40,7 +40,7 @@ class CustomJwtAuthenticationToken(jwt: Jwt) : JwtAuthenticationToken(jwt, jwt.g
                 if (T::class.isInstance(result)) result
                 else null
             } catch (e: Exception) {
-                logger.error("Error getting JWT claim with name '$claimName'")
+                logger.error("Error getting JWT claim with name '$claimName'", e)
                 null
             }
     }

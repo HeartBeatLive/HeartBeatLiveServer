@@ -59,7 +59,9 @@ class UserServiceTest : AbstractMongoDBTest() {
 
         runBlocking {
             assertThat(userRepository.count().awaitSingle()).isZero
-            userService.createUser(GraphqlFirebaseCreateUserInput(id = "1", email = "testemail@gmail.com", emailVerified = true))
+
+            val request = GraphqlFirebaseCreateUserInput(id = "1", email = "testemail@gmail.com", emailVerified = true)
+            userService.createUser(request)
 
             assertThat(userRepository.findAll().asFlow().toList(arrayListOf()))
                 .usingRecursiveComparison().ignoringFields("created")
@@ -72,7 +74,11 @@ class UserServiceTest : AbstractMongoDBTest() {
     fun deleteUserByIdFirebaseTrigger() {
         runBlocking {
             val userId = "1"
-            userService.createUser(GraphqlFirebaseCreateUserInput(id = userId, email = "testemail@gmail.com", emailVerified = true))
+            userService.createUser(GraphqlFirebaseCreateUserInput(
+                id = userId,
+                email = "testemail@gmail.com",
+                emailVerified = true
+            ))
             userService.deleteUserByIdFirebaseTrigger(userId)
             assertThat(userRepository.count().awaitSingle()).isZero
         }
@@ -91,7 +97,11 @@ class UserServiceTest : AbstractMongoDBTest() {
 
         val userId = "1"
         runBlocking {
-            userService.createUser(GraphqlFirebaseCreateUserInput(id = userId, email = "testemail@gmail.com", emailVerified = true))
+            userService.createUser(GraphqlFirebaseCreateUserInput(
+                id = userId,
+                email = "testemail@gmail.com",
+                emailVerified = true
+            ))
             val updatedUser = userService.updateUserDisplayName(userId, "Test Name")
 
             assertThat(updatedUser).usingRecursiveComparison().ignoringFields("created").isEqualTo(expectedUser)
@@ -124,9 +134,14 @@ class UserServiceTest : AbstractMongoDBTest() {
             emailVerified = true
         )
 
-        runBlocking { userService.createUser(GraphqlFirebaseCreateUserInput(id = userId, email = "testemail@gmail.com", emailVerified = false)) }
+        runBlocking { userService.createUser(GraphqlFirebaseCreateUserInput(
+            id = userId,
+            email = "testemail@gmail.com",
+            emailVerified = false
+        )) }
 
-        val updatedUser = runBlocking { userService.updateUserInfoFromJwt(userId, UpdateUserInfoFromJwtTo(emailVerified = true)) }
+        val updateUserInfo = UpdateUserInfoFromJwtTo(emailVerified = true)
+        val updatedUser = runBlocking { userService.updateUserInfoFromJwt(userId, updateUserInfo) }
         assertThat(updatedUser).usingRecursiveComparison().ignoringFields("created").isEqualTo(expectedUser)
         runBlocking {
             assertThat(userRepository.findAll().asFlow().toList(arrayListOf()))
@@ -137,8 +152,9 @@ class UserServiceTest : AbstractMongoDBTest() {
 
     @Test
     fun `updateUserInfoFromJwt - user not found`() {
+        val updateUserInfo = UpdateUserInfoFromJwtTo(emailVerified = true)
         assertThatThrownBy {
-            runBlocking { userService.updateUserInfoFromJwt("abc", UpdateUserInfoFromJwtTo(emailVerified = true)) }
+            runBlocking { userService.updateUserInfoFromJwt("abc", updateUserInfo) }
         }.isEqualTo(UserNotFoundByIdException("abc"))
     }
 
@@ -152,9 +168,13 @@ class UserServiceTest : AbstractMongoDBTest() {
             created = Instant.now(),
             roles = emptySet()
         )
-        runBlocking {
-            userService.createUser(GraphqlFirebaseCreateUserInput(id = "1", email = "testemail@gmail.com", emailVerified = true))
-        }
+
+        val createUserRequest = GraphqlFirebaseCreateUserInput(
+            id = "1",
+            email = "testemail@gmail.com",
+            emailVerified = true
+        )
+        runBlocking { userService.createUser(createUserRequest) }
 
         val user = runBlocking { userService.getUserById("1") }
         assertThat(user).usingRecursiveComparison().ignoringFields("created").isEqualTo(expectedUser)

@@ -51,7 +51,13 @@ internal class FirebaseAuthServiceTest {
             .setPhotoUrl(null)
             .setCustomClaims(mapOf( CustomJwtAuthenticationToken.ROLES_CLAIM to arrayListOf("ADMIN") ))
 
-        val user = User(id = "1", displayName = "Display Name", email = "email@example.com", emailVerified = true, roles = setOf(UserRole.ADMIN))
+        val user = User(
+            id = "1",
+            displayName = "Display Name",
+            email = "email@example.com",
+            emailVerified = true,
+            roles = setOf(UserRole.ADMIN)
+        )
         runBlocking { service.initializeFirebaseUser(user) }
         coVerify(exactly = 1) { firebaseAuth.updateUserAsync(assertEq(expectedUpdateRecord)) }
     }

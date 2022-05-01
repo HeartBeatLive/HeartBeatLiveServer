@@ -15,7 +15,9 @@ import org.springframework.web.filter.reactive.ServerWebExchangeContextFilter
 import org.springframework.web.server.ServerWebExchange
 import reactor.core.publisher.Mono
 
-@SpringBootTest(properties = ["auth.firebase.function.token=${FirebaseFunctionAuthenticationTest.FIREBASE_FUNCTION_TOKEN}"])
+@SpringBootTest(properties = [
+    "auth.firebase.function.token=${FirebaseFunctionAuthenticationTest.FIREBASE_FUNCTION_TOKEN}"
+])
 internal class FirebaseFunctionAuthenticationTest : AbstractTest() {
     companion object {
         const val FIREBASE_FUNCTION_TOKEN = "super-secret-firebase-function-token"
@@ -63,13 +65,16 @@ internal class FirebaseFunctionAuthenticationTest : AbstractTest() {
     fun `checkIsFirebaseFunction - true`() {
         val requestHeaders = HttpHeaders().apply { set(HttpHeaders.AUTHORIZATION, FIREBASE_FUNCTION_TOKEN) }
         assertThatNoException()
-            .isThrownBy { runWithExchangeInContext(requestHeaders) { firebaseFunctionAuthentication.checkIsFirebaseFunction() } }
+            .isThrownBy {
+                runWithExchangeInContext(requestHeaders) { firebaseFunctionAuthentication.checkIsFirebaseFunction() }
+            }
     }
 
     @Test
     fun `checkIsFirebaseFunction - false`() {
         val requestHeaders = HttpHeaders().apply { set(HttpHeaders.AUTHORIZATION, "abc") }
-        assertThatThrownBy { runWithExchangeInContext(requestHeaders) { firebaseFunctionAuthentication.checkIsFirebaseFunction() } }
-            .isExactlyInstanceOf(AccessDeniedException::class.java)
+        assertThatThrownBy {
+            runWithExchangeInContext(requestHeaders) { firebaseFunctionAuthentication.checkIsFirebaseFunction() }
+        }.isExactlyInstanceOf(AccessDeniedException::class.java)
     }
 }
