@@ -9,7 +9,7 @@ on:
       - master
 
 jobs:
-  test:
+  analyse-code:
     runs-on: ubuntu-latest
 
     steps:
@@ -32,11 +32,6 @@ jobs:
             ${{ runner.os }}-gradle-
       - name: Run the Gradle package task
         run: ./gradlew detekt
-      - name: Upload SARIF to Github using the upload-sarif action
-        uses: github/codeql-action/upload-sarif@v1
-        if: success() || failure()
-        with:
-          sarif_file: build/reports/detekt/detekt.sarif
       - name: Cleanup Gradle Cache
         run: |
           rm -f ~/.gradle/caches/modules-2/modules-2.lock
