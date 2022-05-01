@@ -6,8 +6,6 @@ import com.munoon.heartbeatlive.server.user.firebase.FirebaseAuthService
 import com.munoon.heartbeatlive.server.user.model.GraphqlFirebaseCreateUserInput
 import com.munoon.heartbeatlive.server.user.model.UpdateUserInfoFromJwtTo
 import com.munoon.heartbeatlive.server.user.repository.UserRepository
-import kotlinx.coroutines.reactor.awaitSingle
-import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.stereotype.Service
 
 @Service
@@ -25,7 +23,7 @@ class UserService(
             displayName = null,
             email = request.email,
             emailVerified = request.emailVerified
-        )).awaitSingle()
+        ))
 
         firebaseAuthService.initializeFirebaseUser(user)
         return user
@@ -39,7 +37,6 @@ class UserService(
     suspend fun updateUserDisplayName(userId: String, displayName: String): User {
         val user = getUserById(userId)
         val updatedUser = userRepository.save(user.copy(displayName = displayName))
-            .awaitSingle()
 
         firebaseAuthService.updateFirebaseUser(updatedUser, user)
         return updatedUser
@@ -48,9 +45,8 @@ class UserService(
     suspend fun updateUserInfoFromJwt(userId: String, updateUserInfo: UpdateUserInfoFromJwtTo): User {
         val user = getUserById(userId)
         return userRepository.save(user.copy(emailVerified = updateUserInfo.emailVerified))
-            .awaitSingle()
     }
 
-    suspend fun getUserById(userId: String): User = userRepository.findById(userId).awaitSingleOrNull()
+    suspend fun getUserById(userId: String): User = userRepository.findById(userId)
         ?: throw UserNotFoundByIdException(userId)
 }

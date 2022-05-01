@@ -11,8 +11,6 @@ import com.munoon.heartbeatlive.server.user.repository.UserRepository
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.coVerify
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.reactive.asFlow
-import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -58,12 +56,12 @@ class UserServiceTest : AbstractMongoDBTest() {
         )
 
         runBlocking {
-            assertThat(userRepository.count().awaitSingle()).isZero
+            assertThat(userRepository.count()).isZero
 
             val request = GraphqlFirebaseCreateUserInput(id = "1", email = "testemail@gmail.com", emailVerified = true)
             userService.createUser(request)
 
-            assertThat(userRepository.findAll().asFlow().toList(arrayListOf()))
+            assertThat(userRepository.findAll().toList(arrayListOf()))
                 .usingRecursiveComparison().ignoringFields("created")
                 .isEqualTo(listOf(expectedUser))
             coVerify(exactly = 1) { firebaseAuthService.initializeFirebaseUser(userArgumentMatch(expectedUser)) }
@@ -80,7 +78,7 @@ class UserServiceTest : AbstractMongoDBTest() {
                 emailVerified = true
             ))
             userService.deleteUserByIdFirebaseTrigger(userId)
-            assertThat(userRepository.count().awaitSingle()).isZero
+            assertThat(userRepository.count()).isZero
         }
     }
 
@@ -105,7 +103,7 @@ class UserServiceTest : AbstractMongoDBTest() {
             val updatedUser = userService.updateUserDisplayName(userId, "Test Name")
 
             assertThat(updatedUser).usingRecursiveComparison().ignoringFields("created").isEqualTo(expectedUser)
-            assertThat(userRepository.findAll().asFlow().toList(arrayListOf()))
+            assertThat(userRepository.findAll().toList(arrayListOf()))
                 .usingRecursiveComparison().ignoringFields("created")
                 .isEqualTo(listOf(expectedUser))
             coVerify(exactly = 1) {
@@ -144,7 +142,7 @@ class UserServiceTest : AbstractMongoDBTest() {
         val updatedUser = runBlocking { userService.updateUserInfoFromJwt(userId, updateUserInfo) }
         assertThat(updatedUser).usingRecursiveComparison().ignoringFields("created").isEqualTo(expectedUser)
         runBlocking {
-            assertThat(userRepository.findAll().asFlow().toList(arrayListOf()))
+            assertThat(userRepository.findAll().toList(arrayListOf()))
                 .usingRecursiveComparison().ignoringFields("created")
                 .isEqualTo(listOf(expectedUser))
         }
