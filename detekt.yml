@@ -1,0 +1,17 @@
+exceptions:
+  TooGenericExceptionCaught:
+    active: false
+
+performance:
+  SpreadOperator:
+    active: false
+
+style:
+  ReturnCount:
+    max: 5
+
+  NewLineAtEndOfFile:
+    active: false
+
+  UnnecessaryAbstractClass:
+    active: false

@@ -12,12 +12,7 @@ import reactor.core.publisher.Mono
 @Component
 class FirebaseFunctionAuthentication(private val properties: FirebaseAuthenticationProperties) {
     suspend fun isFirebaseFunction(): Boolean {
-        val exchange = Mono.deferContextual { context ->
-            context.getOrEmpty<ServerWebExchange>(ServerWebExchangeContextFilter.EXCHANGE_CONTEXT_ATTRIBUTE)
-                .map { Mono.just(it) }
-                .orElseGet { Mono.empty() }
-        }.awaitSingleOrNull() ?: return false
-
+        val exchange = getExchange() ?: return false
         val token = exchange.request.headers[HttpHeaders.AUTHORIZATION]?.firstOrNull() ?: return false
         return properties.function.token == token
     }
@@ -26,5 +21,13 @@ class FirebaseFunctionAuthentication(private val properties: FirebaseAuthenticat
         if (!isFirebaseFunction()) {
             throw AccessDeniedException("This method is available only for firebase function!")
         }
+    }
+
+    private companion object {
+        suspend fun getExchange() = Mono.deferContextual { context ->
+            context.getOrEmpty<ServerWebExchange>(ServerWebExchangeContextFilter.EXCHANGE_CONTEXT_ATTRIBUTE)
+                .map { Mono.just(it) }
+                .orElseGet { Mono.empty() }
+        }.awaitSingleOrNull()
     }
 }

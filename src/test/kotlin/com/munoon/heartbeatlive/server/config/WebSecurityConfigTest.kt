@@ -63,8 +63,9 @@ internal class WebSecurityConfigTest : AbstractTest() {
     }
 
     private companion object {
+        @Suppress("MaxLineLength")
         const val JWT_ID_TOKEN_VALUE = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImM2NzNkM2M5NDdhZWIxOGI2NGU1OGUzZWRlMzI1NWZiZjU3NTI4NWIiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiTmlraXRhIiwicm9sZXMiOltdLCJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vaGVhcnRiZWF0LWM4OTU2IiwiYXVkIjoiaGVhcnRiZWF0LWM4OTU2IiwiYXV0aF90aW1lIjoxNjUwOTA4NTY5LCJ1c2VyX2lkIjoiRldZNGR1bVpGdU9LczRhVDNkTDNSVnNtVmtyMSIsInN1YiI6IkZXWTRkdW1aRnVPS3M0YVQzZEwzUlZzbVZrcjEiLCJpYXQiOjE2NTA5MDg1NjksImV4cCI6MTY1MDkxMjE2OSwiZW1haWwiOiJtdW5vb25nZ0BnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZW1haWwiOlsibXVub29uZ2dAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoicGFzc3dvcmQifX0.OGj2ZOt_zSfr5AGBRus9QG1UwtswVNyaTLGhR8rw5ef6QjVCn8e7QZbR5fCpdGoXp3jsfwLWtRrQGNcikzeH-YItLnfqswnWLv40Tc5dIbdXWEmbvdIQyhcyXjpj0QSHYSTtDaX-SlQx79Hr6j6YdBeFT58ZU6tSgPm6c2h3Z-fRbmppVjYzdWO8p7Cr2IUNM-Zo2dm-OQi3CTQurNbWdBcyAlFo_jObqLCYTt0Gvklz2NlRoRh24fzML9bFlK7FGqkLdPKFiNP7FRj5Qs7xN9C7tCQJVmDP1bKW6Oh2eVuTnMShMcLTUN1CYz1sh1ZlwuKZcH4VNlJGnt7PVNI5og"
-        val USER_ID = "FWY4dumZFuOKs4aT3dL3RVsmVkr1"
+        const val USER_ID = "FWY4dumZFuOKs4aT3dL3RVsmVkr1"
         val JWT_ID_TOKEN = Jwt.withTokenValue(JWT_ID_TOKEN_VALUE)
             .header("alg", "RS256")
             .header("kid", "c673d3c947aeb18b64e58e3ede3255fbf575285b")

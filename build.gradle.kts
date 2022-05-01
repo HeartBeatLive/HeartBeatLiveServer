@@ -1,10 +1,13 @@
+import io.gitlab.arturbosch.detekt.Detekt
+import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-	id("org.springframework.boot") version "3.0.0-SNAPSHOT"
+	id("org.springframework.boot") version "2.7.0-SNAPSHOT"
 	id("io.spring.dependency-management") version "1.0.11.RELEASE"
-	kotlin("jvm") version "1.6.21"
-	kotlin("plugin.spring") version "1.6.21"
+	kotlin("jvm") version "1.6.10"
+	kotlin("plugin.spring") version "1.6.10"
+	id("io.gitlab.arturbosch.detekt") version "1.19.0"
 }
 
 group = "com.munoon.heartbeatlive.server"
@@ -53,4 +56,22 @@ tasks.withType<KotlinCompile> {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+}
+
+detekt {
+	buildUponDefaultConfig = true
+	allRules = false
+	config = files("$projectDir/detekt.yml")
+}
+
+tasks.withType<Detekt>().configureEach {
+	jvmTarget = "17"
+	reports {
+		html.required.set(true)
+		sarif.required.set(true)
+	}
+}
+
+tasks.withType<DetektCreateBaselineTask>().configureEach {
+	jvmTarget = "17"
 }
