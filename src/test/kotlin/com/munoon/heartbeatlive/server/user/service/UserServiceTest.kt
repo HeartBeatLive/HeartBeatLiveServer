@@ -32,9 +32,14 @@ class UserServiceTest : AbstractMongoDBTest() {
 
     @Test
     fun `checkEmailReserved - true`() {
-        val email = "testemail@gmail.com"
-        runBlocking { userService.createUser(GraphqlFirebaseCreateUserInput(id = "1", email, emailVerified = true)) }
-        val resp = runBlocking { userService.checkEmailReserved(email) }
+        val createUserInput = GraphqlFirebaseCreateUserInput(
+            id = "1",
+            email = "testemail@gmail.com",
+            emailVerified = true
+        )
+        runBlocking { userService.createUser(createUserInput) }
+
+        val resp = runBlocking { userService.checkEmailReserved("TESTEMAIL@gmail.com") }
         assertThat(resp).isTrue
     }
 
@@ -58,7 +63,7 @@ class UserServiceTest : AbstractMongoDBTest() {
         runBlocking {
             assertThat(userRepository.count()).isZero
 
-            val request = GraphqlFirebaseCreateUserInput(id = "1", email = "testemail@gmail.com", emailVerified = true)
+            val request = GraphqlFirebaseCreateUserInput(id = "1", email = "TESTEMAIL@gmail.com", emailVerified = true)
             userService.createUser(request)
 
             assertThat(userRepository.findAll().toList(arrayListOf()))
