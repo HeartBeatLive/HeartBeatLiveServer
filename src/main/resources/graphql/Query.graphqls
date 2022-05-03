@@ -1,6 +1,6 @@
 type Query {
     "Check if user with following email exist. Require anonymous user."
-    checkEmailReserved("Email, that you need to check. Validate by email format and length from 1 to 200 symbols." email: String): Boolean
+    checkEmailReserved("Email, that you need to check. Validate by email format and length from 1 to 200 symbols." email: String!): Boolean!
     "Get authenticated user profile. Require authentication."
-    getProfile: Profile
+    getProfile: Profile!
 }
