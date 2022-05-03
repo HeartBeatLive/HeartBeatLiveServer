@@ -5,4 +5,5 @@ const merge = require("@graphql-tools/merge");
 const files = loadFiles.loadFilesSync("../src/main/resources/graphql");
 const mergeTypeDefs = merge.mergeTypeDefs(files);
 const printedTypeDefs = graphql.print(mergeTypeDefs);
-module.exports = graphql.introspectionFromSchema(graphql.buildSchema(printedTypeDefs));
+const schema = graphql.buildSchema(printedTypeDefs);
+module.exports = graphql.introspectionFromSchema(schema);

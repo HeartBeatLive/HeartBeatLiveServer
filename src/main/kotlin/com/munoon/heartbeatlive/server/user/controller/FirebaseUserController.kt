@@ -30,7 +30,7 @@ class FirebaseUserController(
     suspend fun firebaseDeleteUser(@Argument userId: String): Boolean {
         firebaseFunctionAuthentication.checkIsFirebaseFunction()
         logger.info("Deleting user with id '$userId'")
-        userService.deleteUserByIdFirebaseTrigger(userId)
+        userService.deleteUserById(userId, updateFirebaseState = false)
         return true
     }
 }

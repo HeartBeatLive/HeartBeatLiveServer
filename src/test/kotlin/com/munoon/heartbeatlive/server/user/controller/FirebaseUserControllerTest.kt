@@ -48,7 +48,7 @@ internal class FirebaseUserControllerTest : AbstractGraphqlHttpTest() {
 
     @Test
     fun firebaseDeleteUser() {
-        coEvery { userService.deleteUserByIdFirebaseTrigger("1") } returns Unit
+        coEvery { userService.deleteUserById("1", updateFirebaseState = false) } returns Unit
 
         graphqlTester.mutate()
             .header(HttpHeaders.AUTHORIZATION, FIREBASE_FUNCTION_TOKEN)
@@ -58,7 +58,7 @@ internal class FirebaseUserControllerTest : AbstractGraphqlHttpTest() {
             .satisfyNoErrors()
             .path("firebaseDeleteUser").isEqualsTo(true)
 
-        coVerify(exactly = 1) { userService.deleteUserByIdFirebaseTrigger("1") }
+        coVerify(exactly = 1) { userService.deleteUserById("1", updateFirebaseState = false) }
     }
 
     @Test

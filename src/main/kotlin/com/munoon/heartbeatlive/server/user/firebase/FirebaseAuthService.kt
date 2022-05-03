@@ -22,6 +22,10 @@ class FirebaseAuthService(private val firebaseAuth: FirebaseAuth) {
         firebaseAuth.updateUserAsync(user.generateUpdateRequest()).await()
     }
 
+    suspend fun deleteFirebaseUser(id: String) {
+        firebaseAuth.deleteUserAsync(id).await()
+    }
+
     private companion object {
         fun User.generateClaims() = mapOf(
             CustomJwtAuthenticationToken.ROLES_CLAIM to roles.map { it.name }

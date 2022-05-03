@@ -155,4 +155,23 @@ internal class ProfileControllerTest : AbstractGraphqlHttpTest() {
     fun `getProfile - user not authenticated`() {
         // TODO impl this when error schema will be ready
     }
+
+    @Test
+    fun deleteProfile() {
+        coEvery { userService.deleteUserById("1", updateFirebaseState = true) } returns Unit
+
+        graphqlTester.withUser()
+            .document("mutation { deleteProfile }")
+            .execute()
+            .satisfyNoErrors()
+            .path("deleteProfile").isEqualsTo(true)
+
+        coVerify(exactly = 1) { userService.deleteUserById("1", updateFirebaseState = true) }
+    }
+
+    @Test
+    @Disabled("Test will be implemented when error schema will be specified")
+    fun `deleteProfile - user not authenticated`() {
+        // TODO impl this when error schema will be ready
+    }
 }

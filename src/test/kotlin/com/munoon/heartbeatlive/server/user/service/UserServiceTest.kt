@@ -74,7 +74,22 @@ class UserServiceTest : AbstractMongoDBTest() {
     }
 
     @Test
-    fun deleteUserByIdFirebaseTrigger() {
+    fun `deleteUserById with firebase state updating`() {
+        val userId = "1"
+        runBlocking {
+            userService.createUser(GraphqlFirebaseCreateUserInput(
+                id = userId,
+                email = "testemail@gmail.com",
+                emailVerified = true
+            ))
+            userService.deleteUserById(userId, updateFirebaseState = true)
+            assertThat(userRepository.count()).isZero
+        }
+        coVerify(exactly = 1) { firebaseAuthService.deleteFirebaseUser(userId) }
+    }
+
+    @Test
+    fun `deleteUserById without firebase state updating`() {
         runBlocking {
             val userId = "1"
             userService.createUser(GraphqlFirebaseCreateUserInput(
@@ -82,9 +97,17 @@ class UserServiceTest : AbstractMongoDBTest() {
                 email = "testemail@gmail.com",
                 emailVerified = true
             ))
-            userService.deleteUserByIdFirebaseTrigger(userId)
+            userService.deleteUserById(userId, updateFirebaseState = false)
             assertThat(userRepository.count()).isZero
         }
+        coVerify(exactly = 0) { firebaseAuthService.deleteFirebaseUser(any()) }
+    }
+
+    @Test
+    fun `deleteUserById user not found`() {
+        assertThatThrownBy { runBlocking { userService.deleteUserById("abc", updateFirebaseState = true) } }
+            .isEqualTo(UserNotFoundByIdException("abc"))
+        coVerify(exactly = 0) { firebaseAuthService.deleteFirebaseUser(any()) }
     }
 
     @Test

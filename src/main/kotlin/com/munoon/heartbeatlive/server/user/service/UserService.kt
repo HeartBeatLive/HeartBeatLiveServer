@@ -25,9 +25,12 @@ class UserService(
         return user
     }
 
-    suspend fun deleteUserByIdFirebaseTrigger(userId: String) {
+    suspend fun deleteUserById(userId: String, updateFirebaseState: Boolean) {
         val deletedCount = userRepository.deleteUserById(userId)
         if (deletedCount <= 0) throw UserNotFoundByIdException(userId)
+        if (updateFirebaseState) {
+            firebaseAuthService.deleteFirebaseUser(userId)
+        }
     }
 
     suspend fun updateUserDisplayName(userId: String, displayName: String): User {

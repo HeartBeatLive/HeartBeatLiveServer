@@ -49,4 +49,12 @@ class ProfileController(private val userService: UserService) {
         logger.info("User '${authUserId()}' requested his profile")
         return userService.getUserById(authUserId()).asGraphqlProfile()
     }
+
+    @MutationMapping
+    @PreAuthorize("isAuthenticated()")
+    suspend fun deleteProfile(): Boolean {
+        logger.info("User '${authUserId()}' delete his user")
+        userService.deleteUserById(authUserId(), updateFirebaseState = true)
+        return true
+    }
 }

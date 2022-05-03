@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test
 internal class FirebaseAuthServiceTest {
     private val firebaseAuth = mockk<FirebaseAuth> {
         every { updateUserAsync(any()) }.returns(SettableApiFuture.create<UserRecord>().apply { set(mockk()) })
+        every { deleteUserAsync(any()) }.returns(SettableApiFuture.create<Void>().apply { set(mockk()) })
     }
 
     private val service = FirebaseAuthService(firebaseAuth)
@@ -67,6 +68,13 @@ internal class FirebaseAuthServiceTest {
         val user = User(id = "1", displayName = null, email = "email@example.com", emailVerified = true)
         runBlocking { service.initializeFirebaseUser(user) }
         coVerify(exactly = 0) { firebaseAuth.updateUserAsync(any()) }
+    }
+
+    @Test
+    fun deleteFirebaseUser() {
+        val userId = "abc"
+        runBlocking { service.deleteFirebaseUser(userId) }
+        coVerify(exactly = 1) { firebaseAuth.deleteUserAsync(userId) }
     }
 
     private fun MockKVerificationScope.assertEq(expected: UserRecord.UpdateRequest) = match<UserRecord.UpdateRequest> {
