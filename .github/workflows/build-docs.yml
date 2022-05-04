@@ -24,6 +24,9 @@ jobs:
       - name: Build schema.graphqls
         working-directory: docs
         run: npm run build-schema
+      - run: |
+          cp docs/server.js docs/public/server.js
+          echo "web: node server.js" > docs/public/Procfile
       - name: Deploy docs to heroku
         uses: tiagogouvea/github-dpl-action@master
         with:

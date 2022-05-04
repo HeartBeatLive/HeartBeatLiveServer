@@ -3,7 +3,7 @@ const fs = require('fs');
 
 const PORT = process.env.PORT || 8080;
 const ROOT_CREDENTIALS = process.env.CREDENTIALS || 'username:password';
-const FILES_PREFIX = "./public/";
+const FILES_PREFIX = process.env.FILES_PREFIX || "./public/";
 
 const STATIC_FILES = {
     '/javascripts/spectaql.min.js': { contentType: 'text/javascript' },
