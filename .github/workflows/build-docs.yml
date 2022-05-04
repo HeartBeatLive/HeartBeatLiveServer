@@ -24,13 +24,11 @@ jobs:
       - name: Build schema.graphqls
         working-directory: docs
         run: npm run build-schema
-      - run: |
-          echo '{ "root": "public/", "basic_auth": true }' > docs/public/static.json
-      - name: Deploy documentation to Heroku
-        uses: akhileshns/heroku-deploy@v3.12.12
+      - run: Deploy docs to heroku
+        uses: tiagogouvea/github-dpl-action@master
         with:
-          heroku_app_name: ${{ secrets.HEROKU_API_DOCS_APP }}
-          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
-          heroku_email: ${{ secrets.HEROKU_EMAIL }}
-          buildpack: https://github.com/heroku/heroku-buildpack-static.git
-          appdir: docs/public
+          provider: 'heroku'
+          strategy: 'api'
+          base-dir: /docs
+          app: ${{ secrets.HEROKU_API_DOCS_APP }}
+          api-key: ${{ secrets.HEROKU_API_KEY }}
