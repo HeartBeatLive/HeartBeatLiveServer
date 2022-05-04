@@ -28,8 +28,6 @@ jobs:
         working-directory: docs
         run: |
           mv public/index.html public/index.php
-          cp authenticate-user.php public
-          echo -e "<?php include 'authenticate-user.php' ?>\n$(cat public/index.php)" > public/index.php
       - name: Deploy documentation to Heroku
         uses: tiagogouvea/github-dpl-action@master
         with:
