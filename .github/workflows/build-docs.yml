@@ -32,6 +32,6 @@ jobs:
         with:
           provider: 'heroku'
           strategy: 'api'
-          base-dir: /docs
+          base-dir: /docs/public
           app: ${{ secrets.HEROKU_API_DOCS_APP }}
           api-key: ${{ secrets.HEROKU_API_KEY }}
