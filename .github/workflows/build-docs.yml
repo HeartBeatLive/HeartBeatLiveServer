@@ -24,21 +24,10 @@ jobs:
       - name: Build schema.graphqls
         working-directory: docs
         run: npm run build-schema
-      - name: Prepare documentation server files
-        working-directory: docs
-        run: |
-          mv public/index.html public/index.php
-          cp authenticate-user.php public
-          cp heroku-nginx.conf public/nginx_app.conf
-          echo -e "<?php include 'authenticate-user.php' ?>\n$(cat public/index.php)" > public/index.php
-          echo "web: heroku-php-nginx" >> public/Procfile
-          mv public/schema.graphqls public/schema.php
-          echo -e "<?php include 'authenticate-user.php' ?>\n$(cat public/schema.php)" > public/schema.php
       - name: Deploy documentation to Heroku
-        uses: tiagogouvea/github-dpl-action@master
+        uses: akhileshns/heroku-deploy@v3.12.12
         with:
-          provider: 'heroku'
-          strategy: 'api'
-          base-dir: /docs/public
-          app: ${{ secrets.HEROKU_API_DOCS_APP }}
-          api-key: ${{ secrets.HEROKU_API_KEY }}
+          heroku_app_name: ${{ secrets.HEROKU_API_DOCS_APP }}
+          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+          buildpack: https://github.com/heroku/heroku-buildpack-static.git
+          base-dir: docs
