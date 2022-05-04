@@ -4,7 +4,16 @@ introspection:
 
 info:
   title: HeartBeatLive GraphQL API
-  description: API documentation of HeartBeatLive server
+  description: |
+    API documentation of HeartBeatLive server \
+    [GitHub Repository](https://github.com/HeartBeatLive/HeartBeatLiveServer) \
+    [Schema File](/schema.graphqls)
+  version: "1.0"
+  x-introItems:
+    - title: GitHub Repository
+      url: https://github.com/HeartBeatLive/HeartBeatLiveServer
+    - title: Schema File
+      url: /schema.graphqls
 
 servers:
   - url: http://localhost:8080/graphql

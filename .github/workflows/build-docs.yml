@@ -21,12 +21,19 @@ jobs:
         run: |
           npm ci
           npm run build
+      - name: Build schema.graphqls
+        working-directory: docs
+        run: npm run build-schema
       - name: Prepare documentation server files
         working-directory: docs
         run: |
           mv public/index.html public/index.php
           cp authenticate-user.php public
+          cp heroku-nginx.conf public/nginx_app.conf
           echo -e "<?php include 'authenticate-user.php' ?>\n$(cat public/index.php)" > public/index.php
+          echo "web: heroku-php-nginx" >> public/Procfile
+          mv public/schema.graphqls public/schema.php
+          echo -e "<?php include 'authenticate-user.php' ?>\n$(cat public/schema.php)" > public/schema.php
       - name: Deploy documentation to Heroku
         uses: tiagogouvea/github-dpl-action@master
         with:

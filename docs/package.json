@@ -4,7 +4,8 @@
   "description": "HeartBeatApp server documentation",
   "main": "index.js",
   "scripts": {
-    "build": "npx spectaql config.yml"
+    "build": "npx spectaql config.yml",
+    "build-schema": "node build-schema.js"
   },
   "author": "",
   "license": "ISC",
