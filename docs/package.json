@@ -5,8 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "npx spectaql config.yml",
-    "build-schema": "node build-schema.js",
-    "server": "node server.js"
+    "build-schema": "node build-schema.js"
   },
   "author": "",
   "license": "ISC",

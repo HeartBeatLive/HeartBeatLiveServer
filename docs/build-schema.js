@@ -14,7 +14,7 @@ const printedTypeDefs = graphql.print(mergeTypeDefs);
 const schemaFileContent = `
 # HeartBeatLive GraphQL API
 # version = ${apiVersion}
-# buildTime = ${new Date().toISOString()}
+# build time = ${new Date().toISOString()}
 
 ${printedTypeDefs}
 `.trim();

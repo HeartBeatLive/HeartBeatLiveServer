@@ -27,8 +27,7 @@ jobs:
       - name: Prepare documentation server files
         working-directory: docs
         run: |
-          cp server.js public/server.js
-          echo "web: node server.js" > public/Procfile
+          cp static.json public/static.json
       - name: Deploy documentation to Heroku
         uses: tiagogouvea/github-dpl-action@master
         with:
