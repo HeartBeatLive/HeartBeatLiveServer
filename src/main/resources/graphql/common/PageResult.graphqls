@@ -1,0 +1,14 @@
+interface PageResult {
+    pageInfo: PageInfo!
+}
+
+type PageInfo {
+    "Total pages, that server currently have with specified parameters."
+    totalPages: Int!
+
+    "Total items, that server have."
+    totalItems: Int!
+
+    "Are there more page."
+    hasNext: Boolean!
+}

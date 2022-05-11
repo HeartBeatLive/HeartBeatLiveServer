@@ -1,0 +1,5 @@
+"Public profile, that can be accessible by any user."
+type PublicProfile {
+    "Display name, that should be printed to users."
+    displayName: String
+}

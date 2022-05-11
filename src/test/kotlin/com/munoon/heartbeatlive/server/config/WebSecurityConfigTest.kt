@@ -13,9 +13,13 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.ApplicationContext
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.jwt.JwtValidationException
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder
+import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers
+import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.mockUser
+import org.springframework.test.web.reactive.server.WebTestClient
 import java.time.Instant
 
 @SpringBootTest
@@ -25,6 +29,9 @@ internal class WebSecurityConfigTest : AbstractTest() {
 
     @Autowired
     private lateinit var jwtDecoder: ReactiveJwtDecoder
+
+    @Autowired
+    private lateinit var applicationContext: ApplicationContext
 
     @Test
     fun jwtDecoder() {
@@ -60,6 +67,32 @@ internal class WebSecurityConfigTest : AbstractTest() {
 
         assertThatThrownBy { jwtDecoder.decode("invalid_jwt_token").block() }
             .isExactlyInstanceOf(JwtValidationException::class.java)
+    }
+
+    @Test
+    fun `endpoints security - non graphql path`() {
+        WebTestClient.bindToApplicationContext(applicationContext)
+            .apply(SecurityMockServerConfigurers.springSecurity())
+            .configureClient()
+            .apply(mockUser())
+            .build()
+            .post()
+            .uri("/abc")
+            .exchange()
+            .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `endpoints security - non POST method`() {
+        WebTestClient.bindToApplicationContext(applicationContext)
+            .apply(SecurityMockServerConfigurers.springSecurity())
+            .configureClient()
+            .apply(mockUser())
+            .build()
+            .get()
+            .uri("/graphql")
+            .exchange()
+            .expectStatus().isForbidden
     }
 
     private companion object {

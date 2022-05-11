@@ -1,0 +1,5 @@
+"Input for creating user's sharing code."
+input CreateSharingCodeInput {
+    "Time, until which this shared code should be valid. Should be in future."
+    expiredAt: EpochSecondsTime
+}

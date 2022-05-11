@@ -2,8 +2,8 @@ package com.munoon.heartbeatlive.server.user.controller
 
 import com.munoon.heartbeatlive.server.AbstractGraphqlHttpTest
 import com.munoon.heartbeatlive.server.user.User
+import com.munoon.heartbeatlive.server.user.UserMapper.asGraphqlProfile
 import com.munoon.heartbeatlive.server.user.UserRole
-import com.munoon.heartbeatlive.server.user.asGraphqlProfile
 import com.munoon.heartbeatlive.server.user.model.GraphqlProfileTo
 import com.munoon.heartbeatlive.server.user.model.UpdateUserInfoFromJwtTo
 import com.munoon.heartbeatlive.server.user.service.UserService
@@ -40,12 +40,6 @@ internal class ProfileControllerTest : AbstractGraphqlHttpTest() {
             .execute()
             .satisfyNoErrors()
             .path("checkEmailReserved").entity(Boolean::class.java).isEqualTo(false)
-    }
-
-    @Test
-    @Disabled("Test will be implemented when error schema will be specified")
-    fun `checkEmailReserved - user authenticated`() {
-        // TODO impl this when error schema will be ready
     }
 
     @Test

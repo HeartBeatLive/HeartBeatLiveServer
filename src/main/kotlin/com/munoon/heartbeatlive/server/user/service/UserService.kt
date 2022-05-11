@@ -1,8 +1,8 @@
 package com.munoon.heartbeatlive.server.user.service
 
 import com.munoon.heartbeatlive.server.user.User
+import com.munoon.heartbeatlive.server.user.UserMapper.asNewUser
 import com.munoon.heartbeatlive.server.user.UserNotFoundByIdException
-import com.munoon.heartbeatlive.server.user.asNewUser
 import com.munoon.heartbeatlive.server.user.firebase.FirebaseAuthService
 import com.munoon.heartbeatlive.server.user.model.GraphqlFirebaseCreateUserInput
 import com.munoon.heartbeatlive.server.user.model.UpdateUserInfoFromJwtTo

@@ -1,0 +1,8 @@
+"Algorithms for sorting sharing codes."
+enum SharingCodeSorting {
+    "Sharing codes will be sorted from old to new."
+    CREATED_ASC,
+
+    "Sharing codes will be sorted from new to old."
+    CREATED_DESC
+}

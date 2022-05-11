@@ -1,6 +1,6 @@
 type Mutation {
     firebaseCreateUser(request: FirebaseCreateUserRequest!): Boolean!
-    firebaseDeleteUser(userId: String!): Boolean!
+    firebaseDeleteUser(userId: ID!): Boolean!
 
     "Update authenticated user display name. Require authentication."
     updateProfileDisplayName("User's new display name. Validating by length from 2 to 60 symbols." displayName: String!): Profile!
@@ -11,4 +11,14 @@ type Mutation {
 
     "Run this method when user logged out. Require authentication."
     logout: Boolean!
+
+    "Method to create sharing code by user. Require authentication."
+    createSharingCode("Sharing code creation info." data: CreateSharingCodeInput): SharingCode!
+    "Method for editing sharing code expire time. Require authentication. Sharing code should belong to authenticated user."
+    updateSharingCodeExpireTime(
+        "Identifier of sharing code." id: ID!,
+        "Time, at which sharing code should expire. Should be in future." expiredAt: EpochSecondsTime
+    ): SharingCode!
+    "Method for deleting sharing code by id. Require authentication. Sharing code should belong to authenticated user."
+    deleteSharingCodeById("Identifier of sharing code." id: ID!): Boolean!
 }

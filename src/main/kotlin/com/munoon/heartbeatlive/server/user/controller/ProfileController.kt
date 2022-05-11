@@ -2,7 +2,8 @@ package com.munoon.heartbeatlive.server.user.controller
 
 import com.munoon.heartbeatlive.server.auth.utils.AuthUtils.authUser
 import com.munoon.heartbeatlive.server.auth.utils.AuthUtils.authUserId
-import com.munoon.heartbeatlive.server.user.asGraphqlProfile
+import com.munoon.heartbeatlive.server.auth.utils.AuthUtils.authUserIdOrAnonymous
+import com.munoon.heartbeatlive.server.user.UserMapper.asGraphqlProfile
 import com.munoon.heartbeatlive.server.user.model.GraphqlProfileTo
 import com.munoon.heartbeatlive.server.user.model.UpdateUserInfoFromJwtTo
 import com.munoon.heartbeatlive.server.user.service.UserService
@@ -20,9 +21,9 @@ class ProfileController(private val userService: UserService) {
     private val logger = LoggerFactory.getLogger(ProfileController::class.java)
 
     @QueryMapping
-    @PreAuthorize("isAnonymous()")
+    @PreAuthorize("permitAll()")
     suspend fun checkEmailReserved(@Argument @Email @Length(min = 1, max = 200) email: String): Boolean {
-        logger.info("Checking if email '$email' is reserved")
+        logger.info("User '${authUserIdOrAnonymous()}' check if email '$email' is reserved")
         return userService.checkEmailReserved(email)
     }
 

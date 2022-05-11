@@ -1,5 +1,6 @@
 package com.munoon.heartbeatlive.server.config
 
+import com.munoon.heartbeatlive.server.sharing.HeartBeatSharing
 import com.munoon.heartbeatlive.server.user.User
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.event.ContextRefreshedEvent
@@ -15,6 +16,10 @@ class MongoConfig(private val mongoTemplate: ReactiveMongoTemplate) {
     fun createMongoIndexes() {
         mongoTemplate.indexOps<User>()
             .ensureIndex(Index("email", Sort.Direction.ASC).unique().sparse().named(User.UNIQUE_EMAIL_INDEX))
+            .block()
+
+        mongoTemplate.indexOps<HeartBeatSharing>()
+            .ensureIndex(Index("publicCode", Sort.Direction.ASC).unique().named(HeartBeatSharing.UNIQUE_PUBLIC_CODE_INDEX))
             .block()
     }
 }

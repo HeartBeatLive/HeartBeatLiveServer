@@ -6,6 +6,11 @@
           "args": {
             "email": { "documentation": { "example": "email@example.com" } }
           }
+        },
+        "getSharingCodeByPublicCode": {
+          "args": {
+            "publicCode": { "documentation": { "example": "KUD1Y8" } }
+          }
         }
       }
     },
@@ -26,9 +31,32 @@
         "displayName": { "documentation": { "example": "John Doe" } },
         "email": { "documentation": { "example": "email@example.com" } }
       }
+    },
+    "PublicProfile": {
+      "fields": {
+        "displayName": { "documentation": { "example": "John Doe" } }
+      }
+    },
+    "SharingCode": {
+      "fields": {
+        "publicCode": { "documentation": { "example": "KUD1Y8" } }
+      }
+    },
+    "PublicSharingCode": {
+      "fields": {
+        "publicCode": { "documentation": { "example": "KUD1Y8" } }
+      }
     }
   },
   "INPUT_OBJECT": {
     "FirebaseCreateUserRequest": { "documentation": { "undocumented": true } }
+  },
+  "SCALAR": {
+    "ID": {
+      "documentation": { "example": "62782a893d712026d7e5e4ef" }
+    },
+    "EpochSecondsTime": {
+      "documentation": { "example": 1652271547 }
+    }
   }
 }
