@@ -7,8 +7,12 @@ import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingMapper.create
 import com.munoon.heartbeatlive.server.sharing.model.GraphqlCreateSharingCodeInput
 import com.munoon.heartbeatlive.server.sharing.repository.HeartBeatSharingRepository
 import com.munoon.heartbeatlive.server.subscription.UserSubscriptionPlan
+import com.munoon.heartbeatlive.server.user.UserEvents
 import kotlinx.coroutines.reactive.asFlow
+import kotlinx.coroutines.runBlocking
+import org.springframework.context.event.EventListener
 import org.springframework.data.domain.Pageable
+import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import java.time.Instant
 
@@ -71,5 +75,11 @@ class HeartBeatSharingService(
             data = repository.findAllByUserId(userId, pageable).asFlow(),
             totalItemsCount = repository.countAllByUserId(userId)
         )
+    }
+
+    @Async
+    @EventListener
+    fun handleUserDeletedEvent(event: UserEvents.UserDeletedEvent) {
+        runBlocking { repository.deleteAllByUserId(event.userId) }
     }
 }

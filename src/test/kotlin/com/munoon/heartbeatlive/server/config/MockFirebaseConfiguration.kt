@@ -10,5 +10,5 @@ import org.springframework.context.annotation.Primary
 class MockFirebaseConfiguration {
     @Bean
     @Primary
-    fun firebaseAuth(): FirebaseAuth = mockk()
+    fun firebaseAuth(): FirebaseAuth = mockk(relaxed = true)
 }

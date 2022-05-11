@@ -17,4 +17,6 @@ interface HeartBeatSharingRepository : CoroutineSortingRepository<HeartBeatShari
     fun findAllByUserId(userId: String, pageable: Pageable): Flux<HeartBeatSharing>
 
     suspend fun countAllByUserId(userId: String): Int
+
+    suspend fun deleteAllByUserId(userId: String)
 }

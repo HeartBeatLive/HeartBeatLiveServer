@@ -8,14 +8,15 @@ import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingNotFoundByPublicC
 import com.munoon.heartbeatlive.server.sharing.model.GraphqlCreateSharingCodeInput
 import com.munoon.heartbeatlive.server.sharing.repository.HeartBeatSharingRepository
 import com.munoon.heartbeatlive.server.subscription.UserSubscriptionPlan
+import com.munoon.heartbeatlive.server.user.UserEvents
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
-
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import java.time.Duration
@@ -29,6 +30,9 @@ internal class HeartBeatSharingServiceTest : AbstractTest() {
 
     @Autowired
     private lateinit var repository: HeartBeatSharingRepository
+
+    @Autowired
+    private lateinit var eventPublisher: ApplicationEventPublisher
 
     @Test
     fun createSharing() {
@@ -259,6 +263,24 @@ internal class HeartBeatSharingServiceTest : AbstractTest() {
                 .usingRecursiveComparison()
                 .ignoringFields("created")
                 .isEqualTo(listOf(sharingCode2, sharingCode1))
+        }
+    }
+
+    @Test
+    fun handleUserDeletedEvent() {
+        val input = GraphqlCreateSharingCodeInput(expiredAt = null)
+        runBlocking { service.createSharing(input, "user1", UserSubscriptionPlan.FREE) }
+        val user2SharingCode = runBlocking { service.createSharing(input, "user2", UserSubscriptionPlan.FREE) }
+        runBlocking { assertThat(repository.count()).isEqualTo(2) }
+
+        eventPublisher.publishEvent(UserEvents.UserDeletedEvent(userId = "user1", updateFirebaseState = false))
+
+        runBlocking { assertThat(repository.count()).isEqualTo(1) }
+        runBlocking {
+            assertThat(repository.findAll().toList(arrayListOf()))
+                .usingRecursiveComparison()
+                .ignoringFields("created")
+                .isEqualTo(listOf(user2SharingCode))
         }
     }
 }
