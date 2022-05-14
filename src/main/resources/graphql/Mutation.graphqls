@@ -21,4 +21,18 @@ type Mutation {
     ): SharingCode!
     "Method for deleting sharing code by id. Require authentication. Sharing code should belong to authenticated user."
     deleteSharingCodeById("Identifier of sharing code." id: ID!): Boolean!
+
+    """
+    Method to subscribe to user by sharing code. Require authenticated user. \
+    User can't subscribe to himself or use expired sharing code. \
+    This method will return error if user, that you trying subscribe to, have too many subscribers,
+    or if authenticated user have too many subscriptions. Check account subscription settings for limits. \
+    This method will return existing subscriptions, if user already following the same user.
+    """
+    subscribeBySharingCode("Sharing code of the user, that you want to subscribe to." sharingCode: String!): SubscriptionInfo
+    """
+    Method to unsubscribe from user. Require authenticated user. \
+    Subscription's subscriber should be authenticated user.
+    """
+    unsubscribeFromUserById("Identifier of subscription." id: ID!): Boolean
 }

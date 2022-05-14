@@ -6,6 +6,12 @@ type Query {
 
     "Get sharing code by id. Require authentication. Sharing code should belong to authenticated user."
     getSharingCodeById("Sharing code identifier." id: ID!): SharingCode!
-    "Get sharing code by public code."
+    """
+    Get sharing code by public code.
+    This method will return an error if sharing code was expired or if user subscribers limit exceeded.
+    """
     getSharingCodeByPublicCode("Public code of heart beat sharing." publicCode: String!): PublicSharingCode!
+
+    "Get subscription by it's identifier. You should be _subscriber_ or _user_. Require authenticated user."
+    getSubscriptionById("Subscription identifier." id: ID!): SubscriptionInfo
 }

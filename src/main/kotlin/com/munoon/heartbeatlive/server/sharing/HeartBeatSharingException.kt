@@ -8,3 +8,5 @@ data class HeartBeatSharingNotFoundByPublicCodeException(val publicCode: String)
 
 data class HeartBeatSharingLimitExceededException(val limit: Int)
     : RuntimeException("User have too many heart beat sharing (limit = $limit).")
+
+class HeartBeatSharingExpiredException : RuntimeException("Heart beat sharing code has expired!")

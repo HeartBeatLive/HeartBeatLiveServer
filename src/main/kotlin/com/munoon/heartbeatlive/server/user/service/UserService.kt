@@ -59,4 +59,6 @@ class UserService(
 
     suspend fun getUserById(userId: String): User = userRepository.findById(userId)
         ?: throw UserNotFoundByIdException(userId)
+
+    fun getUsersByIds(userIds: Set<String>) = userRepository.findAllById(userIds)
 }

@@ -11,6 +11,9 @@ import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.satisfyNoErrors
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.verify
+import kotlinx.coroutines.flow.flowOf
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
@@ -75,6 +78,18 @@ internal class HeartBeatSharingPublicControllerTest : AbstractGraphqlHttpTest() 
     }
 
     @Test
+    @Disabled("Test will be implemented when error schema will be specified")
+    fun `getSharingCodeByPublicCode - public code expired`() {
+        // TODO impl this when error schema will be ready
+    }
+
+    @Test
+    @Disabled("Test will be implemented when error schema will be specified")
+    fun `getSharingCodeByPublicCode - user has no more free subscribers`() {
+        // TODO impl this when error schema will be ready
+    }
+
+    @Test
     fun mapSharingCodeUser() {
         coEvery { heartBeatSharingService.getSharingCodeByPublicCode("ABC123") } returns HeartBeatSharing(
             id = "sharingCode1",
@@ -82,12 +97,12 @@ internal class HeartBeatSharingPublicControllerTest : AbstractGraphqlHttpTest() 
             userId = "user1",
             expiredAt = null
         )
-        coEvery { userService.getUserById("user1") } returns User(
+        every { userService.getUsersByIds(any()) } returns flowOf(User(
             id = "user1",
             displayName = "Test User",
             email = null,
             emailVerified = false
-        )
+        ))
 
         graphqlTester.document("""
             query {
@@ -101,6 +116,6 @@ internal class HeartBeatSharingPublicControllerTest : AbstractGraphqlHttpTest() 
             .path("getSharingCodeByPublicCode.user").isEqualsTo(GraphqlPublicProfileTo("Test User"))
 
         coVerify(exactly = 1) { heartBeatSharingService.getSharingCodeByPublicCode("ABC123") }
-        coVerify(exactly = 1) { userService.getUserById("user1") }
+        verify(exactly = 1) { userService.getUsersByIds(setOf("user1")) }
     }
 }

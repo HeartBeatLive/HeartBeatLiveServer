@@ -1,4 +1,4 @@
-package com.munoon.heartbeatlive.server.subscription
+package com.munoon.heartbeatlive.server.subscription.account
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test

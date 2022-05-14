@@ -11,9 +11,11 @@ import com.munoon.heartbeatlive.server.sharing.model.GraphqlCreateSharingCodeInp
 import com.munoon.heartbeatlive.server.sharing.model.GraphqlSharingCode
 import com.munoon.heartbeatlive.server.sharing.model.SharingCodeSorting
 import com.munoon.heartbeatlive.server.sharing.service.HeartBeatSharingService
+import com.munoon.heartbeatlive.server.user.User
 import com.munoon.heartbeatlive.server.user.UserMapper.asGraphqlProfile
 import com.munoon.heartbeatlive.server.user.model.GraphqlProfileTo
-import com.munoon.heartbeatlive.server.user.service.UserService
+import kotlinx.coroutines.future.await
+import org.dataloader.DataLoader
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -34,8 +36,7 @@ import javax.validation.constraints.PositiveOrZero
 @PreAuthorize("isAuthenticated()")
 class HeartBeatSharingProfileController(
     private val service: HeartBeatSharingService,
-    private val userService: UserService,
-    val userSharingProperties: UserSharingProperties
+    private val userSharingProperties: UserSharingProperties
 ) {
     private val logger = LoggerFactory.getLogger(HeartBeatSharingProfileController::class.java)
 
@@ -93,7 +94,7 @@ class HeartBeatSharingProfileController(
     }
 
     @SchemaMapping(typeName = "SharingCode", field = "user")
-    suspend fun mapSharingCodeUser(sharingCode: GraphqlSharingCode): GraphqlProfileTo {
-        return userService.getUserById(sharingCode.userId).asGraphqlProfile()
+    suspend fun mapSharingCodeUser(sharingCode: GraphqlSharingCode, userByIdLoader: DataLoader<String, User>): GraphqlProfileTo {
+        return userByIdLoader.load(sharingCode.userId).await().asGraphqlProfile()
     }
 }

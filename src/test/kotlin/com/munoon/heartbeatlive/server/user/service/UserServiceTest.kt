@@ -238,4 +238,24 @@ class UserServiceTest : AbstractMongoDBTest() {
         assertThatThrownBy { runBlocking { userService.getUserById("abc") } }
             .isEqualTo(UserNotFoundByIdException("abc"))
     }
+
+    @Test
+    fun getUsersByIds() {
+        val user1 = runBlocking {
+            userService.createUser(GraphqlFirebaseCreateUserInput(id = "user1", email = null, emailVerified = false))
+        }
+        val user2 = runBlocking {
+            userService.createUser(GraphqlFirebaseCreateUserInput(id = "user2", email = null, emailVerified = false))
+        }
+        runBlocking {
+            userService.createUser(GraphqlFirebaseCreateUserInput(id = "user3", email = null, emailVerified = false))
+        }
+
+        runBlocking {
+            assertThat(userService.getUsersByIds(setOf("user1", "user2")).toList(arrayListOf()))
+                .usingRecursiveComparison()
+                .ignoringFields("created")
+                .isEqualTo(listOf(user1, user2))
+        }
+    }
 }

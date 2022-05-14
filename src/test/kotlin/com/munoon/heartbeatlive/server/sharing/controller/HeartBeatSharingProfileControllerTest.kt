@@ -5,8 +5,8 @@ import com.munoon.heartbeatlive.server.common.PageInfo
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharing
 import com.munoon.heartbeatlive.server.sharing.model.GraphqlCreateSharingCodeInput
 import com.munoon.heartbeatlive.server.sharing.service.HeartBeatSharingService
-import com.munoon.heartbeatlive.server.subscription.JwtUserSubscription
-import com.munoon.heartbeatlive.server.subscription.UserSubscriptionPlan
+import com.munoon.heartbeatlive.server.subscription.account.JwtUserSubscription
+import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
 import com.munoon.heartbeatlive.server.user.User
 import com.munoon.heartbeatlive.server.user.UserRole
 import com.munoon.heartbeatlive.server.user.model.GraphqlProfileTo
@@ -19,6 +19,7 @@ import com.ninjasquad.springmockk.MockkBean
 import com.ninjasquad.springmockk.SpykBean
 import io.mockk.coEvery
 import io.mockk.coVerify
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -77,6 +78,12 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
     @Test
     @Disabled("Test will be implemented when error schema will be specified")
     fun `getSharingCodeById - other user`() {
+        // TODO impl this when error schema will be ready
+    }
+
+    @Test
+    @Disabled("Test will be implemented when error schema will be specified")
+    fun `getSharingCodeById - not authenticated`() {
         // TODO impl this when error schema will be ready
     }
 
@@ -192,6 +199,12 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
     }
 
     @Test
+    @Disabled("Test will be implemented when error schema will be specified")
+    fun `createSharingCode - unauthenticated`() {
+        // TODO impl this when error schema will be ready
+    }
+
+    @Test
     fun updateSharingCodeExpireTime() {
         val created = Instant.now()
         val expiredAt = OffsetDateTime.now().plusDays(10).withNano(0).toInstant()
@@ -243,6 +256,12 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
     }
 
     @Test
+    @Disabled("Test will be implemented when error schema will be specified")
+    fun `updateSharingCodeExpireTime - unauthenticated`() {
+        // TODO impl this when error schema will be ready
+    }
+
+    @Test
     fun deleteSharingCodeById() {
         coEvery { service.deleteSharingCodeById("sharingCode1", "user1") } returns Unit
 
@@ -264,6 +283,12 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
     @Test
     @Disabled("Test will be implemented when error schema will be specified")
     fun `deleteSharingCodeById - other user`() {
+        // TODO impl this when error schema will be ready
+    }
+
+    @Test
+    @Disabled("Test will be implemented when error schema will be specified")
+    fun `deleteSharingCodeById - unauthenticated`() {
         // TODO impl this when error schema will be ready
     }
 
@@ -394,6 +419,12 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
     }
 
     @Test
+    @Disabled("Test will be implemented when error schema will be specified")
+    fun `getProfileSharingCode - unauthenticated`() {
+        // TODO impl this when error schema will be ready
+    }
+
+    @Test
     fun mapSharingCodeUser() {
         coEvery { service.getSharingCodeById("sharingCode1") } returns HeartBeatSharing(
             id = "sharingCode1",
@@ -402,13 +433,13 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
             expiredAt = null
         )
 
-        coEvery { userService.getUserById("user1") } returns User(
+        coEvery { userService.getUsersByIds(any()) } returns flowOf(User(
             id = "user1",
             displayName = "Test User",
             email = "email@example.com",
             emailVerified = true,
             roles = setOf(UserRole.ADMIN)
-        )
+        ))
 
         graphqlTester.withUser(id = "user1")
             .document("""
@@ -437,6 +468,6 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
             ))
 
         coVerify(exactly = 1) { service.getSharingCodeById("sharingCode1") }
-        coVerify(exactly = 1) { userService.getUserById("user1") }
+        coVerify(exactly = 1) { userService.getUsersByIds(setOf("user1")) }
     }
 }

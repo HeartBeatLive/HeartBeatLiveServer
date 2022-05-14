@@ -7,7 +7,7 @@ import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingNotFoundByIdExcep
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingNotFoundByPublicCodeException
 import com.munoon.heartbeatlive.server.sharing.model.GraphqlCreateSharingCodeInput
 import com.munoon.heartbeatlive.server.sharing.repository.HeartBeatSharingRepository
-import com.munoon.heartbeatlive.server.subscription.UserSubscriptionPlan
+import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
 import com.munoon.heartbeatlive.server.user.UserEvents
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
