@@ -1,5 +1,8 @@
 package com.munoon.heartbeatlive.server.subscription.service
 
+import com.munoon.heartbeatlive.server.ban.UserBanEvents
+import com.munoon.heartbeatlive.server.ban.UserBanUtils.validateUserBanned
+import com.munoon.heartbeatlive.server.ban.service.UserBanService
 import com.munoon.heartbeatlive.server.common.PageResult
 import com.munoon.heartbeatlive.server.config.properties.SubscriptionProperties
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingUtils.checkExpired
@@ -24,7 +27,8 @@ class SubscriptionService(
     private val repository: SubscriptionRepository,
     private val heartBeatSharingService: HeartBeatSharingService,
     private val accountSubscriptionService: AccountSubscriptionService,
-    private val subscriptionProperties: SubscriptionProperties
+    private val subscriptionProperties: SubscriptionProperties,
+    private val userBanService: UserBanService
 ) {
     suspend fun subscribeBySharingCode(code: String, userId: String): Subscription {
         val sharingCode = heartBeatSharingService.getSharingCodeByPublicCode(code)
@@ -36,6 +40,7 @@ class SubscriptionService(
         sharingCode.checkExpired()
         validateUserSubscribersCount(sharingCode.userId)
         validateUserSubscriptionsCount(userId)
+        userBanService.validateUserBanned(userId, sharingCode.userId)
 
         // return existing subscription if it exists
         repository.findByUserIdAndSubscriberUserId(userId = sharingCode.userId, subscriberUserId = userId)
@@ -92,5 +97,11 @@ class SubscriptionService(
     @EventListener
     fun handleUserDeletedEvent(event: UserEvents.UserDeletedEvent) {
         runBlocking { repository.deleteAllByUserIdOrSubscriberUserId(event.userId) }
+    }
+
+    @Async
+    @EventListener
+    fun handleUserBannedEvent(event: UserBanEvents.UserBannedEvent) {
+        runBlocking { repository.deleteAllBySubscriberUserIdAndUserId(event.userId, event.bannedByUserId) }
     }
 }

@@ -3,17 +3,11 @@ package com.munoon.heartbeatlive.server.sharing.controller
 import com.munoon.heartbeatlive.server.AbstractGraphqlHttpTest
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharing
 import com.munoon.heartbeatlive.server.sharing.service.HeartBeatSharingService
-import com.munoon.heartbeatlive.server.user.User
-import com.munoon.heartbeatlive.server.user.model.GraphqlPublicProfileTo
-import com.munoon.heartbeatlive.server.user.service.UserService
 import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.isEqualsTo
 import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.satisfyNoErrors
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.coEvery
 import io.mockk.coVerify
-import io.mockk.every
-import io.mockk.verify
-import kotlinx.coroutines.flow.flowOf
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
@@ -24,9 +18,6 @@ import java.time.OffsetDateTime
 internal class HeartBeatSharingPublicControllerTest : AbstractGraphqlHttpTest() {
     @MockkBean
     private lateinit var heartBeatSharingService: HeartBeatSharingService
-
-    @MockkBean
-    private lateinit var userService: UserService
 
     @Test
     fun getSharingCodeByPublicCode() {
@@ -90,32 +81,8 @@ internal class HeartBeatSharingPublicControllerTest : AbstractGraphqlHttpTest() 
     }
 
     @Test
-    fun mapSharingCodeUser() {
-        coEvery { heartBeatSharingService.getSharingCodeByPublicCode("ABC123") } returns HeartBeatSharing(
-            id = "sharingCode1",
-            publicCode = "ABC123",
-            userId = "user1",
-            expiredAt = null
-        )
-        every { userService.getUsersByIds(any()) } returns flowOf(User(
-            id = "user1",
-            displayName = "Test User",
-            email = null,
-            emailVerified = false
-        ))
-
-        graphqlTester.document("""
-            query {
-                getSharingCodeByPublicCode(publicCode: "ABC123") {
-                    user { displayName }
-                }
-            }
-        """.trimIndent())
-            .execute()
-            .satisfyNoErrors()
-            .path("getSharingCodeByPublicCode.user").isEqualsTo(GraphqlPublicProfileTo("Test User"))
-
-        coVerify(exactly = 1) { heartBeatSharingService.getSharingCodeByPublicCode("ABC123") }
-        verify(exactly = 1) { userService.getUsersByIds(setOf("user1")) }
+    @Disabled("Test will be implemented when error schema will be specified")
+    fun `getSharingCodeByPublicCode - authenticated user is banned by sharing code owner`() {
+        // TODO impl this when error schema will be ready
     }
 }

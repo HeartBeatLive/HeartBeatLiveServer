@@ -24,7 +24,7 @@ type Mutation {
 
     """
     Method to subscribe to user by sharing code. Require authenticated user. \
-    User can't subscribe to himself or use expired sharing code. \
+    User can't subscribe to himself, use expired sharing code or subscribe to user, that have banned him. \
     This method will return error if user, that you trying subscribe to, have too many subscribers,
     or if authenticated user have too many subscriptions. Check account subscription settings for limits. \
     This method will return existing subscriptions, if user already following the same user.
@@ -35,4 +35,14 @@ type Mutation {
     Subscription's subscriber should be authenticated user.
     """
     unsubscribeFromUserById("Identifier of subscription." id: ID!): Boolean
+
+    """
+    Ban your subscriber by subscription id, so this user will no longer receive you heart rate and will be not able
+    to subscribe to you again. \
+    Require authentication. Authenticated user must be _SubscriptionInfo.user_. \
+    This method will return existing ban info, if user already banned.
+    """
+    banUserBySubscriptionId("Subscription identifier." subscriptionId: ID!): BanInfo
+    "Un-ban user by ban id. Require authentication. Authenticated user must be _BanInfo.user_."
+    unbanUserById("Ban identifier." id: ID!): Boolean
 }

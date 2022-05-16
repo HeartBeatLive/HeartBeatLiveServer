@@ -7,11 +7,19 @@ type Query {
     "Get sharing code by id. Require authentication. Sharing code should belong to authenticated user."
     getSharingCodeById("Sharing code identifier." id: ID!): SharingCode!
     """
-    Get sharing code by public code.
-    This method will return an error if sharing code was expired or if user subscribers limit exceeded.
+    Get sharing code by public code. \
+    This method will return an error if sharing code was expired or if user subscribers limit exceeded. \
+    If user is authenticated, this method will also check if user not banned by sharing code owner.
     """
     getSharingCodeByPublicCode("Public code of heart beat sharing." publicCode: String!): PublicSharingCode!
 
     "Get subscription by it's identifier. You should be _subscriber_ or _user_. Require authenticated user."
     getSubscriptionById("Subscription identifier." id: ID!): SubscriptionInfo
+
+    "Request users, that was banned by you. Require authentication."
+    getBannedUsers(
+        "Page number. Must be positive or zero, start from 0." page: Int!,
+        "Count of items, that you need. Must be positive, from 0 to 20." size: Int!,
+        "Sorting algorithm, optional." sort: BansSorting
+    ): BansPage
 }

@@ -8,8 +8,6 @@ import com.munoon.heartbeatlive.server.sharing.service.HeartBeatSharingService
 import com.munoon.heartbeatlive.server.subscription.account.JwtUserSubscription
 import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
 import com.munoon.heartbeatlive.server.user.User
-import com.munoon.heartbeatlive.server.user.UserRole
-import com.munoon.heartbeatlive.server.user.model.GraphqlProfileTo
 import com.munoon.heartbeatlive.server.user.service.UserService
 import com.munoon.heartbeatlive.server.utils.AuthTestUtils.withUser
 import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.isEqualsTo
@@ -19,7 +17,6 @@ import com.ninjasquad.springmockk.MockkBean
 import com.ninjasquad.springmockk.SpykBean
 import io.mockk.coEvery
 import io.mockk.coVerify
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -422,52 +419,5 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
     @Disabled("Test will be implemented when error schema will be specified")
     fun `getProfileSharingCode - unauthenticated`() {
         // TODO impl this when error schema will be ready
-    }
-
-    @Test
-    fun mapSharingCodeUser() {
-        coEvery { service.getSharingCodeById("sharingCode1") } returns HeartBeatSharing(
-            id = "sharingCode1",
-            publicCode = "ABC123",
-            userId = "user1",
-            expiredAt = null
-        )
-
-        coEvery { userService.getUsersByIds(any()) } returns flowOf(User(
-            id = "user1",
-            displayName = "Test User",
-            email = "email@example.com",
-            emailVerified = true,
-            roles = setOf(UserRole.ADMIN)
-        ))
-
-        graphqlTester.withUser(id = "user1")
-            .document("""
-                query {
-                    getSharingCodeById(id: "sharingCode1") {
-                        id,
-                        user {
-                            id,
-                            displayName,
-                            email,
-                            emailVerified,
-                            roles
-                        }
-                    }
-                }
-            """.trimIndent())
-            .execute()
-            .satisfyNoErrors()
-            .path("getSharingCodeById.id").isEqualsTo("sharingCode1")
-            .path("getSharingCodeById.user").isEqualsTo(GraphqlProfileTo(
-                id = "user1",
-                displayName = "Test User",
-                email = "email@example.com",
-                emailVerified = true,
-                roles = setOf(UserRole.ADMIN)
-            ))
-
-        coVerify(exactly = 1) { service.getSharingCodeById("sharingCode1") }
-        coVerify(exactly = 1) { userService.getUsersByIds(setOf("user1")) }
     }
 }

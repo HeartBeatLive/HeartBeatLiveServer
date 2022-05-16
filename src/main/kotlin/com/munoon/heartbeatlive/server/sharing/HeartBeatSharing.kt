@@ -5,7 +5,7 @@ import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
 import java.time.Instant
 
-@Document("heartBeatShared")
+@Document("heartBeatSharing")
 data class HeartBeatSharing(
     @Id
     val id: String?,

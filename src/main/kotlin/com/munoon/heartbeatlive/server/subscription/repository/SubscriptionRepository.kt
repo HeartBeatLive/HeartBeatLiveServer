@@ -23,4 +23,7 @@ interface SubscriptionRepository : CoroutineSortingRepository<Subscription, Stri
 
     @Query("{ \$or: [ { userId: ?0 }, { subscriberUserId: ?0 } ] }", delete = true)
     suspend fun deleteAllByUserIdOrSubscriberUserId(userId: String)
+
+    @Query("{ subscriberUserId: ?0, userId: ?1 }", delete = true)
+    suspend fun deleteAllBySubscriberUserIdAndUserId(subscriberUserId: String, userId: String)
 }

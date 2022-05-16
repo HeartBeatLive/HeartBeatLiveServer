@@ -1,6 +1,9 @@
 package com.munoon.heartbeatlive.server.subscription.service
 
 import com.munoon.heartbeatlive.server.AbstractTest
+import com.munoon.heartbeatlive.server.ban.UserBanEvents
+import com.munoon.heartbeatlive.server.ban.UserBanedByOtherUserException
+import com.munoon.heartbeatlive.server.ban.service.UserBanService
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharing
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingExpiredException
 import com.munoon.heartbeatlive.server.sharing.service.HeartBeatSharingService
@@ -45,12 +48,17 @@ internal class SubscriptionServiceTest : AbstractTest() {
     @Autowired
     private lateinit var eventPublisher: ApplicationEventPublisher
 
+    @MockkBean
+    private lateinit var userBanService: UserBanService
+
     @BeforeEach
-    fun setUpAccountSubscriptionService() {
+    fun setUpMocks() {
         coEvery { accountSubscriptionService.getAccountSubscriptionByUserId(any()) } returns AccountSubscription(
             userId = "userId",
             subscriptionPlan = UserSubscriptionPlan.FREE
         )
+
+        coEvery { userBanService.checkUserBanned(any(), any()) } returns false
     }
 
     @Test
@@ -80,6 +88,7 @@ internal class SubscriptionServiceTest : AbstractTest() {
         }
 
         coVerify(exactly = 1) { heartBeatSharingService.getSharingCodeByPublicCode(any()) }
+        coVerify(exactly = 1) { userBanService.checkUserBanned("user2", "user1") }
     }
 
     @Test
@@ -141,6 +150,22 @@ internal class SubscriptionServiceTest : AbstractTest() {
 
         assertThatThrownBy { runBlocking { service.subscribeBySharingCode(code = "ABC123", userId = "user1") } }
             .isExactlyInstanceOf(UserSubscriptionsLimitExceededException::class.java)
+    }
+
+    @Test
+    fun `subscribeBySharingCode - user is banned by sharing code owner`() {
+        coEvery { userBanService.checkUserBanned("user2", "user1") } returns true
+        coEvery { heartBeatSharingService.getSharingCodeByPublicCode("ABC123") } returns HeartBeatSharing(
+            id = null,
+            publicCode = "ABC123",
+            userId = "user1",
+            expiredAt = null
+        )
+
+        assertThatThrownBy { runBlocking { service.subscribeBySharingCode(code = "ABC123", userId = "user2") } }
+            .isEqualTo(UserBanedByOtherUserException(userId = "user2", bannedByUserId = "user1"))
+
+        coVerify(exactly = 1) { userBanService.checkUserBanned("user2", "user1") }
     }
 
     @Test
@@ -295,6 +320,7 @@ internal class SubscriptionServiceTest : AbstractTest() {
 
     @Test
     fun handleUserDeletedEvent() {
+        every { userBanService.handleUserDeletedEvent(any()) } returns Unit
         every { heartBeatSharingService.handleUserDeletedEvent(any()) } returns Unit
         runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2")) }
         runBlocking { repository.save(Subscription(userId = "user2", subscriberUserId = "user1")) }
@@ -310,6 +336,29 @@ internal class SubscriptionServiceTest : AbstractTest() {
                 .usingRecursiveComparison()
                 .ignoringFields("created")
                 .isEqualTo(listOf(notDelete))
+        }
+    }
+
+    @Test
+    fun handleUserBannedEvent() {
+        every { userBanService.handleUserDeletedEvent(any()) } returns Unit
+        runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2")) }
+        val expected1 = runBlocking { repository.save(Subscription(userId = "user2", subscriberUserId = "user1")) }
+        val expected2 = runBlocking { repository.save(Subscription(userId = "user3", subscriberUserId = "user1")) }
+        val expected3 = runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user3")) }
+        val expected4 = runBlocking { repository.save(Subscription(userId = "user2", subscriberUserId = "user3")) }
+        val expected5 = runBlocking { repository.save(Subscription(userId = "user3", subscriberUserId = "user2")) }
+        runBlocking { assertThat(repository.count()).isEqualTo(6) }
+
+        eventPublisher.publishEvent(UserBanEvents.UserBannedEvent("user2", "user1"))
+
+        runBlocking {
+            assertThat(repository.count()).isEqualTo(5)
+
+            assertThat(repository.findAll().toList(arrayListOf()))
+                .usingRecursiveComparison()
+                .ignoringFields("created")
+                .isEqualTo(listOf(expected1, expected2, expected3, expected4, expected5))
         }
     }
 }
