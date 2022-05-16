@@ -253,7 +253,9 @@ internal class HeartBeatSharingServiceTest : AbstractTest() {
 
         val sharingCode1 = runBlocking { service.createSharing(input, userId, UserSubscriptionPlan.FREE) }
         val sharingCode2 = runBlocking { service.createSharing(input, userId, UserSubscriptionPlan.FREE) }
-        runBlocking { service.createSharing(input, "user2", UserSubscriptionPlan.FREE) } // ignored, because belong to another user
+
+        // ignored, because belong to another user
+        runBlocking { service.createSharing(input, "user2", UserSubscriptionPlan.FREE) }
 
         runBlocking {
             val pageRequest = PageRequest.of(0, 10, Sort.Direction.DESC, "created")

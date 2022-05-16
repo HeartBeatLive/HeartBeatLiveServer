@@ -13,12 +13,18 @@ import java.util.concurrent.CompletableFuture
 @SchemaMapping(typeName = "SubscriptionInfo")
 class SubscriptionUserController {
     @SchemaMapping
-    fun user(subscription: GraphqlSubscriptionInfo, userByIdLoader: DataLoader<String, User>): CompletableFuture<GraphqlPublicProfileTo> {
+    fun user(
+        subscription: GraphqlSubscriptionInfo,
+        userByIdLoader: DataLoader<String, User>
+    ): CompletableFuture<GraphqlPublicProfileTo> {
         return userByIdLoader.load(subscription.userId).thenApply { it.asGraphqlPublicProfile() }
     }
 
     @SchemaMapping
-    fun subscriber(subscription: GraphqlSubscriptionInfo, userByIdLoader: DataLoader<String, User>): CompletableFuture<GraphqlPublicProfileTo> {
+    fun subscriber(
+        subscription: GraphqlSubscriptionInfo,
+        userByIdLoader: DataLoader<String, User>
+    ): CompletableFuture<GraphqlPublicProfileTo> {
         return userByIdLoader.load(subscription.subscriberUserId).thenApply { it.asGraphqlPublicProfile() }
     }
 }

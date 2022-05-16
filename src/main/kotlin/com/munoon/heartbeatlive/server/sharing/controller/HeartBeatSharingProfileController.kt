@@ -56,7 +56,10 @@ class HeartBeatSharingProfileController(
     }
 
     @MutationMapping
-    suspend fun updateSharingCodeExpireTime(@Argument id: String, @Argument @Future expiredAt: Instant?): GraphqlSharingCode {
+    suspend fun updateSharingCodeExpireTime(
+        @Argument id: String,
+        @Argument @Future expiredAt: Instant?
+    ): GraphqlSharingCode {
         logger.info("User '${authUserId()}' update sharing code '$id' expire time to '$expiredAt'")
         return service.updateSharingCodeExpireTime(id, expiredAt, authUserId()).asGraphQL(userSharingProperties)
     }

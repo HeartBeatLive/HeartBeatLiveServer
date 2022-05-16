@@ -23,7 +23,11 @@ class MongoConfig(private val mongoTemplate: ReactiveMongoTemplate) {
             .block()
 
         mongoTemplate.indexOps<HeartBeatSharing>()
-            .ensureIndex(Index("publicCode", Sort.Direction.ASC).unique().named(HeartBeatSharing.UNIQUE_PUBLIC_CODE_INDEX))
+            .ensureIndex(
+                Index("publicCode", Sort.Direction.ASC)
+                    .unique()
+                    .named(HeartBeatSharing.UNIQUE_PUBLIC_CODE_INDEX)
+            )
             .block()
 
         mongoTemplate.indexOps<Subscription>()

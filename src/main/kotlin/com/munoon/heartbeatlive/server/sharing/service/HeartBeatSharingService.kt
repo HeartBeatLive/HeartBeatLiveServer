@@ -2,8 +2,12 @@ package com.munoon.heartbeatlive.server.sharing.service
 
 import com.munoon.heartbeatlive.server.common.PageResult
 import com.munoon.heartbeatlive.server.config.properties.SubscriptionProperties
-import com.munoon.heartbeatlive.server.sharing.*
+import com.munoon.heartbeatlive.server.sharing.HeartBeatSharing
+import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingLimitExceededException
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingMapper.create
+import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingNotFoundByIdException
+import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingNotFoundByPublicCodeException
+import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingUtils
 import com.munoon.heartbeatlive.server.sharing.model.GraphqlCreateSharingCodeInput
 import com.munoon.heartbeatlive.server.sharing.repository.HeartBeatSharingRepository
 import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
@@ -27,8 +31,9 @@ class HeartBeatSharingService(
         userSubscriptionPlan: UserSubscriptionPlan
     ): HeartBeatSharing {
         val totalUserSharingCodeCount = repository.countAllByUserId(userId)
-        if (totalUserSharingCodeCount >= subscriptionProperties[userSubscriptionPlan].maxSharingCodesLimit) {
-            throw HeartBeatSharingLimitExceededException(subscriptionProperties[userSubscriptionPlan].maxSharingCodesLimit)
+        val limit = subscriptionProperties[userSubscriptionPlan].maxSharingCodesLimit
+        if (totalUserSharingCodeCount >= limit) {
+            throw HeartBeatSharingLimitExceededException(limit)
         }
 
         var sharingCode = input.create(userId)
@@ -49,7 +54,11 @@ class HeartBeatSharingService(
             ?: throw HeartBeatSharingNotFoundByPublicCodeException(publicCode)
     }
 
-    suspend fun updateSharingCodeExpireTime(id: String, expiredAt: Instant?, validateUserId: String?): HeartBeatSharing {
+    suspend fun updateSharingCodeExpireTime(
+        id: String,
+        expiredAt: Instant?,
+        validateUserId: String?
+    ): HeartBeatSharing {
         val sharingCode = getSharingCodeById(id)
 
         if (validateUserId != null && validateUserId != sharingCode.userId) {

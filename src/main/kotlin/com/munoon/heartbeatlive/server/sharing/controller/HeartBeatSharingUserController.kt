@@ -13,12 +13,18 @@ import java.util.concurrent.CompletableFuture
 @Controller
 class HeartBeatSharingUserController {
     @SchemaMapping(typeName = "SharingCode", field = "user")
-    fun mapSharingCodeUser(sharingCode: GraphqlSharingCode, userByIdLoader: DataLoader<String, User>): CompletableFuture<GraphqlProfileTo> {
+    fun mapSharingCodeUser(
+        sharingCode: GraphqlSharingCode,
+        userByIdLoader: DataLoader<String, User>
+    ): CompletableFuture<GraphqlProfileTo> {
         return userByIdLoader.load(sharingCode.userId).thenApply { it.asGraphqlProfile() }
     }
 
     @SchemaMapping(typeName = "PublicSharingCode", field = "user")
-    fun mapPublicSharingCodeUser(sharingCode: GraphqlPublicSharingCode, userByIdLoader: DataLoader<String, User>): CompletableFuture<GraphqlProfileTo> {
+    fun mapPublicSharingCodeUser(
+        sharingCode: GraphqlPublicSharingCode,
+        userByIdLoader: DataLoader<String, User>
+    ): CompletableFuture<GraphqlProfileTo> {
         return userByIdLoader.load(sharingCode.userId).thenApply { it.asGraphqlProfile() }
     }
 }

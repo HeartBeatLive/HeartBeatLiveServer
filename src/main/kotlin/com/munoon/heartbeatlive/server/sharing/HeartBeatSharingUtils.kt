@@ -4,7 +4,7 @@ import java.time.Instant
 
 object HeartBeatSharingUtils {
     private val PUBLIC_CODE_ALLOWED_CHARD = ('A'..'Z') + ('0'..'9')
-    private val PUBLIC_CODE_LENGTH = 6
+    private const val PUBLIC_CODE_LENGTH = 6
 
     fun generatePublicCode(): String {
         return (1..PUBLIC_CODE_LENGTH)

@@ -13,12 +13,18 @@ import java.util.concurrent.CompletableFuture
 @SchemaMapping(typeName = "BanInfo")
 class UserBanUserInfoController {
     @SchemaMapping
-    fun user(banInfo: GraphqlBanInfo, userByIdLoader: DataLoader<String, User>): CompletableFuture<GraphqlPublicProfileTo> {
+    fun user(
+        banInfo: GraphqlBanInfo,
+        userByIdLoader: DataLoader<String, User>
+    ): CompletableFuture<GraphqlPublicProfileTo> {
         return userByIdLoader.load(banInfo.userId).thenApply { it.asGraphqlPublicProfile() }
     }
 
     @SchemaMapping
-    fun bannedUser(banInfo: GraphqlBanInfo, userByIdLoader: DataLoader<String, User>): CompletableFuture<GraphqlPublicProfileTo> {
+    fun bannedUser(
+        banInfo: GraphqlBanInfo,
+        userByIdLoader: DataLoader<String, User>
+    ): CompletableFuture<GraphqlPublicProfileTo> {
         return userByIdLoader.load(banInfo.bannedUserId).thenApply { it.asGraphqlPublicProfile() }
     }
 }

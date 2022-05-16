@@ -2,7 +2,9 @@ package com.munoon.heartbeatlive.server.sharing
 
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingUtils.checkExpired
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingUtils.isExpired
-import org.assertj.core.api.Assertions.*
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatNoException
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.OffsetDateTime
@@ -11,7 +13,7 @@ internal class HeartBeatSharingUtilsTest {
     @Test
     fun generatePublicCode() {
         val publicCodes = arrayListOf<String>()
-        for (i in 0..100) {
+        repeat(100) {
             val publicCode = HeartBeatSharingUtils.generatePublicCode()
             assertThat(publicCode.length).isEqualTo(6)
             assertThat(publicCodes).doesNotContain(publicCode)
