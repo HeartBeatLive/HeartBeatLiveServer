@@ -1,0 +1,32 @@
+"Subscription info. This model represent, that _subscriber_ subscribes to _user_."
+type SubscriptionInfo {
+    "Subscription id. Using id, both user and subscriber can manage their subscriber/subscription."
+    id: ID!
+
+    "User to whom this subscription mapped."
+    user: PublicProfile!
+
+    "User, who subscribe to _user_. This user will receive heart beats of _user_."
+    subscriber: PublicProfile!
+
+    "Time, when this subscription was created."
+    subscribeTime: EpochSecondsTime!
+}
+
+"Algorithm, that specify how subscriptions pages should be sorted."
+enum SubscriptionsSorting {
+    "Sort from old subscriptions to new."
+    CREATED_ASC,
+
+    "Sort from new subscriptions to old."
+    CREATED_DESC
+}
+
+"This model represent page result of requested subscriptions."
+type SubscribersPage implements PageResult {
+    "Subscriptions."
+    content: [SubscriptionInfo!]!
+
+    "Page info. Contains info, that can be useful for future pages requests."
+    pageInfo: PageInfo!
+}

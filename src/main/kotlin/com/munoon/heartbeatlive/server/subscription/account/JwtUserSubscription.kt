@@ -1,4 +1,4 @@
-package com.munoon.heartbeatlive.server.subscription
+package com.munoon.heartbeatlive.server.subscription.account
 
 import java.time.Instant
 

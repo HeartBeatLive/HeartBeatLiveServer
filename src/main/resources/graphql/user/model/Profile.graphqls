@@ -1,7 +1,7 @@
 "User profile info."
 type Profile {
     "Unique identifier of user."
-    id: String!
+    id: ID!
 
     "Display name, that should be printed to users."
     displayName: String
@@ -14,4 +14,25 @@ type Profile {
 
     "User roles array."
     roles: [UserRole!]!
+
+    "Sharing codes, that user created."
+    sharingCodes(
+        "Page number. Must be positive or zero, start from 0." page: Int! = 0,
+        "Count of items, that you need. Must be positive, from 0 to 20." size: Int! = 5,
+        "Sorting algorithm, optional." sort: SharingCodeSorting
+    ): SharingCodesPage!
+
+    "Your subscribers. These users will receive your heart rates."
+    subscribers(
+        "Page number. Must be positive or zero, start from 0." page: Int! = 0,
+        "Count of items, that you need. Must be positive, from 0 to 20." size: Int! = 5,
+        "Sorting algorithm, optional." sort: SubscriptionsSorting
+    ): SubscribersPage!
+
+    "Your subscriptions. You will receive their heart rates."
+    subscriptions(
+        "Page number. Must be positive or zero, start from 0." page: Int! = 0,
+        "Count of items, that you need. Must be positive, from 0 to 20." size: Int! = 5,
+        "Sorting algorithm, optional." sort: SubscriptionsSorting
+    ): SubscribersPage!
 }

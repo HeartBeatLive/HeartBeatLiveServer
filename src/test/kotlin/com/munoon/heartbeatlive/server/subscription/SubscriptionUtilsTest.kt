@@ -1,28 +1,66 @@
 package com.munoon.heartbeatlive.server.subscription
 
-import org.assertj.core.api.Assertions.assertThat
+import com.munoon.heartbeatlive.server.subscription.SubscriptionUtils.validateUserSubscribersCount
+import com.munoon.heartbeatlive.server.subscription.SubscriptionUtils.validateUserSubscriptionsCount
+import com.munoon.heartbeatlive.server.subscription.service.SubscriptionService
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.mockk
+import kotlinx.coroutines.runBlocking
+import org.assertj.core.api.Assertions.assertThatNoException
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import java.time.Duration
-import java.time.Instant
 
 internal class SubscriptionUtilsTest {
     @Test
-    fun `getActiveSubscriptionPlan - current subscription`() {
-        val expirationTime = Instant.now() + Duration.ofDays(10)
-        val activeSubscription = SubscriptionUtils.getActiveSubscriptionPlan(UserSubscriptionPlan.PRO, expirationTime)
-        assertThat(activeSubscription).isEqualTo(UserSubscriptionPlan.PRO)
+    fun `validateUserSubscribersCount - limit exceeded`() {
+        val subscriptionService = mockk<SubscriptionService>() {
+            coEvery { checkUserHaveMaximumSubscribers("user1") } returns true
+        }
+
+        assertThatThrownBy { runBlocking {
+            subscriptionService.validateUserSubscribersCount("user1")
+        } }.isExactlyInstanceOf(UserSubscribersLimitExceededException::class.java)
+
+        coVerify(exactly = 1) { subscriptionService.checkUserHaveMaximumSubscribers("user1") }
     }
 
     @Test
-    fun `getActiveSubscriptionPlan - subscription expired`() {
-        val expirationTime = Instant.now() - Duration.ofDays(10)
-        val activeSubscription = SubscriptionUtils.getActiveSubscriptionPlan(UserSubscriptionPlan.PRO, expirationTime)
-        assertThat(activeSubscription).isEqualTo(UserSubscriptionPlan.FREE)
+    fun `validateUserSubscribersCount - limit not exceeded`() {
+        val subscriptionService = mockk<SubscriptionService>() {
+            coEvery { checkUserHaveMaximumSubscribers("user1") } returns false
+        }
+
+        assertThatNoException().isThrownBy { runBlocking {
+            subscriptionService.validateUserSubscribersCount("user1")
+        } }
+
+        coVerify(exactly = 1) { subscriptionService.checkUserHaveMaximumSubscribers("user1") }
     }
 
     @Test
-    fun `getActiveSubscriptionPlan - expiration time not specified`() {
-        val activeSubscription = SubscriptionUtils.getActiveSubscriptionPlan(UserSubscriptionPlan.PRO, null)
-        assertThat(activeSubscription).isEqualTo(UserSubscriptionPlan.FREE)
+    fun `validateUserSubscriptionsCount - true`() {
+        val subscriptionService = mockk<SubscriptionService>() {
+            coEvery { checkUserHaveMaximumSubscriptions("user1") } returns true
+        }
+
+        assertThatThrownBy { runBlocking {
+            subscriptionService.validateUserSubscriptionsCount("user1")
+        } }.isExactlyInstanceOf(UserSubscriptionsLimitExceededException::class.java)
+
+        coVerify(exactly = 1) { subscriptionService.checkUserHaveMaximumSubscriptions("user1") }
+    }
+
+    @Test
+    fun `validateUserSubscriptionsCount - false`() {
+        val subscriptionService = mockk<SubscriptionService>() {
+            coEvery { checkUserHaveMaximumSubscriptions("user1") } returns false
+        }
+
+        assertThatNoException().isThrownBy { runBlocking {
+            subscriptionService.validateUserSubscriptionsCount("user1")
+        } }
+
+        coVerify(exactly = 1) { subscriptionService.checkUserHaveMaximumSubscriptions("user1") }
     }
 }

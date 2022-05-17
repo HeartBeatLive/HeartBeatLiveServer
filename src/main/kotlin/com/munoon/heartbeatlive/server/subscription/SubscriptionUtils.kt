@@ -1,13 +1,17 @@
 package com.munoon.heartbeatlive.server.subscription
 
-import java.time.Instant
+import com.munoon.heartbeatlive.server.subscription.service.SubscriptionService
 
 object SubscriptionUtils {
-    fun getActiveSubscriptionPlan(subscription: UserSubscriptionPlan, expiration: Instant?) = when {
-        expiration == null -> UserSubscriptionPlan.FREE
-        Instant.now().isAfter(expiration) -> UserSubscriptionPlan.FREE
-        else -> subscription
+    suspend fun SubscriptionService.validateUserSubscribersCount(userId: String) {
+        if (checkUserHaveMaximumSubscribers(userId)) {
+            throw UserSubscribersLimitExceededException()
+        }
     }
 
-    fun JwtUserSubscription.getActiveSubscriptionPlan() = getActiveSubscriptionPlan(plan, expirationTime)
+    suspend fun SubscriptionService.validateUserSubscriptionsCount(userId: String) {
+        if (checkUserHaveMaximumSubscriptions(userId)) {
+            throw UserSubscriptionsLimitExceededException()
+        }
+    }
 }

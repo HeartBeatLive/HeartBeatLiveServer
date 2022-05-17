@@ -1,0 +1,20 @@
+"Sharing code info. Using this sharing code, user _B_ can subscribe to user _A_."
+type SharingCode {
+    "Sharing code id. Using this ID, owner can manage this sharing code."
+    id: ID!
+
+    "Public code. Using this code, user _B_ can subscribe to user _A_."
+    publicCode: String!
+
+    "When user _B_ will open this URL, he will be prompted to subscribe to user _A_."
+    sharingUrl: String!
+
+    "User information."
+    user: Profile!
+
+    "Time, when this sharing code was created."
+    created: EpochSecondsTime!
+
+    "Time, until which this this sharing code is valid. Client should check this field before sending subscription request."
+    expiredAt: EpochSecondsTime
+}

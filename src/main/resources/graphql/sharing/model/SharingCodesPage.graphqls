@@ -1,0 +1,8 @@
+"This model represent page result of requesting sharing codes."
+type SharingCodesPage implements PageResult {
+    "Sharing codes."
+    content: [SharingCode!]!
+
+    "Page info. Contains info, that can be useful for future pages requests."
+    pageInfo: PageInfo!
+}

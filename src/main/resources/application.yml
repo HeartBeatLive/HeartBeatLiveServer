@@ -16,3 +16,16 @@ auth:
     function:
       token: "simple-firebase-function-token"
 #    service-account-file: classpath:service-account.json
+
+app:
+  subscription:
+    free:
+      max-sharing-codes-limit: 2
+      max-subscribers-limit: 1
+      max-subscriptions-limit: 1
+    pro:
+      max-sharing-codes-limit: 20
+      max-subscribers-limit: 30
+      max-subscriptions-limit: 30
+  sharing-code:
+    sharing-url-template: "https://heartbeatlive.com/sharing/%s"

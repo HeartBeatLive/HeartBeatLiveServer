@@ -1,6 +1,6 @@
 type Mutation {
     firebaseCreateUser(request: FirebaseCreateUserRequest!): Boolean!
-    firebaseDeleteUser(userId: String!): Boolean!
+    firebaseDeleteUser(userId: ID!): Boolean!
 
     "Update authenticated user display name. Require authentication."
     updateProfileDisplayName("User's new display name. Validating by length from 2 to 60 symbols." displayName: String!): Profile!
@@ -11,4 +11,38 @@ type Mutation {
 
     "Run this method when user logged out. Require authentication."
     logout: Boolean!
+
+    "Method to create sharing code by user. Require authentication."
+    createSharingCode("Sharing code creation info." data: CreateSharingCodeInput): SharingCode!
+    "Method for editing sharing code expire time. Require authentication. Sharing code should belong to authenticated user."
+    updateSharingCodeExpireTime(
+        "Identifier of sharing code." id: ID!,
+        "Time, at which sharing code should expire. Should be in future." expiredAt: EpochSecondsTime
+    ): SharingCode!
+    "Method for deleting sharing code by id. Require authentication. Sharing code should belong to authenticated user."
+    deleteSharingCodeById("Identifier of sharing code." id: ID!): Boolean!
+
+    """
+    Method to subscribe to user by sharing code. Require authenticated user. \
+    User can't subscribe to himself, use expired sharing code or subscribe to user, that have banned him. \
+    This method will return error if user, that you trying subscribe to, have too many subscribers,
+    or if authenticated user have too many subscriptions. Check account subscription settings for limits. \
+    This method will return existing subscriptions, if user already following the same user.
+    """
+    subscribeBySharingCode("Sharing code of the user, that you want to subscribe to." sharingCode: String!): SubscriptionInfo
+    """
+    Method to unsubscribe from user. Require authenticated user. \
+    Subscription's subscriber should be authenticated user.
+    """
+    unsubscribeFromUserById("Identifier of subscription." id: ID!): Boolean
+
+    """
+    Ban your subscriber by subscription id, so this user will no longer receive you heart rate and will be not able
+    to subscribe to you again. \
+    Require authentication. Authenticated user must be _SubscriptionInfo.user_. \
+    This method will return existing ban info, if user already banned.
+    """
+    banUserBySubscriptionId("Subscription identifier." subscriptionId: ID!): BanInfo
+    "Un-ban user by ban id. Require authentication. Authenticated user must be _BanInfo.user_."
+    unbanUserById("Ban identifier." id: ID!): Boolean
 }

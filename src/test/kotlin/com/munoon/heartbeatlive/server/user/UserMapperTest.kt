@@ -1,7 +1,11 @@
 package com.munoon.heartbeatlive.server.user
 
+import com.munoon.heartbeatlive.server.user.UserMapper.asGraphqlProfile
+import com.munoon.heartbeatlive.server.user.UserMapper.asGraphqlPublicProfile
+import com.munoon.heartbeatlive.server.user.UserMapper.asNewUser
 import com.munoon.heartbeatlive.server.user.model.GraphqlFirebaseCreateUserInput
 import com.munoon.heartbeatlive.server.user.model.GraphqlProfileTo
+import com.munoon.heartbeatlive.server.user.model.GraphqlPublicProfileTo
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
@@ -25,6 +29,22 @@ internal class UserMapperTest {
         )
 
         val actual = user.asGraphqlProfile()
+        assertThat(actual).usingRecursiveComparison().isEqualTo(expected)
+    }
+
+    @Test
+    fun asGraphqlPublicProfile() {
+        val user = User(
+            id = "1",
+            displayName = "Test Name",
+            email = "email@example.com",
+            emailVerified = true,
+            roles = setOf(UserRole.ADMIN)
+        )
+
+        val expected = GraphqlPublicProfileTo(displayName = "Test Name")
+
+        val actual = user.asGraphqlPublicProfile()
         assertThat(actual).usingRecursiveComparison().isEqualTo(expected)
     }
 

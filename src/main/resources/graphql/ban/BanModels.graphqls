@@ -1,0 +1,32 @@
+"Information about user ban."
+type BanInfo {
+    "Ban id. May be used to unban user."
+    id: ID!
+
+    "User, that banned other user."
+    user: PublicProfile
+
+    "User, that was banned."
+    bannedUser: PublicProfile
+
+    "Time, when this ban was issued."
+    banTime: EpochSecondsTime
+}
+
+"Page representation of ban items."
+type BansPage implements PageResult {
+    "Page info. Contains info, that can be useful for future pages requests."
+    pageInfo: PageInfo!
+
+    "Ban items."
+    content: [BanInfo!]
+}
+
+"Sorting algorithm of ban items."
+enum BansSorting {
+    "Sort from old bans to new."
+    CREATED_ASC,
+
+    "Sort from new bans to old."
+    CREATED_DESC
+}

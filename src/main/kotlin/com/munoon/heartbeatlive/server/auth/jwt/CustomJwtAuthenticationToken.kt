@@ -1,8 +1,8 @@
 package com.munoon.heartbeatlive.server.auth.jwt
 
-import com.munoon.heartbeatlive.server.subscription.JwtUserSubscription
-import com.munoon.heartbeatlive.server.subscription.SubscriptionUtils.getActiveSubscriptionPlan
-import com.munoon.heartbeatlive.server.subscription.UserSubscriptionPlan
+import com.munoon.heartbeatlive.server.subscription.account.AccountSubscriptionUtils.getActiveSubscriptionPlan
+import com.munoon.heartbeatlive.server.subscription.account.JwtUserSubscription
+import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
 import com.munoon.heartbeatlive.server.user.UserRole
 import org.slf4j.LoggerFactory
 import org.springframework.security.oauth2.jwt.Jwt
