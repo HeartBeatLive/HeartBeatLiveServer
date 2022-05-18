@@ -72,7 +72,7 @@ class HeartBeatSharingProfileController(
     }
 
     @SchemaMapping(typeName = "Profile", field = "sharingCodes")
-    suspend fun getProfileSharingCode(
+    suspend fun getProfileSharingCodes(
         @Argument @PositiveOrZero page: Int,
         @Argument @Positive @Max(20) size: Int,
         @Argument sort: SharingCodeSorting?

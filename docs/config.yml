@@ -29,6 +29,10 @@ info:
     | common.validation | Request validation was not passed. |
     | common.access_denied | User do not have access to something. |
     | common.unknown | Unknown exception happened. |
+    | heart_beat_sharing.not_found.by_public_code | Heart beat sharing is not found by sharing code. |
+    | heart_beat_sharing.not_found.by_id | Heart beat sharing is not found by identifier. |
+    | heart_beat_sharing.limit_exceeded | Heart beats sharing count limit is exceeded. |
+    | heart_beat_sharing.expired | Heart beat sharing is expired. |
   version: "1.0"
   x-introItems:
     - title: GitHub Repository

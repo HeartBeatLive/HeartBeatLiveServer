@@ -4,6 +4,6 @@ import java.time.Instant
 import javax.validation.constraints.Future
 
 data class GraphqlCreateSharingCodeInput(
-    @Future
+    @field:Future
     val expiredAt: Instant?
 )

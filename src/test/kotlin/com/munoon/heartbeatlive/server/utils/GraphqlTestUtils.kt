@@ -23,6 +23,12 @@ object GraphqlTestUtils {
         assertThat(it[0].path).isEqualTo(path)
     }
 
+    fun GraphQlTester.Errors.expectSingleUnauthenticatedError(path: String?) = expectSingleError(
+        errorType = ErrorType.FORBIDDEN,
+        code = "common.access_denied",
+        path = path
+    )
+
     inline fun <reified T : Any> GraphQlTester.Path.isEqualsTo(expected: T) = entity(T::class.java).isEqualTo(expected)
 
     inline fun <reified T : Any> GraphQlTester.Path.assertList(asserter: (List<T>) -> Unit): GraphQlTester.Path {

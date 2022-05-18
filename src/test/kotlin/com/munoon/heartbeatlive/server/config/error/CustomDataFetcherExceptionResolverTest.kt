@@ -45,7 +45,7 @@ internal class CustomDataFetcherExceptionResolverTest {
             .location(SourceLocation(1, 2))
             .path(ResultPath.rootPath())
             .errorType(ErrorType.BAD_REQUEST)
-            .extensions(mapOf("code" to "common.validation", "invalidProperties" to setOf("testPropertyPath.property")))
+            .extensions(mapOf("code" to "common.validation", "invalidProperties" to setOf("property")))
             .message("ignore")
             .build()
 

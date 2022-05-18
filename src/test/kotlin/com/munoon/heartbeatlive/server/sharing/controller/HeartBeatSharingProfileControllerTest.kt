@@ -3,6 +3,8 @@ package com.munoon.heartbeatlive.server.sharing.controller
 import com.munoon.heartbeatlive.server.AbstractGraphqlHttpTest
 import com.munoon.heartbeatlive.server.common.PageInfo
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharing
+import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingLimitExceededException
+import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingNotFoundByIdException
 import com.munoon.heartbeatlive.server.sharing.model.GraphqlCreateSharingCodeInput
 import com.munoon.heartbeatlive.server.sharing.service.HeartBeatSharingService
 import com.munoon.heartbeatlive.server.subscription.account.JwtUserSubscription
@@ -10,6 +12,7 @@ import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
 import com.munoon.heartbeatlive.server.user.User
 import com.munoon.heartbeatlive.server.user.service.UserService
 import com.munoon.heartbeatlive.server.utils.AuthTestUtils.withUser
+import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.expectSingleError
 import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.isEqualsTo
 import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.isEqualsToListOf
 import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.satisfyNoErrors
@@ -18,11 +21,11 @@ import com.ninjasquad.springmockk.SpykBean
 import io.mockk.coEvery
 import io.mockk.coVerify
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
+import org.springframework.graphql.execution.ErrorType
 import java.time.Duration
 import java.time.Instant
 import java.time.OffsetDateTime
@@ -67,21 +70,75 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `getSharingCodeById - not found`() {
-        // TODO impl this when error schema will be ready
+        coEvery { service.getSharingCodeById("sharingCode1") } throws
+                HeartBeatSharingNotFoundByIdException("sharingCode1")
+
+        graphqlTester.withUser(id = "user1")
+            .document("""
+                query {
+                    getSharingCodeById(id: "sharingCode1") {
+                        id, publicCode, sharingUrl, created, expiredAt
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleError(
+                errorType = ErrorType.NOT_FOUND,
+                code = "heart_beat_sharing.not_found.by_id",
+                extensions = mapOf("id" to "sharingCode1"),
+                path = "getSharingCodeById"
+            )
+
+        coVerify(exactly = 1) { service.getSharingCodeById("sharingCode1") }
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `getSharingCodeById - other user`() {
-        // TODO impl this when error schema will be ready
+        coEvery { service.getSharingCodeById("sharingCode1") } returns HeartBeatSharing(
+            id = "sharingCode1",
+            publicCode = "ABC123",
+            userId = "user2",
+            expiredAt = null
+        )
+
+        graphqlTester.withUser(id = "user1")
+            .document("""
+                query {
+                    getSharingCodeById(id: "sharingCode1") {
+                        id, publicCode, sharingUrl, created, expiredAt
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleError(
+                errorType = ErrorType.NOT_FOUND,
+                code = "heart_beat_sharing.not_found.by_id",
+                extensions = mapOf("id" to "sharingCode1"),
+                path = "getSharingCodeById"
+            )
+
+        coVerify(exactly = 1) { service.getSharingCodeById("sharingCode1") }
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `getSharingCodeById - not authenticated`() {
-        // TODO impl this when error schema will be ready
+        graphqlTester
+            .document("""
+                query {
+                    getSharingCodeById(id: "sharingCode1") {
+                        id, publicCode, sharingUrl, created, expiredAt
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleError(
+                errorType = ErrorType.FORBIDDEN,
+                code = "common.access_denied",
+                path = "getSharingCodeById"
+            )
+
+        coVerify(exactly = 0) { service.getSharingCodeById("sharingCode1") }
     }
 
     @Test
@@ -184,21 +241,71 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `createSharingCode - limit exceeded`() {
-        // TODO impl this when error schema will be ready
+        coEvery { service.createSharing(any(), any(), any()) } throws HeartBeatSharingLimitExceededException(1)
+
+        val subscription = JwtUserSubscription(UserSubscriptionPlan.PRO, Instant.now().plus(Duration.ofDays(1)))
+        graphqlTester.withUser(id = "user1", subscription = subscription)
+            .document("""
+                mutation {
+                    createSharingCode {
+                        id, publicCode, sharingUrl, created, expiredAt
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleError(
+                errorType = ErrorType.FORBIDDEN,
+                code = "heart_beat_sharing.limit_exceeded",
+                extensions = mapOf("limit" to 1),
+                path = "createSharingCode"
+            )
+
+        val expectedInput = GraphqlCreateSharingCodeInput(expiredAt = null)
+        coVerify(exactly = 1) { service.createSharing(expectedInput, "user1", UserSubscriptionPlan.PRO) }
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `createSharingCode - invalid expired at`() {
-        // TODO impl this when error schema will be ready
+        val expiredAt = OffsetDateTime.now().minusDays(100).toInstant()
+
+        graphqlTester.withUser(id = "user1")
+            .document("""
+                mutation {
+                    createSharingCode(data: { expiredAt: ${expiredAt.epochSecond} }) {
+                        id, publicCode, sharingUrl, created, expiredAt
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleError(
+                errorType = ErrorType.BAD_REQUEST,
+                code = "common.validation",
+                path = "createSharingCode",
+                extensions = mapOf("invalidProperties" to listOf("data.expiredAt" ))
+            )
+
+        coVerify(exactly = 0) { service.createSharing(any(), any(), any()) }
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `createSharingCode - unauthenticated`() {
-        // TODO impl this when error schema will be ready
+        graphqlTester
+            .document("""
+                mutation {
+                    createSharingCode {
+                        id, publicCode, sharingUrl, created, expiredAt
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleError(
+                errorType = ErrorType.FORBIDDEN,
+                code = "common.access_denied",
+                path = "createSharingCode"
+            )
+
+        coVerify(exactly = 0) { service.createSharing(any(), any(), any()) }
     }
 
     @Test
@@ -235,27 +342,76 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `updateSharingCodeExpireTime - not found`() {
-        // TODO impl this when error schema will be ready
+        coEvery { service.updateSharingCodeExpireTime(any(), any(), any()) } throws
+                HeartBeatSharingNotFoundByIdException("sharingCode1")
+
+        val expiredAt = Instant.now().plusSeconds(100)
+        graphqlTester.withUser(id = "user1")
+            .document("""
+                mutation {
+                    updateSharingCodeExpireTime(id: "sharingCode1", expiredAt: ${expiredAt.epochSecond}) {
+                        id, publicCode, sharingUrl, created, expiredAt
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleError(
+                errorType = ErrorType.NOT_FOUND,
+                code = "heart_beat_sharing.not_found.by_id",
+                extensions = mapOf("id" to "sharingCode1"),
+                path = "updateSharingCodeExpireTime"
+            )
+
+        val expectedExpiredAt = Instant.ofEpochSecond(expiredAt.epochSecond)
+        coVerify(exactly = 1) {
+            service.updateSharingCodeExpireTime("sharingCode1", expectedExpiredAt, "user1")
+        }
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
-    fun `updateSharingCodeExpireTime - other user`() {
-        // TODO impl this when error schema will be ready
-    }
-
-    @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `updateSharingCodeExpireTime - invalid expired at`() {
-        // TODO impl this when error schema will be ready
+        val expiredAt = OffsetDateTime.now().minusDays(1).toInstant()
+
+        graphqlTester.withUser(id = "user1")
+            .document("""
+                mutation {
+                    updateSharingCodeExpireTime(id: "sharingCode1", expiredAt: ${expiredAt.epochSecond}) {
+                        id, publicCode, sharingUrl, created, expiredAt
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleError(
+                errorType = ErrorType.BAD_REQUEST,
+                code = "common.validation",
+                extensions = mapOf("invalidProperties" to listOf("expiredAt")),
+                path = "updateSharingCodeExpireTime"
+            )
+
+        coVerify(exactly = 0) { service.updateSharingCodeExpireTime(any(), any(), any()) }
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `updateSharingCodeExpireTime - unauthenticated`() {
-        // TODO impl this when error schema will be ready
+        val expiredAt = Instant.now().plusSeconds(100)
+
+        graphqlTester
+            .document("""
+                mutation {
+                    updateSharingCodeExpireTime(id: "sharingCode1", expiredAt: ${expiredAt.epochSecond}) {
+                        id, publicCode, sharingUrl, created, expiredAt
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleError(
+                errorType = ErrorType.FORBIDDEN,
+                code = "common.access_denied",
+                path = "updateSharingCodeExpireTime"
+            )
+
+        coVerify(exactly = 0) { service.updateSharingCodeExpireTime(any(), any(), any()) }
     }
 
     @Test
@@ -272,21 +428,35 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `deleteSharingCodeById - not found`() {
-        // TODO impl this when error schema will be ready
+        coEvery { service.deleteSharingCodeById("sharingCode1", "user1") } throws
+                HeartBeatSharingNotFoundByIdException("sharingCode1")
+
+        graphqlTester.withUser(id = "user1")
+            .document("""mutation { deleteSharingCodeById(id: "sharingCode1") }""")
+            .execute()
+            .errors().expectSingleError(
+                errorType = ErrorType.NOT_FOUND,
+                code = "heart_beat_sharing.not_found.by_id",
+                extensions = mapOf("id" to "sharingCode1"),
+                path = "deleteSharingCodeById"
+            )
+
+        coVerify(exactly = 1) { service.deleteSharingCodeById("sharingCode1", "user1") }
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
-    fun `deleteSharingCodeById - other user`() {
-        // TODO impl this when error schema will be ready
-    }
-
-    @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `deleteSharingCodeById - unauthenticated`() {
-        // TODO impl this when error schema will be ready
+        graphqlTester
+            .document("""mutation { deleteSharingCodeById(id: "sharingCode1") }""")
+            .execute()
+            .errors().expectSingleError(
+                errorType = ErrorType.FORBIDDEN,
+                code = "common.access_denied",
+                path = "deleteSharingCodeById"
+            )
+
+        coVerify(exactly = 0) { service.deleteSharingCodeById(any(), any()) }
     }
 
     @Test
@@ -410,14 +580,35 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `getProfileSharingCode - validation error`() {
-        // TODO impl this when error schema will be ready
-    }
+        coEvery { userService.getUserById(any()) } returns User(
+            id = "userId",
+            displayName = null,
+            email = null,
+            emailVerified = false
+        )
 
-    @Test
-    @Disabled("Test will be implemented when error schema will be specified")
-    fun `getProfileSharingCode - unauthenticated`() {
-        // TODO impl this when error schema will be ready
+        graphqlTester.withUser(id = "user1")
+            .document("""
+                query {
+                    getProfile {
+                        sharingCodes(page: -1, size: 100, sort: CREATED_ASC) {
+                            content { id, publicCode, sharingUrl, created, expiredAt }
+                            pageInfo { totalPages, totalItems, hasNext }
+                        }
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleError(
+                errorType = ErrorType.BAD_REQUEST,
+                code = "common.validation",
+                path = "getProfile.sharingCodes",
+                extensions = mapOf(
+                    "invalidProperties" to listOf("size", "page")
+                )
+            )
+
+        coVerify(exactly = 0) { service.getSharingCodesByUserId(any(), any()) }
     }
 }
