@@ -2,12 +2,20 @@ package com.munoon.heartbeatlive.server.subscription.controller
 
 import com.munoon.heartbeatlive.server.AbstractGraphqlHttpTest
 import com.munoon.heartbeatlive.server.common.PageInfo
+import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingExpiredException
+import com.munoon.heartbeatlive.server.subscription.SelfSubscriptionAttemptException
 import com.munoon.heartbeatlive.server.subscription.Subscription
+import com.munoon.heartbeatlive.server.subscription.SubscriptionNotFoundByIdException
+import com.munoon.heartbeatlive.server.subscription.UserSubscribersLimitExceededException
+import com.munoon.heartbeatlive.server.subscription.UserSubscriptionsLimitExceededException
 import com.munoon.heartbeatlive.server.subscription.repository.SubscriptionRepository
 import com.munoon.heartbeatlive.server.subscription.service.SubscriptionService
 import com.munoon.heartbeatlive.server.user.User
 import com.munoon.heartbeatlive.server.user.service.UserService
 import com.munoon.heartbeatlive.server.utils.AuthTestUtils.withUser
+import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.expectSingleError
+import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.expectSingleUnauthenticatedError
+import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.expectSingleValidationError
 import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.isEqualsTo
 import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.isEqualsToListOf
 import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.satisfyNoErrors
@@ -16,12 +24,12 @@ import com.ninjasquad.springmockk.SpykBean
 import io.mockk.coEvery
 import io.mockk.coVerify
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
+import org.springframework.graphql.execution.ErrorType
 import java.time.Duration
 import java.time.Instant
 import java.time.OffsetDateTime
@@ -64,39 +72,127 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `subscribeBySharingCode - self subscription`() {
-        // TODO impl this when error schema will be ready
+        coEvery { service.subscribeBySharingCode("ABC123", "user1") } throws
+                SelfSubscriptionAttemptException()
+
+        graphqlTester.withUser(id = "user1")
+            .document("""
+                mutation {
+                    subscribeBySharingCode(sharingCode: "ABC123") {
+                        id, subscribeTime
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleError(
+                errorType = ErrorType.BAD_REQUEST,
+                code = "subscription.self_subscribe",
+                path = "subscribeBySharingCode"
+            )
+
+        coVerify(exactly = 1) { service.subscribeBySharingCode(any(), any()) }
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `subscribeBySharingCode - sharing code expired`() {
-        // TODO impl this when error schema will be ready
+        coEvery { service.subscribeBySharingCode("ABC123", "user1") } throws
+                HeartBeatSharingExpiredException()
+
+        graphqlTester.withUser(id = "user1")
+            .document("""
+                mutation {
+                    subscribeBySharingCode(sharingCode: "ABC123") {
+                        id, subscribeTime
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleError(
+                errorType = ErrorType.FORBIDDEN,
+                code = "heart_beat_sharing.expired",
+                path = "subscribeBySharingCode"
+            )
+
+        coVerify(exactly = 1) { service.subscribeBySharingCode(any(), any()) }
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `subscribeBySharingCode - sharing code invalid`() {
-        // TODO impl this when error schema will be ready
+        graphqlTester.withUser(id = "user1")
+            .document("""
+                mutation {
+                    subscribeBySharingCode(sharingCode: "") {
+                        id, subscribeTime
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleValidationError("subscribeBySharingCode", "sharingCode")
+
+        coVerify(exactly = 0) { service.subscribeBySharingCode(any(), any()) }
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `subscribeBySharingCode - user have too many subscribers`() {
-        // TODO impl this when error schema will be ready
+        coEvery { service.subscribeBySharingCode("ABC123", "user1") } throws
+                UserSubscribersLimitExceededException()
+
+        graphqlTester.withUser(id = "user1")
+            .document("""
+                mutation {
+                    subscribeBySharingCode(sharingCode: "ABC123") {
+                        id, subscribeTime
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleError(
+                errorType = ErrorType.FORBIDDEN,
+                code = "subscription.subscribers_limit_exceeded",
+                path = "subscribeBySharingCode"
+            )
+
+        coVerify(exactly = 1) { service.subscribeBySharingCode(any(), any()) }
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `subscribeBySharingCode - user have too many subscriptions`() {
-        // TODO impl this when error schema will be ready
+        coEvery { service.subscribeBySharingCode("ABC123", "user1") } throws
+                UserSubscriptionsLimitExceededException()
+
+        graphqlTester.withUser(id = "user1")
+            .document("""
+                mutation {
+                    subscribeBySharingCode(sharingCode: "ABC123") {
+                        id, subscribeTime
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleError(
+                errorType = ErrorType.FORBIDDEN,
+                code = "subscription.subscriptions_limit_exceeded",
+                path = "subscribeBySharingCode"
+            )
+
+        coVerify(exactly = 1) { service.subscribeBySharingCode(any(), any()) }
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `subscribeBySharingCode - user not authenticated`() {
-        // TODO impl this when error schema will be ready
+        graphqlTester
+            .document("""
+                mutation {
+                    subscribeBySharingCode(sharingCode: "ABC123") {
+                        id, subscribeTime
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleUnauthenticatedError(path = "subscribeBySharingCode")
+
+        coVerify(exactly = 0) { service.subscribeBySharingCode(any(), any()) }
     }
 
     @Test
@@ -117,21 +213,39 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `unsubscribeFromUserById - subscription not found`() {
-        // TODO impl this when error schema will be ready
+        coEvery { service.unsubscribeFromUserById("subscription1", validateUserId = "user1") } throws
+                SubscriptionNotFoundByIdException("subscription1")
+
+        graphqlTester.withUser(id = "user1")
+            .document("""
+                mutation {
+                    unsubscribeFromUserById(id: "subscription1")
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleError(
+                errorType = ErrorType.NOT_FOUND,
+                code = "subscription.not_found.by_id",
+                extensions = mapOf("id" to "subscription1"),
+                path = "unsubscribeFromUserById"
+            )
+
+        coVerify(exactly = 1) { service.unsubscribeFromUserById(any(), any()) }
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
-    fun `unsubscribeFromUserById - subscription belong to another user`() {
-        // TODO impl this when error schema will be ready
-    }
-
-    @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `unsubscribeFromUserById - user not authenticated`() {
-        // TODO impl this when error schema will be ready
+        graphqlTester
+            .document("""
+                mutation {
+                    unsubscribeFromUserById(id: "subscription1")
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleUnauthenticatedError(path = "unsubscribeFromUserById")
+
+        coVerify(exactly = 0) { service.unsubscribeFromUserById(any(), any()) }
     }
 
     @Test
@@ -187,19 +301,71 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `getSubscriptionById - not found`() {
-        // TODO impl this when error schema will be ready
+        coEvery { service.getSubscriptionById("subscriptionId") } throws
+                SubscriptionNotFoundByIdException("subscriptionId")
+
+        graphqlTester.withUser(id = "user1")
+            .document("""
+                query {
+                    getSubscriptionById(id: "subscriptionId") {
+                        id, subscribeTime
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleError(
+                errorType = ErrorType.NOT_FOUND,
+                code = "subscription.not_found.by_id",
+                extensions = mapOf("id" to "subscriptionId"),
+                path = "getSubscriptionById"
+            )
+
+        coVerify(exactly = 1) { service.getSubscriptionById(any()) }
     }
 
     @Test
     fun `getSubscriptionById - belong to another users`() {
-        // TODO impl this when error schema will be ready
+        coEvery { service.getSubscriptionById("subscriptionId") } returns Subscription(
+            id = "subscriptionId",
+            userId = "user2",
+            subscriberUserId = "user3",
+            created = Instant.now()
+        )
+
+        graphqlTester.withUser(id = "user1")
+            .document("""
+                query {
+                    getSubscriptionById(id: "subscriptionId") {
+                        id, subscribeTime
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleError(
+                errorType = ErrorType.NOT_FOUND,
+                code = "subscription.not_found.by_id",
+                extensions = mapOf("id" to "subscriptionId"),
+                path = "getSubscriptionById"
+            )
+
+        coVerify(exactly = 1) { service.getSubscriptionById(any()) }
     }
 
     @Test
     fun `getSubscriptionById - user not authenticated`() {
-        // TODO impl this when error schema will be ready
+        graphqlTester
+            .document("""
+                query {
+                    getSubscriptionById(id: "subscriptionId") {
+                        id, subscribeTime
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleUnauthenticatedError(path = "getSubscriptionById")
+
+        coVerify(exactly = 0) { service.getSubscriptionById(any()) }
     }
 
     @Test

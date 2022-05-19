@@ -2,12 +2,16 @@ package com.munoon.heartbeatlive.server.ban.controller
 
 import com.munoon.heartbeatlive.server.AbstractGraphqlHttpTest
 import com.munoon.heartbeatlive.server.ban.UserBan
+import com.munoon.heartbeatlive.server.ban.UserBanNotFoundByIdException
 import com.munoon.heartbeatlive.server.ban.repository.UserBanRepository
 import com.munoon.heartbeatlive.server.ban.service.UserBanService
 import com.munoon.heartbeatlive.server.common.PageInfo
 import com.munoon.heartbeatlive.server.subscription.Subscription
+import com.munoon.heartbeatlive.server.subscription.SubscriptionNotFoundByIdException
 import com.munoon.heartbeatlive.server.subscription.service.SubscriptionService
 import com.munoon.heartbeatlive.server.utils.AuthTestUtils.withUser
+import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.expectSingleError
+import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.expectSingleUnauthenticatedError
 import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.isEqualsTo
 import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.isEqualsToListOf
 import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.satisfyNoErrors
@@ -16,12 +20,12 @@ import com.ninjasquad.springmockk.SpykBean
 import io.mockk.coEvery
 import io.mockk.coVerify
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
+import org.springframework.graphql.execution.ErrorType
 import java.time.Instant
 import java.time.OffsetDateTime
 
@@ -70,21 +74,73 @@ internal class UserBanControllerTest : AbstractGraphqlHttpTest() {
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `banUserBySubscriptionId - subscription not found`() {
-        // TODO impl this when error schema will be ready
+        coEvery { subscriptionService.getSubscriptionById("subscription1") } throws
+                SubscriptionNotFoundByIdException("subscriptionId")
+
+        graphqlTester.withUser(id = "user1")
+            .document("""
+                mutation {
+                    banUserBySubscriptionId(subscriptionId: "subscription1") {
+                        id, banTime
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleError(
+                errorType = ErrorType.NOT_FOUND,
+                code = "subscription.not_found.by_id",
+                extensions = mapOf("id" to "subscriptionId"),
+                path = "banUserBySubscriptionId"
+            )
+
+        coVerify(exactly = 1) { subscriptionService.getSubscriptionById("subscription1") }
+        coVerify(exactly = 0) { service.banUser(userId = any(), userIdToBan = any()) }
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `banUserBySubscriptionId - subscription belong to another user`() {
-        // TODO impl this when error schema will be ready
+        coEvery { subscriptionService.getSubscriptionById("subscription1") } returns Subscription(
+            id = "subscription1",
+            userId = "user2",
+            subscriberUserId = "user1"
+        )
+
+        graphqlTester.withUser(id = "user1")
+            .document("""
+                mutation {
+                    banUserBySubscriptionId(subscriptionId: "subscription1") {
+                        id, banTime
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleError(
+                errorType = ErrorType.NOT_FOUND,
+                code = "subscription.not_found.by_id",
+                extensions = mapOf("id" to "subscription1"),
+                path = "banUserBySubscriptionId"
+            )
+
+        coVerify(exactly = 1) { subscriptionService.getSubscriptionById("subscription1") }
+        coVerify(exactly = 0) { service.banUser(userId = any(), userIdToBan = any()) }
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `banUserBySubscriptionId - user not authenticated`() {
-        // TODO impl this when error schema will be ready
+        graphqlTester
+            .document("""
+                mutation {
+                    banUserBySubscriptionId(subscriptionId: "subscription1") {
+                        id, banTime
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleUnauthenticatedError(path = "banUserBySubscriptionId")
+
+        coVerify(exactly = 0) { subscriptionService.getSubscriptionById(any()) }
+        coVerify(exactly = 0) { service.banUser(userId = any(), userIdToBan = any()) }
     }
 
     @Test
@@ -101,21 +157,31 @@ internal class UserBanControllerTest : AbstractGraphqlHttpTest() {
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `unbanUserById - ban is not found`() {
-        // TODO impl this when error schema will be ready
+        coEvery { service.unbanUser(banId = "ban1", validateUserId = "user1") } throws
+                UserBanNotFoundByIdException("ban1")
+
+        graphqlTester.withUser(id = "user1")
+            .document("""mutation { unbanUserById(id: "ban1") }""")
+            .execute()
+            .errors().expectSingleError(
+                errorType = ErrorType.NOT_FOUND,
+                code = "ban.not_found.by_id",
+                extensions = mapOf("id" to "ban1"),
+                path = "unbanUserById"
+            )
+
+        coVerify(exactly = 1) { service.unbanUser(banId = "ban1", validateUserId = "user1") }
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
-    fun `unbanUserById - ban belong to other user`() {
-        // TODO impl this when error schema will be ready
-    }
-
-    @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `unbanUserById - user not authenticated`() {
-        // TODO impl this when error schema will be ready
+        graphqlTester
+            .document("""mutation { unbanUserById(id: "ban1") }""")
+            .execute()
+            .errors().expectSingleUnauthenticatedError(path = "unbanUserById")
+
+        coVerify(exactly = 0) { service.unbanUser(banId = any(), validateUserId = any()) }
     }
 
     @Test
@@ -181,8 +247,19 @@ internal class UserBanControllerTest : AbstractGraphqlHttpTest() {
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `getBannedUsers - user not authenticated`() {
-        // TODO impl this when error schema will be ready
+        graphqlTester
+            .document("""
+                query {
+                    getBannedUsers(page: 0, size: 10, sort: CREATED_DESC) {
+                        pageInfo { totalPages, totalItems, hasNext }
+                        content { id, banTime }
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleUnauthenticatedError(path = "getBannedUsers")
+
+        coVerify(exactly = 0) { service.getBannedUsers(any(), any()) }
     }
 }
