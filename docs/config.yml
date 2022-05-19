@@ -36,7 +36,7 @@ info:
     | subscription.subscribers_limit_exceeded | User have too many subscribers. |
     | subscription.subscriptions_limit_exceeded | User have too many subscriptions. |
     | subscription.self_subscribe | User is trying to subscribe to himself. |
-    | subscription.subscription.not_found.by_id | Subscription is not found by specified identifier. |
+    | subscription.not_found.by_id | Subscription is not found by specified identifier. |
     | ban.banned | User was banned by another user. |
     | ban.not_found.by_id | User ban was not found by specified identifier. |
   version: "1.0"
