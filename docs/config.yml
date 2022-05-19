@@ -33,6 +33,8 @@ info:
     | heart_beat_sharing.not_found.by_id | Heart beat sharing is not found by identifier. |
     | heart_beat_sharing.limit_exceeded | Heart beats sharing count limit is exceeded. |
     | heart_beat_sharing.expired | Heart beat sharing is expired. |
+    | ban.banned | User was banned by another user. |
+    | ban.not_found.by_id | User ban was not found by specified identifier. |
   version: "1.0"
   x-introItems:
     - title: GitHub Repository
