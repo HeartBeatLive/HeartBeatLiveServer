@@ -8,12 +8,13 @@ import com.munoon.heartbeatlive.server.user.model.GraphqlProfileTo
 import com.munoon.heartbeatlive.server.user.model.UpdateUserInfoFromJwtTo
 import com.munoon.heartbeatlive.server.user.service.UserService
 import com.munoon.heartbeatlive.server.utils.AuthTestUtils.withUser
+import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.expectSingleUnauthenticatedError
+import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.expectSingleValidationError
 import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.isEqualsTo
 import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.satisfyNoErrors
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.coEvery
 import io.mockk.coVerify
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 
@@ -43,9 +44,12 @@ internal class ProfileControllerTest : AbstractGraphqlHttpTest() {
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `checkEmailReserved - email invalid`() {
-        // TODO impl this when error schema will be ready
+        graphqlTester.document("query { checkEmailReserved(email: \"invalid_email\") }")
+            .execute()
+            .errors().expectSingleValidationError("checkEmailReserved", "email")
+
+        coVerify(exactly = 0) { userService.checkEmailReserved("email@gmail.com") }
     }
 
     @Test
@@ -76,15 +80,35 @@ internal class ProfileControllerTest : AbstractGraphqlHttpTest() {
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `updateProfileDisplayName - invalid length`() {
-        // TODO impl this when error schema will be ready
+        graphqlTester.withUser()
+            .document("""
+                mutation {
+                    updateProfileDisplayName(displayName: "A") {
+                        id, displayName, email, emailVerified, roles
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleValidationError("updateProfileDisplayName", "displayName")
+
+        coVerify(exactly = 0) { userService.updateUserDisplayName(any(), any()) }
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `updateProfileDisplayName - user not authenticated`() {
-        // TODO impl this when error schema will be ready
+        graphqlTester
+            .document("""
+                mutation {
+                    updateProfileDisplayName(displayName: "Display Name") {
+                        id, displayName, email, emailVerified, roles
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleUnauthenticatedError(path = "updateProfileDisplayName")
+
+        coVerify(exactly = 0) { userService.updateUserDisplayName(any(), any()) }
     }
 
     @Test
@@ -115,9 +139,19 @@ internal class ProfileControllerTest : AbstractGraphqlHttpTest() {
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `updateProfileInfo - user not authenticated`() {
-        // TODO impl this when error schema will be ready
+        graphqlTester
+            .document("""
+                mutation {
+                    updateProfileInfo {
+                        id, displayName, email, emailVerified, roles
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleUnauthenticatedError(path = "updateProfileInfo")
+
+        coVerify(exactly = 0) { userService.updateUserInfoFromJwt(any(), any()) }
     }
 
     @Test
@@ -145,9 +179,17 @@ internal class ProfileControllerTest : AbstractGraphqlHttpTest() {
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `getProfile - user not authenticated`() {
-        // TODO impl this when error schema will be ready
+        graphqlTester
+            .document("""
+                query {
+                    getProfile { id, displayName, email, emailVerified, roles }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleUnauthenticatedError(path = "getProfile")
+
+        coVerify(exactly = 0) { userService.getUserById(any()) }
     }
 
     @Test
@@ -164,8 +206,12 @@ internal class ProfileControllerTest : AbstractGraphqlHttpTest() {
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `deleteProfile - user not authenticated`() {
-        // TODO impl this when error schema will be ready
+        graphqlTester
+            .document("mutation { deleteProfile }")
+            .execute()
+            .errors().expectSingleUnauthenticatedError(path = "deleteProfile")
+
+        coVerify(exactly = 0) { userService.deleteUserById(any(), any()) }
     }
 }

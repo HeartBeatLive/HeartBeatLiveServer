@@ -4,12 +4,12 @@ import com.munoon.heartbeatlive.server.AbstractGraphqlHttpTest
 import com.munoon.heartbeatlive.server.user.User
 import com.munoon.heartbeatlive.server.user.model.GraphqlFirebaseCreateUserInput
 import com.munoon.heartbeatlive.server.user.service.UserService
+import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.expectSingleUnauthenticatedError
 import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.isEqualsTo
 import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.satisfyNoErrors
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.coEvery
 import io.mockk.coVerify
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.HttpHeaders
@@ -41,9 +41,16 @@ internal class FirebaseUserControllerTest : AbstractGraphqlHttpTest() {
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `firebaseCreateUser - access denied`() {
-        // TODO impl this when error schema will be ready
+        val request = GraphqlFirebaseCreateUserInput("1", "email@gmail.com", true)
+
+        graphqlTester
+            .document("mutation(\$request: FirebaseCreateUserRequest!) { firebaseCreateUser(request: \$request) }")
+            .variable("request", request)
+            .execute()
+            .errors().expectSingleUnauthenticatedError(path = "firebaseCreateUser")
+
+        coVerify(exactly = 0) { userService.createUser(any()) }
     }
 
     @Test
@@ -62,8 +69,12 @@ internal class FirebaseUserControllerTest : AbstractGraphqlHttpTest() {
     }
 
     @Test
-    @Disabled("Test will be implemented when error schema will be specified")
     fun `firebaseDeleteUser - access denied`() {
-        // TODO impl this when error schema will be ready
+        graphqlTester
+            .document("mutation { firebaseDeleteUser(userId: \"1\") }")
+            .execute()
+            .errors().expectSingleUnauthenticatedError(path = "firebaseDeleteUser")
+
+        coVerify(exactly = 0) { userService.deleteUserById("1", updateFirebaseState = false) }
     }
 }
