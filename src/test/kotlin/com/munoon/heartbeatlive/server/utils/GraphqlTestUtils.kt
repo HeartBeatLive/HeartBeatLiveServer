@@ -29,6 +29,13 @@ object GraphqlTestUtils {
         path = path
     )
 
+    fun GraphQlTester.Errors.expectSingleValidationError(path: String?, vararg properties: String) = expectSingleError(
+        errorType = ErrorType.BAD_REQUEST,
+        code = "common.validation",
+        path = path,
+        extensions = mapOf("invalidProperties" to properties.toList())
+    )
+
     inline fun <reified T : Any> GraphQlTester.Path.isEqualsTo(expected: T) = entity(T::class.java).isEqualTo(expected)
 
     inline fun <reified T : Any> GraphQlTester.Path.assertList(asserter: (List<T>) -> Unit): GraphQlTester.Path {

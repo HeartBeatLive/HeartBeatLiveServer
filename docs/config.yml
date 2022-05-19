@@ -33,6 +33,10 @@ info:
     | heart_beat_sharing.not_found.by_id | Heart beat sharing is not found by identifier. |
     | heart_beat_sharing.limit_exceeded | Heart beats sharing count limit is exceeded. |
     | heart_beat_sharing.expired | Heart beat sharing is expired. |
+    | subscription.subscribers_limit_exceeded | User have too many subscribers. |
+    | subscription.subscriptions_limit_exceeded | User have too many subscriptions. |
+    | subscription.self_subscribe | User is trying to subscribe to himself. |
+    | subscription.subscription.not_found.by_id | Subscription is not found by specified identifier. |
     | ban.banned | User was banned by another user. |
     | ban.not_found.by_id | User ban was not found by specified identifier. |
   version: "1.0"
