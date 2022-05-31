@@ -9,4 +9,5 @@ import java.time.Duration
 class HeartRateStreamProperties {
     lateinit var heartRateTimeToSend: Duration
     var subscriptionsCountLimitPerUser: Int = 15
+    lateinit var leaveUserOnlineSinceLastHeartRateDuration: Duration
 }

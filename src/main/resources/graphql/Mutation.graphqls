@@ -51,4 +51,9 @@ type Mutation {
     User should be authenticated.
     """
     sendHeartRate("Heart rate data" data: SendHeartRateInput): Boolean!
+    """
+    Method to stop sending own heart rates. This will turn user's heart rate online status to `OFFLINE`.
+    User should be authenticated.
+    """
+    stopSendingHeartRate: Boolean!
 }

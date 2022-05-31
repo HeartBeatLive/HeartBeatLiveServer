@@ -5,12 +5,16 @@ import com.munoon.heartbeatlive.server.AbstractGraphqlSubscriptionTest
 import com.munoon.heartbeatlive.server.heartrate.TooManyHeartRateSubscriptionsExceptions
 import com.munoon.heartbeatlive.server.heartrate.model.GraphqlHeartRateInfoTo
 import com.munoon.heartbeatlive.server.heartrate.service.HeartRateService
+import com.munoon.heartbeatlive.server.user.User
+import com.munoon.heartbeatlive.server.user.service.UserService
 import com.munoon.heartbeatlive.server.utils.AuthTestUtils.withUser
 import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.expectSingleUnauthenticatedError
 import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.expectSingleValidationError
 import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.isEqualsTo
 import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.satisfyNoErrors
+import com.ninjasquad.springmockk.MockkBean
 import com.ninjasquad.springmockk.SpykBean
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.verify
@@ -110,6 +114,40 @@ internal class HeartBeatControllerTest {
                 .verify(Duration.ofSeconds(30))
 
             verify(exactly = 0) { service.subscribeToHeartRates(any()) }
+        }
+    }
+
+    @SpringBootTest
+    class HeartBeatControllerStopSendingTest : AbstractGraphqlHttpTest() {
+        @MockkBean
+        private lateinit var userService: UserService
+
+        @Test
+        fun stopSendingHeartRate() {
+            coEvery { userService.updateUserLastHeartRateReceiveTime("1", null) } returns User(
+                id = "1",
+                displayName = null,
+                email = null,
+                emailVerified = false
+            )
+
+            graphqlTester.withUser()
+                .document("mutation { stopSendingHeartRate }")
+                .execute()
+                .satisfyNoErrors()
+                .path("stopSendingHeartRate").isEqualsTo(true)
+
+            coVerify(exactly = 1) { userService.updateUserLastHeartRateReceiveTime("1", null) }
+        }
+
+        @Test
+        fun `stopSendingHeartRate - not authenticated`() {
+            graphqlTester
+                .document("mutation { stopSendingHeartRate }")
+                .execute()
+                .errors().expectSingleUnauthenticatedError(path = "stopSendingHeartRate")
+
+            coVerify(exactly = 0) { userService.updateUserLastHeartRateReceiveTime(any(), any()) }
         }
     }
 }

@@ -6,6 +6,7 @@ import com.munoon.heartbeatlive.server.heartrate.HeartRateMapper.asGraphQL
 import com.munoon.heartbeatlive.server.heartrate.model.GraphqlHeartRateInfoTo
 import com.munoon.heartbeatlive.server.heartrate.model.GraphqlSendHeartRateInput
 import com.munoon.heartbeatlive.server.heartrate.service.HeartRateService
+import com.munoon.heartbeatlive.server.user.service.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.graphql.data.method.annotation.Argument
 import org.springframework.graphql.data.method.annotation.MutationMapping
@@ -17,7 +18,10 @@ import javax.validation.Valid
 
 @Controller
 @PreAuthorize("isAuthenticated()")
-class HeartBeatController(private val service: HeartRateService) {
+class HeartBeatController(
+    private val service: HeartRateService,
+    private val userService: UserService
+) {
     private val logger = LoggerFactory.getLogger(HeartBeatController::class.java)
 
     @MutationMapping
@@ -33,5 +37,12 @@ class HeartBeatController(private val service: HeartRateService) {
             logger.info("User '${user.userId}' subscribed to heart rates")
             service.subscribeToHeartRates(user.userId).map { it.asGraphQL() }
         }
+    }
+
+    @MutationMapping
+    suspend fun stopSendingHeartRate(): Boolean {
+        logger.info("User '${authUserId()}' stopped sending heart rates")
+        userService.updateUserLastHeartRateReceiveTime(authUserId(), receiveTime = null)
+        return true
     }
 }

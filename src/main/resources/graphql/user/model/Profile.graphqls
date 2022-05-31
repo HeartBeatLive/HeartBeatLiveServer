@@ -15,6 +15,9 @@ type Profile {
     "User roles array."
     roles: [UserRole!]!
 
+    "Heart rate online status."
+    heartRateOnlineStatus: UserHeartRateOnlineStatus!
+
     "Sharing codes, that user created."
     sharingCodes(
         "Page number. Must be positive or zero, start from 0." page: Int! = 0,

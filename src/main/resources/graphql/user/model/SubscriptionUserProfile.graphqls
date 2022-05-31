@@ -1,0 +1,8 @@
+"User profile, that can be accessible from subscription info."
+type SubscriptionUserProfile {
+    "Display name, that should be printed to users."
+    displayName: String
+
+    "Heart rate online status."
+    heartRateOnlineStatus: UserHeartRateOnlineStatus!
+}

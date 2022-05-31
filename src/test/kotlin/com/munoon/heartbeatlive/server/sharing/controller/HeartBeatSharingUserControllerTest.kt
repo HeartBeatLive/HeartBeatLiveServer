@@ -68,7 +68,8 @@ internal class HeartBeatSharingUserControllerTest : AbstractGraphqlHttpTest() {
                 displayName = "Test User",
                 email = "email@example.com",
                 emailVerified = true,
-                roles = setOf(UserRole.ADMIN)
+                roles = setOf(UserRole.ADMIN),
+                lastHeartRateInfoReceiveTime = null
             ))
 
         coVerify(exactly = 1) { service.getSharingCodeById("sharingCode1") }
@@ -99,7 +100,8 @@ internal class HeartBeatSharingUserControllerTest : AbstractGraphqlHttpTest() {
         """.trimIndent())
             .execute()
             .satisfyNoErrors()
-            .path("getSharingCodeByPublicCode.user").isEqualsTo(GraphqlPublicProfileTo("Test User"))
+            .path("getSharingCodeByPublicCode.user")
+            .isEqualsTo(GraphqlPublicProfileTo("Test User"))
 
         coVerify(exactly = 1) { service.getSharingCodeByPublicCode("ABC123") }
         verify(exactly = 1) { userService.getUsersByIds(setOf("user1")) }

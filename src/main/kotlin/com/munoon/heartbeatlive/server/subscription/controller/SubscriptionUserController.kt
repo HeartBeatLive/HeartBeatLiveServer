@@ -3,7 +3,9 @@ package com.munoon.heartbeatlive.server.subscription.controller
 import com.munoon.heartbeatlive.server.subscription.model.GraphqlSubscriptionInfo
 import com.munoon.heartbeatlive.server.user.User
 import com.munoon.heartbeatlive.server.user.UserMapper.asGraphqlPublicProfile
+import com.munoon.heartbeatlive.server.user.UserMapper.asGraphqlSubscriptionUserProfile
 import com.munoon.heartbeatlive.server.user.model.GraphqlPublicProfileTo
+import com.munoon.heartbeatlive.server.user.model.GraphqlSubscriptionUserProfileTo
 import org.dataloader.DataLoader
 import org.springframework.graphql.data.method.annotation.SchemaMapping
 import org.springframework.stereotype.Controller
@@ -16,8 +18,8 @@ class SubscriptionUserController {
     fun user(
         subscription: GraphqlSubscriptionInfo,
         userByIdLoader: DataLoader<String, User>
-    ): CompletableFuture<GraphqlPublicProfileTo> {
-        return userByIdLoader.load(subscription.userId).thenApply { it.asGraphqlPublicProfile() }
+    ): CompletableFuture<GraphqlSubscriptionUserProfileTo> {
+        return userByIdLoader.load(subscription.userId).thenApply { it.asGraphqlSubscriptionUserProfile() }
     }
 
     @SchemaMapping

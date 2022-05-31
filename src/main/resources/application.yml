@@ -36,3 +36,4 @@ app:
   heart-rate-stream:
     heart-rate-time-to-send: PT1M
     subscriptions-count-limit-per-user: 15
+    leave-user-online-since-last-heart-rate-duration: PT30S

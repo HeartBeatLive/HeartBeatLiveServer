@@ -2,22 +2,27 @@ package com.munoon.heartbeatlive.server.user
 
 import com.munoon.heartbeatlive.server.user.UserMapper.asGraphqlProfile
 import com.munoon.heartbeatlive.server.user.UserMapper.asGraphqlPublicProfile
+import com.munoon.heartbeatlive.server.user.UserMapper.asGraphqlSubscriptionUserProfile
 import com.munoon.heartbeatlive.server.user.UserMapper.asNewUser
 import com.munoon.heartbeatlive.server.user.model.GraphqlFirebaseCreateUserInput
 import com.munoon.heartbeatlive.server.user.model.GraphqlProfileTo
 import com.munoon.heartbeatlive.server.user.model.GraphqlPublicProfileTo
+import com.munoon.heartbeatlive.server.user.model.GraphqlSubscriptionUserProfileTo
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import java.time.Instant
 
 internal class UserMapperTest {
     @Test
     fun asGraphqlProfile() {
+        val lastHeartRateInfoReceiveTime = Instant.now()
         val user = User(
             id = "1",
             displayName = "Test Name",
             email = "email@example.com",
             emailVerified = true,
-            roles = setOf(UserRole.ADMIN)
+            roles = setOf(UserRole.ADMIN),
+            lastHeartRateInfoReceiveTime = lastHeartRateInfoReceiveTime
         )
 
         val expected = GraphqlProfileTo(
@@ -25,7 +30,8 @@ internal class UserMapperTest {
             displayName = "Test Name",
             email = "email@example.com",
             emailVerified = true,
-            roles = setOf(UserRole.ADMIN)
+            roles = setOf(UserRole.ADMIN),
+            lastHeartRateInfoReceiveTime = lastHeartRateInfoReceiveTime
         )
 
         val actual = user.asGraphqlProfile()
@@ -45,6 +51,27 @@ internal class UserMapperTest {
         val expected = GraphqlPublicProfileTo(displayName = "Test Name")
 
         val actual = user.asGraphqlPublicProfile()
+        assertThat(actual).usingRecursiveComparison().isEqualTo(expected)
+    }
+
+    @Test
+    fun asGraphqlSubscriptionUserProfile() {
+        val lastHeartRateInfoReceiveTime = Instant.now()
+        val user = User(
+            id = "1",
+            displayName = "Test Name",
+            email = "email@example.com",
+            emailVerified = true,
+            roles = setOf(UserRole.ADMIN),
+            lastHeartRateInfoReceiveTime = lastHeartRateInfoReceiveTime
+        )
+
+        val expected = GraphqlSubscriptionUserProfileTo(
+            displayName = "Test Name",
+            lastHeartRateInfoReceiveTime = lastHeartRateInfoReceiveTime
+        )
+
+        val actual = user.asGraphqlSubscriptionUserProfile()
         assertThat(actual).usingRecursiveComparison().isEqualTo(expected)
     }
 

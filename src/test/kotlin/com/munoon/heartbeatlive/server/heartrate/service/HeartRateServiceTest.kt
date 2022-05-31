@@ -1,12 +1,13 @@
 package com.munoon.heartbeatlive.server.heartrate.service
 
 import com.munoon.heartbeatlive.server.AbstractTest
-import com.munoon.heartbeatlive.server.config.ServerInstanceRunningId
 import com.munoon.heartbeatlive.server.heartrate.HeartBeatSubscribersManager
 import com.munoon.heartbeatlive.server.heartrate.HeartRateSubscriber
+import com.munoon.heartbeatlive.server.heartrate.LocalSubscribersSenderHeartRateInfoHandler
+import com.munoon.heartbeatlive.server.heartrate.MessagePublisherHeartRateInfoHandler
 import com.munoon.heartbeatlive.server.heartrate.TooManyHeartRateSubscriptionsExceptions
+import com.munoon.heartbeatlive.server.heartrate.UserStatusUpdaterHeartRateInfoHandler
 import com.munoon.heartbeatlive.server.heartrate.model.HeartRateInfo
-import com.munoon.heartbeatlive.server.heartrate.publisher.HeartRateMessagePublisher
 import com.munoon.heartbeatlive.server.heartrate.repository.HeartRateSubscriberRepository
 import com.ninjasquad.springmockk.MockkBean
 import com.ninjasquad.springmockk.SpykBean
@@ -40,18 +41,33 @@ internal class HeartRateServiceTest : AbstractTest() {
     @SpykBean
     private lateinit var asyncTaskExecutor: AsyncTaskExecutor
 
-    @SpykBean
-    private lateinit var publisher: HeartRateMessagePublisher
+    @MockkBean
+    private lateinit var messagePublisherHeartRateInfoHandler: MessagePublisherHeartRateInfoHandler
+
+    @MockkBean
+    private lateinit var localSubscribersSenderHeartRateInfoHandler: LocalSubscribersSenderHeartRateInfoHandler
+
+    @MockkBean
+    private lateinit var userStatusUpdaterHeartRateInfoHandler: UserStatusUpdaterHeartRateInfoHandler
 
     @Test
     fun sendHeartRate() {
+        every { messagePublisherHeartRateInfoHandler.handleHeartRateInfo(any(), any()) } returns Unit
+        every { localSubscribersSenderHeartRateInfoHandler.handleHeartRateInfo(any(), any()) } returns Unit
+        every { userStatusUpdaterHeartRateInfoHandler.handleHeartRateInfo(any(), any()) } returns Unit
+
         runBlocking { service.sendHeartRate("user1", 123.45f) }
 
-        coVerify(exactly = 1, timeout = 60000) { publisher.publish(match {
-            it.heartRate == 123.45f && it.userId == "user1" && it.publisherId == ServerInstanceRunningId.id
-        }) }
-        coVerify(exactly = 1, timeout = 60000) { subscribersManager.sendHeartRate("user1", 123.45f) }
-        coVerify(exactly = 2) { asyncTaskExecutor.execute(any()) }
+        coVerify(exactly = 1, timeout = 60000) {
+            messagePublisherHeartRateInfoHandler.handleHeartRateInfo("user1", 123.45f)
+        }
+        coVerify(exactly = 1, timeout = 60000) {
+            localSubscribersSenderHeartRateInfoHandler.handleHeartRateInfo("user1", 123.45f)
+        }
+        coVerify(exactly = 1, timeout = 60000) {
+            userStatusUpdaterHeartRateInfoHandler.handleHeartRateInfo("user1", 123.45f)
+        }
+        coVerify(exactly = 3) { asyncTaskExecutor.execute(any()) }
     }
 
     @Test
