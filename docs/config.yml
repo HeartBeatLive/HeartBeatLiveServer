@@ -9,6 +9,11 @@ info:
     [GitHub Repository](https://github.com/HeartBeatLive/HeartBeatLiveServer) \
     [Schema File](/schema.graphqls)
     
+    ### Subscriptions
+    You may subscribe to WebSocket stream on `/graphql/websocket` path. \
+    You can authorize client using `Authorization` header or `token` connection param. 
+    In both cases your token should look like that: `Bearer <jwt_token>`.
+    
     ### Errors
     Most of all errors also contains `message`, `extensions.classification`, `extensions.code`, `locations` and `path` fields,
     but none of these fields are guaranteed.
@@ -55,14 +60,14 @@ servers:
         example: application/graphql+json
         comment: Content type must be provided
       - name: Authorization
-        example: Bearer <USER_TOKEN>
+        example: Bearer <jwt_token>
         comment: Your authentication token (Optional)
       - name: X-Application-Type
-        example: <USER_APPLICATION_TYPE>
+        example: <application_type>
         comment: Application type, from which user makes requests (Optional)
       - name: X-Application-Version
-        example: <USER_APPLICATION_VERSION>
+        example: <application_version>
         comment: Application version, from which user makes requests (Optional)
       - name: X-Platform
-        example: <USER_PLATFORM>
+        example: <platform>
         comment: Platform, from which user makes requests (Optional)

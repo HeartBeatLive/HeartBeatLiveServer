@@ -7,7 +7,11 @@ import com.munoon.heartbeatlive.server.ban.service.UserBanService
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharing
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingExpiredException
 import com.munoon.heartbeatlive.server.sharing.service.HeartBeatSharingService
-import com.munoon.heartbeatlive.server.subscription.*
+import com.munoon.heartbeatlive.server.subscription.SelfSubscriptionAttemptException
+import com.munoon.heartbeatlive.server.subscription.Subscription
+import com.munoon.heartbeatlive.server.subscription.SubscriptionNotFoundByIdException
+import com.munoon.heartbeatlive.server.subscription.UserSubscribersLimitExceededException
+import com.munoon.heartbeatlive.server.subscription.UserSubscriptionsLimitExceededException
 import com.munoon.heartbeatlive.server.subscription.account.AccountSubscription
 import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
 import com.munoon.heartbeatlive.server.subscription.account.service.AccountSubscriptionService
@@ -278,6 +282,23 @@ internal class SubscriptionServiceTest : AbstractTest() {
         assertThat(actual.totalItemsCount).isEqualTo(2)
         runBlocking {
             assertThat(actual.data.toList(arrayListOf()))
+                .usingRecursiveComparison()
+                .ignoringFields("created")
+                .isEqualTo(listOf(expected1, expected2))
+        }
+    }
+
+    @Test
+    fun getAllSubscriptionsByUserId() {
+        val expected1 = runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2")) }
+        val expected2 = runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user3")) }
+        runBlocking { repository.save(Subscription(userId = "user2", subscriberUserId = "user1")) } // not expected
+        runBlocking { repository.save(Subscription(userId = "user3", subscriberUserId = "user1")) } // not expected
+
+        val actual = runBlocking { service.getAllSubscriptionsByUserId("user1") }
+
+        runBlocking {
+            assertThat(actual.toList(arrayListOf()))
                 .usingRecursiveComparison()
                 .ignoringFields("created")
                 .isEqualTo(listOf(expected1, expected2))

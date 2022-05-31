@@ -15,6 +15,7 @@ import com.munoon.heartbeatlive.server.subscription.SubscriptionUtils.validateUs
 import com.munoon.heartbeatlive.server.subscription.account.service.AccountSubscriptionService
 import com.munoon.heartbeatlive.server.subscription.repository.SubscriptionRepository
 import com.munoon.heartbeatlive.server.user.UserEvents
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.runBlocking
 import org.springframework.context.event.EventListener
@@ -79,6 +80,10 @@ class SubscriptionService(
             data = repository.findAllBySubscriberUserId(userId, pageable).asFlow(),
             totalItemsCount = repository.countAllBySubscriberUserId(userId)
         )
+    }
+
+    fun getAllSubscriptionsByUserId(userId: String): Flow<Subscription> {
+        return repository.findAllByUserId(userId)
     }
 
     suspend fun checkUserHaveMaximumSubscribers(userId: String): Boolean {

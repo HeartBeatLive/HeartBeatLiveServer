@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.ApplicationContext
+import org.springframework.http.HttpHeaders
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.jwt.JwtValidationException
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder
@@ -91,6 +92,34 @@ internal class WebSecurityConfigTest : AbstractTest() {
             .build()
             .get()
             .uri("/graphql")
+            .exchange()
+            .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `websocket endpoint security - non GET method`() {
+        WebTestClient.bindToApplicationContext(applicationContext)
+            .apply(SecurityMockServerConfigurers.springSecurity())
+            .configureClient()
+            .apply(mockUser())
+            .build()
+            .post()
+            .uri("/graphql/websocket")
+            .header(HttpHeaders.UPGRADE, "websocket")
+            .exchange()
+            .expectStatus().isForbidden
+    }
+
+    @Test
+    fun `websocket endpoint security - non 'websocket' upgrade header`() {
+        WebTestClient.bindToApplicationContext(applicationContext)
+            .apply(SecurityMockServerConfigurers.springSecurity())
+            .configureClient()
+            .apply(mockUser())
+            .build()
+            .get()
+            .uri("/graphql/websocket")
+            .header(HttpHeaders.UPGRADE, "not-websocket")
             .exchange()
             .expectStatus().isForbidden
     }

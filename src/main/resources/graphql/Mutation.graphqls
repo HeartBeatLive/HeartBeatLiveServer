@@ -45,4 +45,10 @@ type Mutation {
     banUserBySubscriptionId("Subscription identifier." subscriptionId: ID!): BanInfo
     "Un-ban user by ban id. Require authentication. Authenticated user must be _BanInfo.user_."
     unbanUserById("Ban identifier." id: ID!): Boolean
+
+    """
+    Method to send user's current heart rate. This heart rate will be sent to all users subscribers. \
+    User should be authenticated.
+    """
+    sendHeartRate("Heart rate data" data: SendHeartRateInput): Boolean!
 }

@@ -6,9 +6,10 @@ import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.security.core.context.ReactiveSecurityContextHolder
 
 object AuthUtils {
-    suspend fun authUser() = ReactiveSecurityContextHolder.getContext()
+    fun authUserMono() = ReactiveSecurityContextHolder.getContext()
         .map { it.authentication as CustomJwtAuthenticationToken }
-        .awaitSingleOrNull()
+
+    suspend fun authUser() = authUserMono().awaitSingleOrNull()
 
     suspend fun authUserIdOrAnonymous(): String = authUser()?.userId ?: "<anonymous>"
 

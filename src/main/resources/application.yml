@@ -11,6 +11,10 @@ spring:
       username: mongodb
       password: password
 
+  graphql:
+    websocket:
+      path: /graphql/websocket
+
 auth:
   firebase:
     function:
@@ -29,3 +33,6 @@ app:
       max-subscriptions-limit: 30
   sharing-code:
     sharing-url-template: "https://heartbeatlive.com/sharing/%s"
+  heart-rate-stream:
+    heart-rate-time-to-send: PT1M
+    subscriptions-count-limit-per-user: 15

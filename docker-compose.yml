@@ -10,3 +10,19 @@ services:
       - MONGO_INITDB_DATABASE=heart-beat-app
       - MONGO_INITDB_ROOT_USERNAME=mongodb
       - MONGO_INITDB_ROOT_PASSWORD=password
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongo mongo:27017/test --quiet
+      interval: 5s
+      timeout: 10s
+      retries: 30
+
+  redis:
+    image: redis:7.0
+    restart: always
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 1s
+      timeout: 3s
+      retries: 30

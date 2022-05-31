@@ -1,0 +1,7 @@
+type Subscription {
+    """
+    Method to subscribe to your own and user's, that you are following, heart rates. \
+    Require authentication.
+    """
+    subscribeToHeartRates: HeartRateInfo!
+}
