@@ -33,8 +33,9 @@ class HeartRateService(
         return mono {
             // validate user's subscriptions count
             val count = repository.countAllByUserId(userId)
-            if (count + 1 > heartRateStreamProperties.subscriptionsCountLimitPerUser) {
-                throw TooManyHeartRateSubscriptionsExceptions(userId, heartRateStreamProperties.subscriptionsCountLimitPerUser)
+            val limit = heartRateStreamProperties.subscriptionsCountLimitPerUser
+            if (count + 1 > limit) {
+                throw TooManyHeartRateSubscriptionsExceptions(userId, limit)
             }
 
             // save new user subscription
