@@ -4,6 +4,9 @@ import com.munoon.heartbeatlive.server.AbstractTest
 import com.munoon.heartbeatlive.server.heartrate.model.HeartRateInfo
 import com.munoon.heartbeatlive.server.subscription.Subscription
 import com.munoon.heartbeatlive.server.subscription.repository.SubscriptionRepository
+import com.munoon.heartbeatlive.server.subscription.service.UserSubscribersLoaderService
+import com.ninjasquad.springmockk.SpykBean
+import io.mockk.verify
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -20,6 +23,9 @@ internal class HeartBeatSubscribersManagerTest : AbstractTest() {
 
     @Autowired
     private lateinit var subscriptionRepository: SubscriptionRepository
+
+    @SpykBean
+    private lateinit var userSubscribersLoaderService: UserSubscribersLoaderService
 
     @Test
     fun sendHeartRate() {
@@ -68,6 +74,8 @@ internal class HeartBeatSubscribersManagerTest : AbstractTest() {
 
         assertThat(user3Listener1Messages).isEmpty()
         assertThat(user3Listener2Messages).isEmpty()
+
+        verify(exactly = 1) { userSubscribersLoaderService.load("user1") }
 
         user1Listener1.dispose()
         user1Listener2.dispose()

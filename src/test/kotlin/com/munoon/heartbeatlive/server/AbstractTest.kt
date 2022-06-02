@@ -1,6 +1,8 @@
 package com.munoon.heartbeatlive.server
 
 import com.munoon.heartbeatlive.server.config.MockFirebaseConfiguration
+import org.cache2k.CacheManager
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.AfterAllCallback
 import org.junit.jupiter.api.extension.BeforeAllCallback
@@ -51,5 +53,10 @@ abstract class AbstractTest {
         ReactiveStringRedisTemplate(redisConnectionFactory)
             .execute { it.serverCommands().flushAll() }
             .blockLast()
+    }
+
+    @AfterEach
+    fun clearCaches() {
+        CacheManager.closeAll()
     }
 }

@@ -21,6 +21,11 @@ auth:
       token: "simple-firebase-function-token"
 #    service-account-file: classpath:service-account.json
 
+cache:
+  user-subscribers:
+    entry-capacity: 1_000_000
+    idle-scan-time: PT30S
+
 app:
   subscription:
     free:

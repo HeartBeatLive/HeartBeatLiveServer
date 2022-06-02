@@ -289,23 +289,6 @@ internal class SubscriptionServiceTest : AbstractTest() {
     }
 
     @Test
-    fun getAllSubscriptionsByUserId() {
-        val expected1 = runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2")) }
-        val expected2 = runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user3")) }
-        runBlocking { repository.save(Subscription(userId = "user2", subscriberUserId = "user1")) } // not expected
-        runBlocking { repository.save(Subscription(userId = "user3", subscriberUserId = "user1")) } // not expected
-
-        val actual = runBlocking { service.getAllSubscriptionsByUserId("user1") }
-
-        runBlocking {
-            assertThat(actual.toList(arrayListOf()))
-                .usingRecursiveComparison()
-                .ignoringFields("created")
-                .isEqualTo(listOf(expected1, expected2))
-        }
-    }
-
-    @Test
     fun `checkUserHaveMaximumSubscribers - true`() {
         for (i in 1..10) {
             runBlocking { repository.save(Subscription(userId = "userId", subscriberUserId = "user$i")) }

@@ -21,7 +21,7 @@ class HeartRateService(
     private val taskExecutor: AsyncTaskExecutor,
     private val handlers: List<HeartRateInfoHandler>
 ) {
-    suspend fun sendHeartRate(userId: String, heartRate: Float) { // TODO test
+    suspend fun sendHeartRate(userId: String, heartRate: Float) {
         for (handler in handlers) {
             taskExecutor.execute {
                 handler.handleHeartRateInfo(userId, heartRate)
