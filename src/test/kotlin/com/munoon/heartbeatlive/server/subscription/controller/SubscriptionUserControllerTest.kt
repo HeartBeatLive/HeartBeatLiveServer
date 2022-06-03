@@ -51,7 +51,7 @@ internal class SubscriptionUserControllerTest : AbstractGraphqlHttpTest() {
             """.trimIndent())
             .execute()
             .satisfyNoErrors()
-            .path("getSubscriptionById.user").isEqualsTo(GraphqlPublicProfileTo("Test User"))
+            .path("getSubscriptionById.user.displayName").isEqualsTo("Test User")
 
         coVerify(exactly = 1) { userService.getUsersByIds(setOf("user1")) }
     }

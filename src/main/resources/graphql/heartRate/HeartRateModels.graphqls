@@ -1,0 +1,11 @@
+"Information about current heart rate"
+type HeartRateInfo {
+    "Subscription id, according to which you are receiving this heart rate. `null` if it is your heart rate."
+    subscriptionId: String
+
+    "Heart rate."
+    heartRate: Float!
+
+    "Boolean, indicating if it is your own heart rate."
+    ownHeartRate: Boolean!
+}

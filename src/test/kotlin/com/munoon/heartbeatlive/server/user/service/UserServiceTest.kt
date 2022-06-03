@@ -17,6 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.event.ApplicationEvents
 import org.springframework.test.context.event.RecordApplicationEvents
 import java.time.Instant
+import java.time.OffsetDateTime
 
 @SpringBootTest
 @RecordApplicationEvents
@@ -257,5 +258,51 @@ class UserServiceTest : AbstractMongoDBTest() {
                 .ignoringFields("created")
                 .isEqualTo(listOf(user1, user2))
         }
+    }
+
+    @Test
+    fun updateUserLastHeartRateReceiveTime() {
+        val newReceiveTime = OffsetDateTime.now().withNano(0).withSecond(0).toInstant()
+        val expected = User(
+            id = "user1",
+            displayName = "Display Name",
+            email = null,
+            emailVerified = false,
+            lastHeartRateInfoReceiveTime = newReceiveTime
+        )
+
+        runBlocking { userRepository.save(User(
+            id = "user1",
+            displayName = "Display Name",
+            email = null,
+            emailVerified = false,
+            lastHeartRateInfoReceiveTime = null
+        )) }
+
+        runBlocking { userService.updateUserLastHeartRateReceiveTime("user1", newReceiveTime) }
+
+        runBlocking {
+            assertThat(userRepository.findAll().toList(arrayListOf()))
+                .usingRecursiveComparison()
+                .ignoringFields("created")
+                .isEqualTo(listOf(expected))
+        }
+
+        val expectedEvent = UserEvents.UserUpdatedEvent(
+            newUser = expected,
+            oldUser = expected.copy(lastHeartRateInfoReceiveTime = null),
+            updateFirebaseState = false
+        )
+        assertThat(events.stream(UserEvents.UserUpdatedEvent::class.java))
+            .usingRecursiveComparison()
+            .ignoringFields("oldUser.created", "newUser.created")
+            .isEqualTo(listOf(expectedEvent))
+    }
+
+    @Test
+    fun `updateUserLastHeartRateReceiveTime - user not found`() {
+        assertThatThrownBy { runBlocking {
+            userService.updateUserLastHeartRateReceiveTime("abc", null)
+        } }.isEqualTo(UserNotFoundByIdException("abc"))
     }
 }

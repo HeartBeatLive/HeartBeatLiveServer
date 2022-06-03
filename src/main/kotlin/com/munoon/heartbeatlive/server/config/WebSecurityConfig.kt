@@ -9,6 +9,7 @@ import com.munoon.heartbeatlive.server.auth.jwt.CustomJwtAuthenticationToken
 import com.munoon.heartbeatlive.server.config.properties.FirebaseAuthenticationProperties
 import com.nimbusds.jose.Header
 import com.nimbusds.jose.util.Base64URL
+import org.springframework.boot.autoconfigure.graphql.GraphQlProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
@@ -24,6 +25,7 @@ import org.springframework.security.oauth2.jwt.JwtClaimNames
 import org.springframework.security.oauth2.jwt.JwtValidationException
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder
 import org.springframework.security.web.server.SecurityWebFilterChain
+import org.springframework.security.web.server.util.matcher.AndServerWebExchangeMatcher
 import org.springframework.security.web.server.util.matcher.PathPatternParserServerWebExchangeMatcher
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatcher
 import org.springframework.web.filter.reactive.ServerWebExchangeContextFilter
@@ -52,6 +54,7 @@ class WebSecurityConfig {
 
             authorizeExchange {
                 authorize(graphqlEndpointWebExchangeMatcher(), permitAll)
+                authorize(graphqlWebsocketEndpointWebExchangeMatcher(), permitAll)
                 authorize(anyExchange, denyAll)
             }
         }
@@ -60,6 +63,20 @@ class WebSecurityConfig {
     @Bean
     fun graphqlEndpointWebExchangeMatcher(): ServerWebExchangeMatcher {
         return PathPatternParserServerWebExchangeMatcher("/graphql", HttpMethod.POST)
+    }
+
+    @Bean
+    fun graphqlWebsocketEndpointWebExchangeMatcher(
+        graphqlProperties: GraphQlProperties? = null
+    ): ServerWebExchangeMatcher {
+        return AndServerWebExchangeMatcher(
+            PathPatternParserServerWebExchangeMatcher(graphqlProperties!!.websocket.path, HttpMethod.GET),
+            {
+                if (it.request.headers.upgrade.equals("websocket", ignoreCase = true))
+                    ServerWebExchangeMatcher.MatchResult.match()
+                else ServerWebExchangeMatcher.MatchResult.notMatch()
+            }
+        )
     }
 
     @Bean

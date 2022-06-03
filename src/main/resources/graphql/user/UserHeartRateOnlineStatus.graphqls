@@ -1,0 +1,8 @@
+"Enum means if user sending heart rates now."
+enum UserHeartRateOnlineStatus {
+    "Means, that user is currently sending heart rates."
+    ONLINE,
+
+    "Means, that user isn't currently sending heart rates."
+    OFFLINE
+}

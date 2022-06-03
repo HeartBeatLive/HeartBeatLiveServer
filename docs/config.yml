@@ -7,44 +7,19 @@ info:
   description: |
     API documentation of HeartBeatLive server \
     [GitHub Repository](https://github.com/HeartBeatLive/HeartBeatLiveServer) \
-    [Schema File](/schema.graphqls)
-    
-    ### Errors
-    Most of all errors also contains `message`, `extensions.classification`, `extensions.code`, `locations` and `path` fields,
-    but none of these fields are guaranteed.
-    Some errors contains additional fields in `extensions`, that are useful for error details recognition.
-    
-    #### Error Classifications
-    | Name | Description |
-    | ---- | ----------- |
-    | BAD_REQUEST | Client send incorrect request. For example, client provided invalid argument value. |
-    | UNAUTHORIZED | User is unauthorized. |
-    | FORBIDDEN | Access is forbidden. For example, user do not have access to some method. |
-    | NOT_FOUND | Something is not found. |
-    | INTERNAL_ERROR | Some error occurs on server side. |
-    
-    #### Error Codes
-    | Name | Description |
-    | ---- | ----------- |
-    | common.validation | Request validation was not passed. |
-    | common.access_denied | User do not have access to something. |
-    | common.unknown | Unknown exception happened. |
-    | heart_beat_sharing.not_found.by_public_code | Heart beat sharing is not found by sharing code. |
-    | heart_beat_sharing.not_found.by_id | Heart beat sharing is not found by identifier. |
-    | heart_beat_sharing.limit_exceeded | Heart beats sharing count limit is exceeded. |
-    | heart_beat_sharing.expired | Heart beat sharing is expired. |
-    | subscription.subscribers_limit_exceeded | User have too many subscribers. |
-    | subscription.subscriptions_limit_exceeded | User have too many subscriptions. |
-    | subscription.self_subscribe | User is trying to subscribe to himself. |
-    | subscription.not_found.by_id | Subscription is not found by specified identifier. |
-    | ban.banned | User was banned by another user. |
-    | ban.not_found.by_id | User ban was not found by specified identifier. |
+    [Schema File](/schema.graphqls) \
+    [Subscriptions Info](#introduction-item-2) \
+    [Errors Info](#introduction-item-3)
   version: "1.0"
   x-introItems:
     - title: GitHub Repository
       url: https://github.com/HeartBeatLive/HeartBeatLiveServer
     - title: Schema File
       url: /schema.graphqls
+    - title: Subscriptions
+      file: ./info/subscriptions.md
+    - title: Errors
+      file: ./info/errors.md
 
 servers:
   - url: http://localhost:8080/graphql
@@ -55,14 +30,14 @@ servers:
         example: application/graphql+json
         comment: Content type must be provided
       - name: Authorization
-        example: Bearer <USER_TOKEN>
+        example: Bearer <jwt_token>
         comment: Your authentication token (Optional)
       - name: X-Application-Type
-        example: <USER_APPLICATION_TYPE>
+        example: <application_type>
         comment: Application type, from which user makes requests (Optional)
       - name: X-Application-Version
-        example: <USER_APPLICATION_VERSION>
+        example: <application_version>
         comment: Application version, from which user makes requests (Optional)
       - name: X-Platform
-        example: <USER_PLATFORM>
+        example: <platform>
         comment: Platform, from which user makes requests (Optional)

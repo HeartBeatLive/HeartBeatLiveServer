@@ -46,10 +46,20 @@
       "fields": {
         "publicCode": { "documentation": { "example": "KUD1Y8" } }
       }
+    },
+    "HeartRateInfo": {
+      "fields": {
+        "heartRate": { "documentation": { "example": 70.22 } }
+      }
     }
   },
   "INPUT_OBJECT": {
-    "FirebaseCreateUserRequest": { "documentation": { "undocumented": true } }
+    "FirebaseCreateUserRequest": { "documentation": { "undocumented": true } },
+    "SendHeartRateInput": {
+      "inputFields": {
+        "heartRate": { "documentation": { "example": 70.22 } }
+      }
+    }
   },
   "SCALAR": {
     "ID": {

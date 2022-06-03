@@ -9,6 +9,7 @@ import com.munoon.heartbeatlive.server.user.model.UpdateUserInfoFromJwtTo
 import com.munoon.heartbeatlive.server.user.repository.UserRepository
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
+import java.time.Instant
 
 @Service
 class UserService(
@@ -61,4 +62,17 @@ class UserService(
         ?: throw UserNotFoundByIdException(userId)
 
     fun getUsersByIds(userIds: Set<String>) = userRepository.findAllById(userIds)
+
+    suspend fun updateUserLastHeartRateReceiveTime(userId: String, receiveTime: Instant?): User {
+        val user = getUserById(userId)
+        val updatedUser = userRepository.save(user.copy(lastHeartRateInfoReceiveTime = receiveTime))
+
+        eventPublisher.publishEvent(UserEvents.UserUpdatedEvent(
+            newUser = updatedUser,
+            oldUser = user,
+            updateFirebaseState = false
+        ))
+
+        return updatedUser
+    }
 }

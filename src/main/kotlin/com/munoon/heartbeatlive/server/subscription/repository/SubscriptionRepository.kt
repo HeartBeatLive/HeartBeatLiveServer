@@ -1,6 +1,7 @@
 package com.munoon.heartbeatlive.server.subscription.repository
 
 import com.munoon.heartbeatlive.server.subscription.Subscription
+import kotlinx.coroutines.flow.Flow
 import org.springframework.data.domain.Pageable
 import org.springframework.data.mongodb.repository.Query
 import org.springframework.data.repository.kotlin.CoroutineSortingRepository
@@ -20,6 +21,8 @@ interface SubscriptionRepository : CoroutineSortingRepository<Subscription, Stri
     fun findAllBySubscriberUserId(subscriberUserId: String, pageable: Pageable): Flux<Subscription>
 
     suspend fun countAllBySubscriberUserId(subscriberUserId: String): Int
+
+    fun findAllByUserId(userId: String): Flow<Subscription>
 
     @Query("{ \$or: [ { userId: ?0 }, { subscriberUserId: ?0 } ] }", delete = true)
     suspend fun deleteAllByUserIdOrSubscriberUserId(userId: String)

@@ -2,7 +2,13 @@
 Server of HeartBeatLive APP.
 
 This server use **Gralde** as build tool and **Java 17** as runtime engine.
-Also, this server use MongoDB as main database (you may use `docker-compose.yml` for launching it locally). Use `gradlew.sh` or `gradlew.bat` files for launching Gradle commands.
+Also, this server use MongoDB as main database and Redis as cache and Pub/Sub service (you may use `docker-compose.yml` for launching them locally).
+Use `gradlew.sh` or `gradlew.bat` files for launching Gradle commands.
+
+## Tests
+Use `./gradlew test` command to launch test.
+You need to have Docker Engine running while you running test.
+We use Docker to launch applications, that tests depend on.
 
 ## API
 All server communication made using GraphQL query language.

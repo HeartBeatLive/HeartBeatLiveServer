@@ -19,7 +19,9 @@ data class User(
 
     val created: Instant = Instant.now(),
 
-    val roles: Set<UserRole> = emptySet()
+    val roles: Set<UserRole> = emptySet(),
+
+    val lastHeartRateInfoReceiveTime: Instant? = null
 ) {
     companion object {
         const val UNIQUE_EMAIL_INDEX = "user_unique_email_index"

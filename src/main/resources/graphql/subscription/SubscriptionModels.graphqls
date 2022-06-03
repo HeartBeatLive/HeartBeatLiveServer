@@ -4,7 +4,7 @@ type SubscriptionInfo {
     id: ID!
 
     "User to whom this subscription mapped."
-    user: PublicProfile!
+    user: SubscriptionUserProfile!
 
     "User, who subscribe to _user_. This user will receive heart beats of _user_."
     subscriber: PublicProfile!
