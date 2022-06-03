@@ -39,7 +39,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-redis-reactive")
 
 	implementation("com.google.firebase:firebase-admin:8.1.0")
-	implementation("com.google.protobuf:protobuf-kotlin:3.20.1")
+	implementation("com.google.protobuf:protobuf-kotlin:3.21.1")
 
 	implementation("org.cache2k:cache2k-api:2.6.1.Final")
 	implementation("org.cache2k:cache2k-addon:2.6.1.Final")
