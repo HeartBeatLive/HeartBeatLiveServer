@@ -21,6 +21,10 @@ auth:
       token: "simple-firebase-function-token"
 #    service-account-file: classpath:service-account.json
 
+one-signal:
+  rest-api-key: ""
+  app-id: ""
+
 cache:
   user-subscribers:
     entry-capacity: 1_000_000
