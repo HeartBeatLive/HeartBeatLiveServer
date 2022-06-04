@@ -77,7 +77,7 @@ tasks.withType<KotlinCompile> {
 
 protobuf {
 	protoc {
-		artifact = "com.google.protobuf:protoc:3.6.1"
+		artifact = "com.google.protobuf:protoc:3.21.1"
 	}
 }
 
