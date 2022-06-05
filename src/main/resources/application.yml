@@ -15,6 +15,10 @@ spring:
     websocket:
       path: /graphql/websocket
 
+  messages:
+    basename: i18n/push_notifications
+    encoding: UTF-8
+
 auth:
   firebase:
     function:

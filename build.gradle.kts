@@ -9,6 +9,7 @@ plugins {
 	id("io.spring.dependency-management") version "1.0.11.RELEASE"
 	kotlin("jvm") version "1.6.21"
 	kotlin("plugin.spring") version "1.6.21"
+	kotlin("plugin.serialization") version "1.6.21"
 	id("com.google.protobuf") version "0.8.18"
 	id("io.gitlab.arturbosch.detekt") version "1.19.0"
 }
@@ -27,6 +28,7 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
+	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.3")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 	implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
 
@@ -51,6 +53,9 @@ dependencies {
 	testImplementation("io.projectreactor:reactor-test")
 	testImplementation("org.springframework.graphql:spring-graphql-test")
 	testImplementation("org.springframework.security:spring-security-test")
+	testImplementation("io.kotest:kotest-runner-junit5:5.3.0")
+	testImplementation("io.kotest:kotest-assertions-core:5.3.0")
+	testImplementation("io.kotest:kotest-property:5.3.0")
 	testImplementation("com.ninja-squad:springmockk:3.1.1")
 	testImplementation("org.testcontainers:testcontainers:1.17.1")
 	testImplementation("org.testcontainers:junit-jupiter:1.17.1")

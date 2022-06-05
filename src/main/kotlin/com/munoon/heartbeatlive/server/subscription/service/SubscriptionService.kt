@@ -9,6 +9,7 @@ import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingUtils.checkExpire
 import com.munoon.heartbeatlive.server.sharing.service.HeartBeatSharingService
 import com.munoon.heartbeatlive.server.subscription.SelfSubscriptionAttemptException
 import com.munoon.heartbeatlive.server.subscription.Subscription
+import com.munoon.heartbeatlive.server.subscription.SubscriptionEvent
 import com.munoon.heartbeatlive.server.subscription.SubscriptionNotFoundByIdException
 import com.munoon.heartbeatlive.server.subscription.SubscriptionUtils.validateUserSubscribersCount
 import com.munoon.heartbeatlive.server.subscription.SubscriptionUtils.validateUserSubscriptionsCount
@@ -17,6 +18,7 @@ import com.munoon.heartbeatlive.server.subscription.repository.SubscriptionRepos
 import com.munoon.heartbeatlive.server.user.UserEvents
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.runBlocking
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.event.EventListener
 import org.springframework.data.domain.Pageable
 import org.springframework.scheduling.annotation.Async
@@ -28,7 +30,8 @@ class SubscriptionService(
     private val heartBeatSharingService: HeartBeatSharingService,
     private val accountSubscriptionService: AccountSubscriptionService,
     private val subscriptionProperties: SubscriptionProperties,
-    private val userBanService: UserBanService
+    private val userBanService: UserBanService,
+    private val eventPublisher: ApplicationEventPublisher
 ) {
     suspend fun subscribeBySharingCode(code: String, userId: String): Subscription {
         val sharingCode = heartBeatSharingService.getSharingCodeByPublicCode(code)
@@ -49,7 +52,9 @@ class SubscriptionService(
         return repository.save(Subscription(
             userId = sharingCode.userId,
             subscriberUserId = userId
-        ))
+        )).also { subscription ->
+            eventPublisher.publishEvent(SubscriptionEvent.SubscriptionCreatedEvent(subscription))
+        }
     }
 
     suspend fun unsubscribeFromUserById(id: String, validateUserId: String?) {

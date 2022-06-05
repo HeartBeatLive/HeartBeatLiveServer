@@ -9,6 +9,7 @@ import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingExpiredException
 import com.munoon.heartbeatlive.server.sharing.service.HeartBeatSharingService
 import com.munoon.heartbeatlive.server.subscription.SelfSubscriptionAttemptException
 import com.munoon.heartbeatlive.server.subscription.Subscription
+import com.munoon.heartbeatlive.server.subscription.SubscriptionEvent
 import com.munoon.heartbeatlive.server.subscription.SubscriptionNotFoundByIdException
 import com.munoon.heartbeatlive.server.subscription.UserSubscribersLimitExceededException
 import com.munoon.heartbeatlive.server.subscription.UserSubscriptionsLimitExceededException
@@ -17,7 +18,10 @@ import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
 import com.munoon.heartbeatlive.server.subscription.account.service.AccountSubscriptionService
 import com.munoon.heartbeatlive.server.subscription.repository.SubscriptionRepository
 import com.munoon.heartbeatlive.server.user.UserEvents
+import com.munoon.heartbeatlive.server.user.model.GraphqlFirebaseCreateUserInput
+import com.munoon.heartbeatlive.server.user.service.UserService
 import com.ninjasquad.springmockk.MockkBean
+import io.kotest.matchers.collections.shouldContainExactly
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -32,10 +36,13 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
+import org.springframework.test.context.event.ApplicationEvents
+import org.springframework.test.context.event.RecordApplicationEvents
 import java.time.Duration
 import java.time.OffsetDateTime
 
 @SpringBootTest
+@RecordApplicationEvents
 internal class SubscriptionServiceTest : AbstractTest() {
     @Autowired
     private lateinit var service: SubscriptionService
@@ -55,6 +62,12 @@ internal class SubscriptionServiceTest : AbstractTest() {
     @MockkBean
     private lateinit var userBanService: UserBanService
 
+    @Autowired
+    private lateinit var userService: UserService
+
+    @Autowired
+    private lateinit var events: ApplicationEvents
+
     @BeforeEach
     fun setUpMocks() {
         coEvery { accountSubscriptionService.getAccountSubscriptionByUserId(any()) } returns AccountSubscription(
@@ -73,6 +86,8 @@ internal class SubscriptionServiceTest : AbstractTest() {
             userId = "user1",
             expiredAt = null
         )
+        runBlocking { userService.createUser(GraphqlFirebaseCreateUserInput(
+            id = "user2", email = null, emailVerified = false)) }
 
         val subscription = runBlocking { service.subscribeBySharingCode(code = "ABC123", userId = "user2") }
 
@@ -93,6 +108,9 @@ internal class SubscriptionServiceTest : AbstractTest() {
 
         coVerify(exactly = 1) { heartBeatSharingService.getSharingCodeByPublicCode(any()) }
         coVerify(exactly = 1) { userBanService.checkUserBanned("user2", "user1") }
+
+        events.stream(SubscriptionEvent::class.java).toList() shouldContainExactly
+                listOf(SubscriptionEvent.SubscriptionCreatedEvent(expectedSubscription))
     }
 
     @Test

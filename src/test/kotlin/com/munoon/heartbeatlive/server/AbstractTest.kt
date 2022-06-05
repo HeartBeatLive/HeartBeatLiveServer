@@ -1,6 +1,6 @@
 package com.munoon.heartbeatlive.server
 
-import com.munoon.heartbeatlive.server.config.MockFirebaseConfiguration
+import com.munoon.heartbeatlive.server.config.MockBeansConfiguration
 import org.cache2k.CacheManager
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -21,7 +21,7 @@ import java.io.File
 
 @ActiveProfiles("test")
 @ExtendWith(AbstractTest.RunContainers::class)
-@Import(MockFirebaseConfiguration::class)
+@Import(MockBeansConfiguration::class)
 abstract class AbstractTest {
     @Autowired
     private lateinit var mongoTemplate: ReactiveMongoTemplate
