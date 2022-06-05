@@ -17,5 +17,6 @@ data class PushNotification(
 ) {
     sealed interface Data {
         data class NewSubscriberData(val subscriptionId: String) : Data
+        data class BanData(val bannedByUserId: String) : Data
     }
 }

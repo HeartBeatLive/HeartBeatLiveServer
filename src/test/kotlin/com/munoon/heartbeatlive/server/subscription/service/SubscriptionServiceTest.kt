@@ -364,6 +364,8 @@ internal class SubscriptionServiceTest : AbstractTest() {
     @Test
     fun handleUserBannedEvent() {
         every { userBanService.handleUserDeletedEvent(any()) } returns Unit
+        runBlocking { userService.createUser(
+            GraphqlFirebaseCreateUserInput(id = "user1", email = null, emailVerified = false)) }
         runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2")) }
         val expected1 = runBlocking { repository.save(Subscription(userId = "user2", subscriberUserId = "user1")) }
         val expected2 = runBlocking { repository.save(Subscription(userId = "user3", subscriberUserId = "user1")) }

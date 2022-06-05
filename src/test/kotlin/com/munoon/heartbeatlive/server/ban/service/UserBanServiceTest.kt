@@ -7,6 +7,8 @@ import com.munoon.heartbeatlive.server.ban.UserBanNotFoundByIdException
 import com.munoon.heartbeatlive.server.ban.repository.UserBanRepository
 import com.munoon.heartbeatlive.server.common.PageResult
 import com.munoon.heartbeatlive.server.user.UserEvents
+import com.munoon.heartbeatlive.server.user.model.GraphqlFirebaseCreateUserInput
+import com.munoon.heartbeatlive.server.user.service.UserService
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -36,6 +38,9 @@ internal class UserBanServiceTest : AbstractTest() {
     @Autowired
     private lateinit var eventPublisher: ApplicationEventPublisher
 
+    @Autowired
+    private lateinit var userService: UserService
+
     @Test
     fun `checkUserBanned - true`() {
         runBlocking { repository.save(UserBan(userId = "user1", bannedUserId = "user2")) }
@@ -52,6 +57,8 @@ internal class UserBanServiceTest : AbstractTest() {
 
     @Test
     fun banUser() {
+        runBlocking { userService.createUser(GraphqlFirebaseCreateUserInput(
+            id = "user1", email = null, emailVerified = false)) }
         val actual = runBlocking { service.banUser(userId = "user1", userIdToBan = "user2") }
         val expected = UserBan(
             id = actual.id!!,
@@ -74,6 +81,8 @@ internal class UserBanServiceTest : AbstractTest() {
 
     @Test
     fun `banUser - already banned`() {
+        runBlocking { userService.createUser(GraphqlFirebaseCreateUserInput(
+            id = "user1", email = null, emailVerified = false)) }
         val ban = runBlocking { service.banUser(userId = "user1", userIdToBan = "user2") }
         events.clear()
 
