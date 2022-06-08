@@ -2,6 +2,7 @@ package com.munoon.heartbeatlive.server.push.sender.push
 
 import com.munoon.heartbeatlive.server.onesignal.OneSignalClient
 import com.munoon.heartbeatlive.server.onesignal.model.OneSignalSendNotification
+import com.munoon.heartbeatlive.server.push.model.PushNotificationPriority
 import com.munoon.heartbeatlive.server.push.model.SendPushNotificationData
 import org.springframework.stereotype.Component
 
@@ -17,8 +18,12 @@ class OneSignalPushNotificationSender(private val oneSignalClient: OneSignalClie
             contents = content.mapKeys { it.key.language },
             headings = title.mapKeys { it.key.language },
             channelForExternalUserIds = OneSignalSendNotification.ChannelForExternalUserIds.PUSH,
-            includeExternalUserIds = setOf(userId),
-            data = metadata
+            includeExternalUserIds = userIds,
+            data = metadata,
+            priority = when (priority) {
+                PushNotificationPriority.MEDIUM -> 5
+                PushNotificationPriority.HIGH -> 10
+            }
         )
     }
 }

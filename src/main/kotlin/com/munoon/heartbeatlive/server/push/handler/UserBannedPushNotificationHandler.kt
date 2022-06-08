@@ -22,6 +22,6 @@ class UserBannedPushNotificationHandler(
             bannedByUserId = event.bannedByUserId,
             bannedByUserDisplayName = userService.getUserById(event.bannedByUserId).displayName ?: "User"
         )
-        pushNotificationService.sendNotification(data)
+        pushNotificationService.sendNotifications(data)
     }
 }

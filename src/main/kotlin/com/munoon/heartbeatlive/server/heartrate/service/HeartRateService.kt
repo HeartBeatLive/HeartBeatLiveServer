@@ -23,6 +23,9 @@ class HeartRateService(
 ) {
     suspend fun sendHeartRate(userId: String, heartRate: Float) {
         for (handler in handlers) {
+            if (!handler.filter(userId, heartRate)) {
+                continue
+            }
             taskExecutor.execute {
                 handler.handleHeartRateInfo(userId, heartRate)
             }

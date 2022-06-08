@@ -18,5 +18,9 @@ data class PushNotification(
     sealed interface Data {
         data class NewSubscriberData(val subscriptionId: String) : Data
         data class BanData(val bannedByUserId: String) : Data
+        data class HighHeartRateData(val heartRateOwnerUserId: String, val heartRate: Float) : Data
+        data class LowHeartRateData(val heartRateOwnerUserId: String, val heartRate: Float) : Data
+        data class HighOwnHeartRateData(val heartRate: Float) : Data
+        data class LowOwnHeartRateData(val heartRate: Float) : Data
     }
 }

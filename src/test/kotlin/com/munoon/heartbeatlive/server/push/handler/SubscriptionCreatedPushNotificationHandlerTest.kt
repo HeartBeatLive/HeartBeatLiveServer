@@ -42,7 +42,7 @@ internal class SubscriptionCreatedPushNotificationHandlerTest : AbstractTest() {
             subscriberUserId = Arb.uuid().map { it.toString() }.bind()
         ) }
 
-        coEvery { pushNotificationService.sendNotification(any()) } returns Unit
+        coEvery { pushNotificationService.sendNotifications(any()) } returns Unit
         runBlocking { checkAll(10, subscriptionArbitrary, Arb.string().orNull()) {
                 subscription, userDisplayName ->
             runBlocking {
@@ -69,7 +69,7 @@ internal class SubscriptionCreatedPushNotificationHandlerTest : AbstractTest() {
                 userId = subscription.userId,
                 subscriberDisplayName = userDisplayName ?: "User"
             )
-            coVerify(exactly = 1) { pushNotificationService.sendNotification(expectedData) }
+            coVerify(exactly = 1) { pushNotificationService.sendNotifications(expectedData) }
         } }
     }
 }

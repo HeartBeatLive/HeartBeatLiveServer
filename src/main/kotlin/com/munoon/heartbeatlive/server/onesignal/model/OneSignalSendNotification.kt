@@ -11,7 +11,8 @@ data class OneSignalSendNotification(
     @SerialName("headings") val headings: Map<String, String>?,
     @SerialName("channel_for_external_user_ids") val channelForExternalUserIds: ChannelForExternalUserIds?,
     @SerialName("include_external_user_ids") val includeExternalUserIds: Set<String>?,
-    @SerialName("data") val data: Map<String, JsonElement>?
+    @SerialName("data") val data: Map<String, JsonElement>?,
+    @SerialName("priority") val priority: Int?
 ) {
     @Serializable
     enum class ChannelForExternalUserIds {

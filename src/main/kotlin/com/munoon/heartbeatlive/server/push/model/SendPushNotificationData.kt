@@ -4,8 +4,9 @@ import kotlinx.serialization.json.JsonElement
 import java.util.*
 
 data class SendPushNotificationData(
-    val userId: String,
+    val userIds: Set<String>,
     val title: Map<Locale, String>,
     val content: Map<Locale, String>,
-    val metadata: Map<String, JsonElement>
+    val metadata: Map<String, JsonElement>,
+    val priority: PushNotificationPriority
 )

@@ -50,3 +50,8 @@ app:
     heart-rate-time-to-send: PT1M
     subscriptions-count-limit-per-user: 15
     leave-user-online-since-last-heart-rate-duration: PT30S
+    high-low-push:
+      send-push-timeout-duration: PT5M
+      normal-heart-rate:
+        min: 31
+        max: 179

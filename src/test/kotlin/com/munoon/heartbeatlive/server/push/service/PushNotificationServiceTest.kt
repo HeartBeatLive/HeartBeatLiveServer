@@ -3,6 +3,7 @@ package com.munoon.heartbeatlive.server.push.service
 import com.munoon.heartbeatlive.server.AbstractTest
 import com.munoon.heartbeatlive.server.push.NewSubscriptionPushNotificationData
 import com.munoon.heartbeatlive.server.push.PushNotification
+import com.munoon.heartbeatlive.server.push.model.PushNotificationPriority
 import com.munoon.heartbeatlive.server.push.model.SendPushNotificationData
 import com.munoon.heartbeatlive.server.push.repository.PushNotificationRepository
 import com.munoon.heartbeatlive.server.push.sender.push.PushNotificationSender
@@ -50,7 +51,7 @@ class PushNotificationServiceTest : AbstractTest() {
         runBlocking { checkAll(1, notificationsArbitrary) { notification ->
             val subscriberDisplayName = notification.subscriberDisplayName
 
-            service.sendNotification(notification)
+            service.sendNotifications(notification)
 
             repository.findAll().toList(arrayListOf()).shouldContain(PushNotification(
                 userId = notification.userId,
@@ -59,9 +60,10 @@ class PushNotificationServiceTest : AbstractTest() {
 
             coVerify { pushNotificationSender.sendNotification(match {
                 it.shouldBeEqualToIgnoringFields(SendPushNotificationData(
-                    userId = notification.userId,
+                    userIds = setOf(notification.userId),
                     metadata = mapOf("subscription_id" to JsonPrimitive(notification.subscriptionId)),
-                    title = emptyMap(), content = emptyMap()
+                    title = emptyMap(), content = emptyMap(),
+                    priority = PushNotificationPriority.MEDIUM
                 ), SendPushNotificationData::content, SendPushNotificationData::title)
                 it.title shouldContain (Locale("en") to "New subscriber")
                 it.title shouldContain (Locale("ru") to "Новый подписчик")

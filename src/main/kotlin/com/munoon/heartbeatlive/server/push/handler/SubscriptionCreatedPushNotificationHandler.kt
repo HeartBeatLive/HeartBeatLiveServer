@@ -18,7 +18,7 @@ class SubscriptionCreatedPushNotificationHandler(
     @EventListener
     fun handleNewSubscriptionEvent(event: SubscriptionEvent.SubscriptionCreatedEvent) = runBlocking {
         val subscriberDisplayName = userService.getUserById(event.subscription.subscriberUserId).displayName
-        pushNotificationService.sendNotification(NewSubscriptionPushNotificationData(
+        pushNotificationService.sendNotifications(NewSubscriptionPushNotificationData(
             subscriptionId = event.subscription.id!!,
             userId = event.subscription.userId,
             subscriberDisplayName = subscriberDisplayName ?: "User"

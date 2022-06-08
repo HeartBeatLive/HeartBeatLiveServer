@@ -10,6 +10,7 @@ import io.kotest.property.Arb
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.enum
+import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.set
 import io.kotest.property.arbitrary.string
@@ -40,7 +41,7 @@ import java.util.*
 
 class OneSignalClientTest : FreeSpec({
     val emptyNotification = OneSignalSendNotification(
-        "", null, null, null, null, null)
+        "", null, null, null, null, null, null)
 
     val properties = OneSignalProperties().apply {
         appId = "one-signal-first-app"
@@ -58,7 +59,8 @@ class OneSignalClientTest : FreeSpec({
                 Arb.string(),
                 Arb.bind(listOf(Arb.string())) { JsonPrimitive(it.first()) },
                 minSize = 1, maxSize = 10
-            ).bind()
+            ).bind(),
+            priority = Arb.int(min = 1, max = 10).bind()
         )
     }
 
@@ -173,6 +175,51 @@ class OneSignalClientTest : FreeSpec({
             }
 
             shouldNotThrowAny {
+                client.sendNotification(emptyNotification)
+            }
+        }
+
+        "response body contain 'external user id not found' error" {
+            val webClientExchangeFunction = mockk<ExchangeFunction>()
+            val webClient = WebClient.builder()
+                .exchangeFunction(webClientExchangeFunction)
+                .build()
+            val client = OneSignalClient(properties, webClient)
+
+            every { webClientExchangeFunction.exchange(any()) } returns mono {
+                ClientResponse.create(HttpStatus.OK)
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                    .body("""{"errors":{"invalid_external_user_ids": ["user1"]}}""")
+                    .build()
+            }
+
+            shouldNotThrowAny {
+                client.sendNotification(emptyNotification)
+            }
+        }
+
+        "response body contain 'external user id not found' and 'invalid player id' errors" {
+            val webClientExchangeFunction = mockk<ExchangeFunction>()
+            val webClient = WebClient.builder()
+                .exchangeFunction(webClientExchangeFunction)
+                .build()
+            val client = OneSignalClient(properties, webClient)
+
+            every { webClientExchangeFunction.exchange(any()) } returns mono {
+                ClientResponse.create(HttpStatus.OK)
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                    .body("""
+                        {
+                            "errors": {
+                                "invalid_external_user_ids": [ "user1" ],
+                                "invalid_player_ids": [ "player1" ]
+                            }
+                        }
+                    """.trimIndent())
+                    .build()
+            }
+
+            shouldThrow<OneSignalApiException> {
                 client.sendNotification(emptyNotification)
             }
         }

@@ -16,23 +16,41 @@ class PushNotificationService(
     private val messageSource: MessageSource,
     private val repository: PushNotificationRepository
 ) {
-    suspend fun sendNotification(notificationData: PushNotificationData) {
-        val data = notificationData.asSendPushNotificationData(messageSource)
-        sender.sendNotification(data)
+    suspend fun sendNotifications(vararg notificationsData: PushNotificationData) {
+        val notifications = notificationsData.toList()
+        sendNotification(notifications)
+        saveNotifications(notifications)
+    }
 
-        notificationData.notification
-            ?.let { notification -> repository.save(PushNotification(
-                userId = notificationData.userId,
-                data = notification
-            )) }
+    private suspend fun sendNotification(notificationsData: List<PushNotificationData>) {
+        notificationsData.forEach { notificationData ->
+            val data = notificationData.asSendPushNotificationData(messageSource)
+            if (data.userIds.isNotEmpty()) {
+                sender.sendNotification(data)
+            }
+        }
+    }
+
+    private suspend fun saveNotifications(notificationsData: List<PushNotificationData>) {
+        notificationsData.filter { it.notification != null }
+            .flatMap {
+                it.userIds.map { userId ->
+                    PushNotification(
+                        userId = userId,
+                        data = it.notification!!
+                    )
+                }
+            }
+            .let { if (it.isNotEmpty()) repository.saveAll(it).collect { } }
     }
 
     private companion object {
         fun PushNotificationData.asSendPushNotificationData(messageSource: MessageSource) = SendPushNotificationData(
-            userId = userId,
+            userIds = userIds,
             title = messageSource.getMessages(title),
             content = messageSource.getMessages(content),
-            metadata = metadata
+            metadata = metadata,
+            priority = priority
         )
 
         fun MessageSource.getMessages(message: PushNotificationData.Message): Map<Locale, String> {

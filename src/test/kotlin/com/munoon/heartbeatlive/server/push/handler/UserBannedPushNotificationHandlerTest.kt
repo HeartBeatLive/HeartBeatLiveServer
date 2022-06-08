@@ -34,7 +34,7 @@ internal class UserBannedPushNotificationHandlerTest : AbstractTest() {
             bannedByUserId = "user1",
             bannedByUserDisplayName = "Nikita"
         )
-        coEvery { pushNotificationService.sendNotification(any()) } returns Unit
+        coEvery { pushNotificationService.sendNotifications(any()) } returns Unit
 
         runBlocking {
             userService.createUser(GraphqlFirebaseCreateUserInput(id = "user1", email = null, emailVerified = false))
@@ -43,7 +43,7 @@ internal class UserBannedPushNotificationHandlerTest : AbstractTest() {
 
         eventPublisher.publishEvent(UserBanEvents.UserBannedEvent("user2", "user1"))
 
-        coVerify(exactly = 1) { pushNotificationService.sendNotification(expectedData) }
+        coVerify(exactly = 1) { pushNotificationService.sendNotifications(expectedData) }
         coVerify { userService.getUserById("user1") }
     }
 }
