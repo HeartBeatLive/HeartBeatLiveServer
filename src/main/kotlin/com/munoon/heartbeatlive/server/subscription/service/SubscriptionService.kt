@@ -14,6 +14,7 @@ import com.munoon.heartbeatlive.server.subscription.SubscriptionNotFoundByIdExce
 import com.munoon.heartbeatlive.server.subscription.SubscriptionUtils.validateUserSubscribersCount
 import com.munoon.heartbeatlive.server.subscription.SubscriptionUtils.validateUserSubscriptionsCount
 import com.munoon.heartbeatlive.server.subscription.account.service.AccountSubscriptionService
+import com.munoon.heartbeatlive.server.subscription.model.GraphqlSubscribeOptionsInput
 import com.munoon.heartbeatlive.server.subscription.repository.SubscriptionRepository
 import com.munoon.heartbeatlive.server.user.UserEvents
 import kotlinx.coroutines.reactive.asFlow
@@ -33,7 +34,11 @@ class SubscriptionService(
     private val userBanService: UserBanService,
     private val eventPublisher: ApplicationEventPublisher
 ) {
-    suspend fun subscribeBySharingCode(code: String, userId: String): Subscription {
+    suspend fun subscribeBySharingCode(
+        code: String,
+        userId: String,
+        options: GraphqlSubscribeOptionsInput
+    ): Subscription {
         val sharingCode = heartBeatSharingService.getSharingCodeByPublicCode(code)
 
         // validation stage
@@ -51,7 +56,8 @@ class SubscriptionService(
 
         return repository.save(Subscription(
             userId = sharingCode.userId,
-            subscriberUserId = userId
+            subscriberUserId = userId,
+            receiveHeartRateMatchNotifications = options.receiveHeartRateMatchNotifications
         )).also { subscription ->
             eventPublisher.publishEvent(SubscriptionEvent.SubscriptionCreatedEvent(subscription))
         }

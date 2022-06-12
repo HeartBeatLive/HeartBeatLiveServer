@@ -4,6 +4,7 @@ import com.munoon.heartbeatlive.server.AbstractTest
 import com.munoon.heartbeatlive.server.ban.UserBanEvents
 import com.munoon.heartbeatlive.server.push.BanPushNotificationData
 import com.munoon.heartbeatlive.server.push.service.PushNotificationService
+import com.munoon.heartbeatlive.server.push.service.sendNotifications
 import com.munoon.heartbeatlive.server.user.model.GraphqlFirebaseCreateUserInput
 import com.munoon.heartbeatlive.server.user.service.UserService
 import com.ninjasquad.springmockk.MockkBean

@@ -1,9 +1,9 @@
 package com.munoon.heartbeatlive.server.push
 
+import com.munoon.heartbeatlive.server.heartrate.HeartRateUtils.mapHeartRateToInteger
 import com.munoon.heartbeatlive.server.push.model.PushNotificationPriority
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
-import kotlin.math.roundToInt
 
 sealed interface PushNotificationData {
     val title: Message
@@ -59,9 +59,10 @@ data class HighHeartRateNotificationData(
     override val title = PushNotificationData.Message(
         "push_notifications.high_heart_rate.title", heartRateOwnerUserDisplayName)
     override val content = PushNotificationData.Message(
-        "push_notifications.high_heart_rate.content", heartRateOwnerUserDisplayName, heartRate.roundToInt())
+        "push_notifications.high_heart_rate.content",
+        heartRateOwnerUserDisplayName, mapHeartRateToInteger(heartRate))
     override val metadata = mapOf(
-        "heart_rate_owner_user_id" to JsonPrimitive(heartRateOwnerUserId),
+        "heart_rate_owner_user_id" to JsonPrimitive(heartRateOwnerUserId), // TODO remove
         "heart_rate" to JsonPrimitive(heartRate)
     )
     override val notification = PushNotification.Data.HighHeartRateData(heartRateOwnerUserId, heartRate)
@@ -77,9 +78,10 @@ data class LowHeartRateNotificationData(
     override val title = PushNotificationData.Message(
         "push_notifications.low_heart_rate.title", heartRateOwnerUserDisplayName)
     override val content = PushNotificationData.Message(
-        "push_notifications.low_heart_rate.content", heartRateOwnerUserDisplayName, heartRate.roundToInt())
+        "push_notifications.low_heart_rate.content",
+        heartRateOwnerUserDisplayName, mapHeartRateToInteger(heartRate))
     override val metadata = mapOf(
-        "heart_rate_owner_user_id" to JsonPrimitive(heartRateOwnerUserId),
+        "heart_rate_owner_user_id" to JsonPrimitive(heartRateOwnerUserId), // TODO remove
         "heart_rate" to JsonPrimitive(heartRate)
     )
     override val notification = PushNotification.Data.LowHeartRateData(heartRateOwnerUserId, heartRate)
@@ -92,7 +94,7 @@ data class HighOwnHeartRateNotificationData(
 ) : SingleUserPushNotificationData {
     override val title = PushNotificationData.Message("push_notifications.high_own_heart_rate.title")
     override val content = PushNotificationData.Message(
-        "push_notifications.high_own_heart_rate.content", heartRate.roundToInt())
+        "push_notifications.high_own_heart_rate.content", mapHeartRateToInteger(heartRate))
     override val metadata = mapOf("heart_rate" to JsonPrimitive(heartRate))
     override val notification = PushNotification.Data.HighOwnHeartRateData(heartRate)
     override val priority = PushNotificationPriority.HIGH
@@ -104,8 +106,26 @@ data class LowOwnHeartRateNotificationData(
 ) : SingleUserPushNotificationData {
     override val title = PushNotificationData.Message("push_notifications.low_own_heart_rate.title")
     override val content = PushNotificationData.Message(
-        "push_notifications.low_own_heart_rate.content", heartRate.roundToInt())
+        "push_notifications.low_own_heart_rate.content", mapHeartRateToInteger(heartRate))
     override val metadata = mapOf("heart_rate" to JsonPrimitive(heartRate))
     override val notification = PushNotification.Data.LowOwnHeartRateData(heartRate)
     override val priority = PushNotificationPriority.HIGH
+}
+
+data class HeartRateMatchNotificationData(
+    val heartRate: Float,
+    override val userId: String,
+    val matchWithUserId: String,
+    val matchWithUserDisplayName: String,
+    val subscriptionId: String
+) : SingleUserPushNotificationData {
+    override val title = PushNotificationData.Message("push_notifications.heart_rate_match.title")
+    override val content = PushNotificationData.Message(
+        "push_notifications.heart_rate_match.content",
+        mapHeartRateToInteger(heartRate), matchWithUserDisplayName)
+    override val metadata = mapOf(
+        "heart_rate" to JsonPrimitive(heartRate),
+        "subscription_id" to JsonPrimitive(subscriptionId)
+    )
+    override val notification = PushNotification.Data.HeartRateMatchData(heartRate, matchWithUserId)
 }

@@ -2,6 +2,7 @@ package com.munoon.heartbeatlive.server.push.handler
 
 import com.munoon.heartbeatlive.server.push.NewSubscriptionPushNotificationData
 import com.munoon.heartbeatlive.server.push.service.PushNotificationService
+import com.munoon.heartbeatlive.server.push.service.sendNotifications
 import com.munoon.heartbeatlive.server.subscription.SubscriptionEvent
 import com.munoon.heartbeatlive.server.user.service.UserService
 import kotlinx.coroutines.runBlocking

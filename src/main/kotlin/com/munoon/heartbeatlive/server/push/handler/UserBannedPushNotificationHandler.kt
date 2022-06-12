@@ -3,6 +3,7 @@ package com.munoon.heartbeatlive.server.push.handler
 import com.munoon.heartbeatlive.server.ban.UserBanEvents
 import com.munoon.heartbeatlive.server.push.BanPushNotificationData
 import com.munoon.heartbeatlive.server.push.service.PushNotificationService
+import com.munoon.heartbeatlive.server.push.service.sendNotifications
 import com.munoon.heartbeatlive.server.user.service.UserService
 import kotlinx.coroutines.runBlocking
 import org.springframework.context.event.EventListener

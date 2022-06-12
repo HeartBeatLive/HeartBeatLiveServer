@@ -5,6 +5,7 @@ import com.munoon.heartbeatlive.server.common.CommonUtils.asGraphqlPage
 import com.munoon.heartbeatlive.server.common.GraphqlPageResult
 import com.munoon.heartbeatlive.server.subscription.SubscriptionMapper.asGraphQL
 import com.munoon.heartbeatlive.server.subscription.SubscriptionNotFoundByIdException
+import com.munoon.heartbeatlive.server.subscription.model.GraphqlSubscribeOptionsInput
 import com.munoon.heartbeatlive.server.subscription.model.GraphqlSubscriptionInfo
 import com.munoon.heartbeatlive.server.subscription.model.GraphqlSubscriptionSorting
 import com.munoon.heartbeatlive.server.subscription.model.asSort
@@ -18,6 +19,7 @@ import org.springframework.graphql.data.method.annotation.QueryMapping
 import org.springframework.graphql.data.method.annotation.SchemaMapping
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Controller
+import javax.validation.Valid
 import javax.validation.constraints.Max
 import javax.validation.constraints.NotNull
 import javax.validation.constraints.Positive
@@ -30,10 +32,12 @@ class SubscriptionController(private val service: SubscriptionService) {
 
     @MutationMapping
     suspend fun subscribeBySharingCode(
-        @Argument @NotNull @Length(min = 6, max = 6) sharingCode: String
+        @Argument @NotNull @Length(min = 6, max = 6) sharingCode: String,
+        @Argument @Valid options: GraphqlSubscribeOptionsInput? // TODO test
     ): GraphqlSubscriptionInfo {
+        val actualOptions = options ?: GraphqlSubscribeOptionsInput()
         logger.info("User '${authUserId()}' create subscription using sharing code '$sharingCode'")
-        return service.subscribeBySharingCode(sharingCode, authUserId()).asGraphQL()
+        return service.subscribeBySharingCode(sharingCode, authUserId(), actualOptions).asGraphQL()
     }
 
     @MutationMapping

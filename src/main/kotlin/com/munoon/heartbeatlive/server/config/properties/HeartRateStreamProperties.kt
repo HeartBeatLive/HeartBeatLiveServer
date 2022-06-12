@@ -10,8 +10,9 @@ import java.time.Duration
 class HeartRateStreamProperties {
     lateinit var heartRateTimeToSend: Duration
     var subscriptionsCountLimitPerUser: Int = 15
-    lateinit var leaveUserOnlineSinceLastHeartRateDuration: Duration
     lateinit var highLowPush: HighLowPushSettings
+    lateinit var storeUserHeartRateDuration: Duration
+    lateinit var heartRateMatchPush: HeartRateMatchPushSettings
 
     @ConstructorBinding
     data class HighLowPushSettings(
@@ -24,4 +25,10 @@ class HeartRateStreamProperties {
             val max: Float
         )
     }
+
+    @ConstructorBinding
+    data class HeartRateMatchPushSettings(
+        val includeHeartRatesForDuration: Duration,
+        val sendPushTimeoutDuration: Duration
+    )
 }

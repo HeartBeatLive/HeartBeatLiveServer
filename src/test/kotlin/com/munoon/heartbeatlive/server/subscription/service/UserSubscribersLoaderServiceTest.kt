@@ -34,8 +34,10 @@ internal class UserSubscribersLoaderServiceTest {
     fun load() {
         val repository = mockk<SubscriptionRepository>() {
             coEvery { findAllByUserId(any()) } returns flowOf(
-                Subscription(id = "subscription1", userId = "user1", subscriberUserId = "user2"),
-                Subscription(id = "subscription2", userId = "user1", subscriberUserId = "user3")
+                Subscription(id = "subscription1", userId = "user1", subscriberUserId = "user2",
+                    receiveHeartRateMatchNotifications = false),
+                Subscription(id = "subscription2", userId = "user1", subscriberUserId = "user3",
+                    receiveHeartRateMatchNotifications = false)
             )
         }
         val service = UserSubscribersLoaderService(repository, cacheProperties)

@@ -6,11 +6,14 @@ import java.time.Instant
 
 object UserUtils {
     fun getHeartRateOnlineStatus(
-        lastHeartRateInfoReceiveTime: Instant?,
+        heartRates: List<User.HeartRate>,
         properties: HeartRateStreamProperties
     ): GraphqlUserHeartRateOnlineStatus {
-        val lastReceiveTime = (lastHeartRateInfoReceiveTime ?: return GraphqlUserHeartRateOnlineStatus.OFFLINE)
-        return if (lastReceiveTime + properties.leaveUserOnlineSinceLastHeartRateDuration > Instant.now())
-            GraphqlUserHeartRateOnlineStatus.ONLINE else GraphqlUserHeartRateOnlineStatus.OFFLINE
+        val userOnline = heartRates.filter { it.time + properties.storeUserHeartRateDuration > Instant.now() }
+            .maxByOrNull { it.time }
+            ?.let { it.heartRate != null }
+            ?: false
+
+        return if (userOnline) GraphqlUserHeartRateOnlineStatus.ONLINE else GraphqlUserHeartRateOnlineStatus.OFFLINE
     }
 }

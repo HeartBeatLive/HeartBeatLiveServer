@@ -2,9 +2,9 @@ package com.munoon.heartbeatlive.server.heartrate.service
 
 import com.munoon.heartbeatlive.server.config.properties.HeartRateStreamProperties
 import com.munoon.heartbeatlive.server.heartrate.HeartBeatSubscribersManager
-import com.munoon.heartbeatlive.server.heartrate.HeartRateInfoHandler
 import com.munoon.heartbeatlive.server.heartrate.HeartRateSubscriber
 import com.munoon.heartbeatlive.server.heartrate.TooManyHeartRateSubscriptionsExceptions
+import com.munoon.heartbeatlive.server.heartrate.handler.HeartRateInfoHandler
 import com.munoon.heartbeatlive.server.heartrate.model.HeartRateInfo
 import com.munoon.heartbeatlive.server.heartrate.repository.HeartRateSubscriberRepository
 import kotlinx.coroutines.reactor.mono
@@ -27,7 +27,7 @@ class HeartRateService(
                 continue
             }
             taskExecutor.execute {
-                handler.handleHeartRateInfo(userId, heartRate)
+                runBlocking { handler.handleHeartRateInfo(userId, heartRate) }
             }
         }
     }

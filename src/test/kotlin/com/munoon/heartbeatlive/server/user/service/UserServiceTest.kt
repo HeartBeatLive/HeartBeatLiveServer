@@ -17,7 +17,6 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.event.ApplicationEvents
 import org.springframework.test.context.event.RecordApplicationEvents
 import java.time.Instant
-import java.time.OffsetDateTime
 
 @SpringBootTest
 @RecordApplicationEvents
@@ -261,48 +260,65 @@ class UserServiceTest : AbstractMongoDBTest() {
     }
 
     @Test
-    fun updateUserLastHeartRateReceiveTime() {
-        val newReceiveTime = OffsetDateTime.now().withNano(0).withSecond(0).toInstant()
+    fun writeUserHeartRate() {
+        val heartRate1Time = Instant.now()
+        val heartRate2Time = Instant.now()
+
         val expected = User(
             id = "user1",
             displayName = "Display Name",
             email = null,
             emailVerified = false,
-            lastHeartRateInfoReceiveTime = newReceiveTime
+            heartRates = listOf(
+                User.HeartRate(null, heartRate2Time),
+                User.HeartRate(21, heartRate1Time)
+            )
         )
 
         runBlocking { userRepository.save(User(
             id = "user1",
             displayName = "Display Name",
             email = null,
-            emailVerified = false,
-            lastHeartRateInfoReceiveTime = null
+            emailVerified = false
         )) }
 
-        runBlocking { userService.updateUserLastHeartRateReceiveTime("user1", newReceiveTime) }
+        runBlocking { userService.writeUserHeartRate("user1", 20.6f, Instant.now()) }
+        runBlocking { userService.writeUserHeartRate("user1", null, Instant.now()) }
 
         runBlocking {
             assertThat(userRepository.findAll().toList(arrayListOf()))
                 .usingRecursiveComparison()
-                .ignoringFields("created")
+                .ignoringFields("created", "heartRates.time")
                 .isEqualTo(listOf(expected))
         }
 
-        val expectedEvent = UserEvents.UserUpdatedEvent(
-            newUser = expected,
-            oldUser = expected.copy(lastHeartRateInfoReceiveTime = null),
+        val expectedEvent1 = UserEvents.UserUpdatedEvent(
+            newUser = expected.copy(heartRates = listOf(
+                User.HeartRate(21, heartRate1Time)
+            )),
+            oldUser = expected.copy(heartRates = emptyList()),
+            updateFirebaseState = false
+        )
+        val expectedEvent2 = UserEvents.UserUpdatedEvent(
+            newUser = expected.copy(heartRates = listOf(
+                User.HeartRate(null, heartRate2Time),
+                User.HeartRate(21, heartRate1Time)
+            )),
+            oldUser = expected.copy(heartRates = listOf(
+                User.HeartRate(21, heartRate1Time)
+            )),
             updateFirebaseState = false
         )
         assertThat(events.stream(UserEvents.UserUpdatedEvent::class.java))
             .usingRecursiveComparison()
-            .ignoringFields("oldUser.created", "newUser.created")
-            .isEqualTo(listOf(expectedEvent))
+            .ignoringFields("oldUser.created", "newUser.created", "newUser.heartRates.time", "oldUser.heartRates.time")
+            .isEqualTo(listOf(expectedEvent1, expectedEvent2))
     }
 
     @Test
-    fun `updateUserLastHeartRateReceiveTime - user not found`() {
+    fun `writeUserHeartRate - user not found`() {
         assertThatThrownBy { runBlocking {
-            userService.updateUserLastHeartRateReceiveTime("abc", null)
+            userService.writeUserHeartRate("abc", null, Instant.now())
         } }.isEqualTo(UserNotFoundByIdException("abc"))
     }
 }

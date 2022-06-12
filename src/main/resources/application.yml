@@ -49,9 +49,12 @@ app:
   heart-rate-stream:
     heart-rate-time-to-send: PT1M
     subscriptions-count-limit-per-user: 15
-    leave-user-online-since-last-heart-rate-duration: PT30S
+    store-user-heart-rate-duration: PT40S
     high-low-push:
       send-push-timeout-duration: PT5M
       normal-heart-rate:
         min: 31
         max: 179
+    heart-rate-match-push:
+      send-push-timeout-duration: PT5M
+      include-heart-rates-for-duration: PT30S

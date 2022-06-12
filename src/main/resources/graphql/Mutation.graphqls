@@ -29,7 +29,10 @@ type Mutation {
     or if authenticated user have too many subscriptions. Check account subscription settings for limits. \
     This method will return existing subscriptions, if user already following the same user.
     """
-    subscribeBySharingCode("Sharing code of the user, that you want to subscribe to." sharingCode: String!): SubscriptionInfo
+    subscribeBySharingCode(
+        "Sharing code of the user, that you want to subscribe to." sharingCode: String!,
+        "Subscription options." options: SubscribeOptionsInput
+    ): SubscriptionInfo
     """
     Method to unsubscribe from user. Require authenticated user. \
     Subscription's subscriber should be authenticated user.

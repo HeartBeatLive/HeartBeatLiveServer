@@ -22,5 +22,6 @@ data class PushNotification(
         data class LowHeartRateData(val heartRateOwnerUserId: String, val heartRate: Float) : Data
         data class HighOwnHeartRateData(val heartRate: Float) : Data
         data class LowOwnHeartRateData(val heartRate: Float) : Data
+        data class HeartRateMatchData(val heartRate: Float, val matchWithUserId: String) : Data
     }
 }

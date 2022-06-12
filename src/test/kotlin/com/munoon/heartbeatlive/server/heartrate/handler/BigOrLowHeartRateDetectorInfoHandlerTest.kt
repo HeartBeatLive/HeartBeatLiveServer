@@ -1,13 +1,13 @@
 package com.munoon.heartbeatlive.server.heartrate.handler
 
 import com.munoon.heartbeatlive.server.AbstractTest
-import com.munoon.heartbeatlive.server.heartrate.BigOrLowHeartRateDetectorInfoHandler
 import com.munoon.heartbeatlive.server.heartrate.repository.HighLowHeartRateNotificationRepository
 import com.munoon.heartbeatlive.server.push.HighHeartRateNotificationData
 import com.munoon.heartbeatlive.server.push.HighOwnHeartRateNotificationData
 import com.munoon.heartbeatlive.server.push.LowHeartRateNotificationData
 import com.munoon.heartbeatlive.server.push.LowOwnHeartRateNotificationData
 import com.munoon.heartbeatlive.server.push.service.PushNotificationService
+import com.munoon.heartbeatlive.server.push.service.sendNotifications
 import com.munoon.heartbeatlive.server.subscription.service.UserSubscribersLoaderService
 import com.munoon.heartbeatlive.server.user.User
 import com.munoon.heartbeatlive.server.user.service.UserService
@@ -54,7 +54,7 @@ internal class BigOrLowHeartRateDetectorInfoHandlerTest : AbstractTest() {
             displayName = Arb.string().bind(),
             email = null, emailVerified = false
         ) }
-        coEvery { pushNotificationService.sendNotifications(*anyVararg()) } returns Unit
+        coEvery { pushNotificationService.sendNotifications(any()) } returns Unit
 
         checkAll(1,
             userArbitrary,
@@ -89,7 +89,7 @@ internal class BigOrLowHeartRateDetectorInfoHandlerTest : AbstractTest() {
             displayName = Arb.string().bind(),
             email = null, emailVerified = false
         ) }
-        coEvery { pushNotificationService.sendNotifications(*anyVararg()) } returns Unit
+        coEvery { pushNotificationService.sendNotifications(any()) } returns Unit
 
         checkAll(1,
             userArbitrary,
@@ -126,7 +126,7 @@ internal class BigOrLowHeartRateDetectorInfoHandlerTest : AbstractTest() {
         ) }.take(1).iterator().next()
 
         coEvery { userService.getUserById(user.id) } returns user
-        coEvery { pushNotificationService.sendNotifications(*anyVararg()) } returns Unit
+        coEvery { pushNotificationService.sendNotifications(any()) } returns Unit
         every { userSubscribersLoaderService.load(user.id) } returns
                 Arb.map(Arb.string(), Arb.string(), minSize = 1, maxSize = 5).take(1).iterator().next()
 
@@ -134,7 +134,7 @@ internal class BigOrLowHeartRateDetectorInfoHandlerTest : AbstractTest() {
             handler.handleHeartRateInfo(user.id, heartRate)
         }
 
-        coVerify(exactly = 1) { pushNotificationService.sendNotifications(*anyVararg()) }
+        coVerify(exactly = 1) { pushNotificationService.sendNotifications(any()) }
     }
 
     @Test

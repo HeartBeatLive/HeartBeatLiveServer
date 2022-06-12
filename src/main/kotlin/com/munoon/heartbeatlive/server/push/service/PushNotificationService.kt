@@ -16,7 +16,7 @@ class PushNotificationService(
     private val messageSource: MessageSource,
     private val repository: PushNotificationRepository
 ) {
-    suspend fun sendNotifications(vararg notificationsData: PushNotificationData) {
+    suspend fun sendNotifications(notificationsData: List<PushNotificationData>) {
         val notifications = notificationsData.toList()
         sendNotification(notifications)
         saveNotifications(notifications)
@@ -62,4 +62,8 @@ class PushNotificationService(
             )
         }
     }
+}
+
+suspend fun PushNotificationService.sendNotifications(vararg notificationsData: PushNotificationData) {
+    sendNotifications(notificationsData.toList())
 }

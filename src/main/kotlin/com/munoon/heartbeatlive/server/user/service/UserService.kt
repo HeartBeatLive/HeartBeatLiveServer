@@ -1,5 +1,7 @@
 package com.munoon.heartbeatlive.server.user.service
 
+import com.munoon.heartbeatlive.server.config.properties.HeartRateStreamProperties
+import com.munoon.heartbeatlive.server.heartrate.HeartRateUtils.mapHeartRateToInteger
 import com.munoon.heartbeatlive.server.user.User
 import com.munoon.heartbeatlive.server.user.UserEvents
 import com.munoon.heartbeatlive.server.user.UserMapper.asNewUser
@@ -14,7 +16,8 @@ import java.time.Instant
 @Service
 class UserService(
     private val userRepository: UserRepository,
-    private val eventPublisher: ApplicationEventPublisher
+    private val eventPublisher: ApplicationEventPublisher,
+    private val heartRateStreamProperties: HeartRateStreamProperties
 ) {
     suspend fun checkEmailReserved(email: String): Boolean {
         return userRepository.existsByEmail(email.lowercase())
@@ -63,9 +66,15 @@ class UserService(
 
     fun getUsersByIds(userIds: Set<String>) = userRepository.findAllById(userIds)
 
-    suspend fun updateUserLastHeartRateReceiveTime(userId: String, receiveTime: Instant?): User {
+    suspend fun writeUserHeartRate(userId: String, heartRate: Float?, receiveTime: Instant): User {
         val user = getUserById(userId)
-        val updatedUser = userRepository.save(user.copy(lastHeartRateInfoReceiveTime = receiveTime))
+
+        val heartRates = user.heartRates.toMutableList()
+        heartRates.add(0, User.HeartRate(heartRate?.let { mapHeartRateToInteger(it) }, receiveTime))
+        val newHeartRates = heartRates
+            .filter { it.time + heartRateStreamProperties.storeUserHeartRateDuration > Instant.now() }
+
+        val updatedUser = userRepository.save(user.copy(heartRates = newHeartRates))
 
         eventPublisher.publishEvent(UserEvents.UserUpdatedEvent(
             newUser = updatedUser,

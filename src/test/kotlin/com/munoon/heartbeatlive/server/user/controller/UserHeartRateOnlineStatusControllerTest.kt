@@ -31,7 +31,7 @@ internal class UserHeartRateOnlineStatusControllerTest : AbstractGraphqlHttpTest
             displayName = null,
             email = null,
             emailVerified = false,
-            lastHeartRateInfoReceiveTime = Instant.now()
+            heartRates = listOf(User.HeartRate(10, Instant.now()))
         )
 
         graphqlTester.withUser()
@@ -54,14 +54,15 @@ internal class UserHeartRateOnlineStatusControllerTest : AbstractGraphqlHttpTest
             displayName = "Test User",
             email = null,
             emailVerified = false,
-            lastHeartRateInfoReceiveTime = Instant.now()
+            heartRates = listOf(User.HeartRate(10, Instant.now()))
         ))
 
         coEvery { subscriptionService.getSubscriptionById("subscriptionId") } returns Subscription(
             id = "subscriptionId",
             userId = "user1",
             subscriberUserId = "user2",
-            created = Instant.now()
+            created = Instant.now(),
+            receiveHeartRateMatchNotifications = false
         )
 
         graphqlTester.withUser(id = "user1")

@@ -21,9 +21,14 @@ data class User(
 
     val roles: Set<UserRole> = emptySet(),
 
-    val lastHeartRateInfoReceiveTime: Instant? = null
+    val heartRates: List<HeartRate> = emptyList()
 ) {
     companion object {
         const val UNIQUE_EMAIL_INDEX = "user_unique_email_index"
     }
+
+    data class HeartRate(
+        val heartRate: Int?, // null means user stopped sending heart rate
+        val time: Instant
+    )
 }

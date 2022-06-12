@@ -1,7 +1,7 @@
 package com.munoon.heartbeatlive.server.user.model
 
+import com.munoon.heartbeatlive.server.user.User
 import com.munoon.heartbeatlive.server.user.UserRole
-import java.time.Instant
 
 data class GraphqlProfileTo(
     val id: String,
@@ -9,5 +9,5 @@ data class GraphqlProfileTo(
     val email: String?,
     val emailVerified: Boolean,
     val roles: Set<UserRole>,
-    val lastHeartRateInfoReceiveTime: Instant? // for mapping only
+    val heartRates: List<User.HeartRate> // for mapping only
 )

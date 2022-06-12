@@ -3,6 +3,7 @@ package com.munoon.heartbeatlive.server.push.handler
 import com.munoon.heartbeatlive.server.AbstractTest
 import com.munoon.heartbeatlive.server.push.NewSubscriptionPushNotificationData
 import com.munoon.heartbeatlive.server.push.service.PushNotificationService
+import com.munoon.heartbeatlive.server.push.service.sendNotifications
 import com.munoon.heartbeatlive.server.subscription.Subscription
 import com.munoon.heartbeatlive.server.subscription.SubscriptionEvent
 import com.munoon.heartbeatlive.server.user.model.GraphqlFirebaseCreateUserInput
@@ -11,6 +12,7 @@ import com.ninjasquad.springmockk.MockkBean
 import io.kotest.common.runBlocking
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
@@ -39,7 +41,8 @@ internal class SubscriptionCreatedPushNotificationHandlerTest : AbstractTest() {
         val subscriptionArbitrary = arbitrary { Subscription(
             id = Arb.uuid().map { it.toString() }.bind(),
             userId = Arb.uuid().map { it.toString() }.bind(),
-            subscriberUserId = Arb.uuid().map { it.toString() }.bind()
+            subscriberUserId = Arb.uuid().map { it.toString() }.bind(),
+            receiveHeartRateMatchNotifications = Arb.boolean().bind()
         ) }
 
         coEvery { pushNotificationService.sendNotifications(any()) } returns Unit

@@ -6,31 +6,45 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.Instant
-import java.time.OffsetDateTime
 
 internal class UserUtilsTest {
     private companion object {
         val heartRateStreamProperties = HeartRateStreamProperties().apply {
-            leaveUserOnlineSinceLastHeartRateDuration = Duration.ofMinutes(2)
+            this.storeUserHeartRateDuration = Duration.ofSeconds(30)
         }
     }
 
     @Test
     fun `getHeartRateOnlineStatus - ONLINE`() {
-        val status = UserUtils.getHeartRateOnlineStatus(Instant.now(), heartRateStreamProperties)
+        val heartRates = listOf(
+            User.HeartRate(50, Instant.now())
+        )
+        val status = UserUtils.getHeartRateOnlineStatus(heartRates, heartRateStreamProperties)
         assertThat(status).isEqualTo(GraphqlUserHeartRateOnlineStatus.ONLINE)
     }
 
     @Test
     fun `getHeartRateOnlineStatus - OFFLINE because last receive time is null`() {
-        val status = UserUtils.getHeartRateOnlineStatus(null, heartRateStreamProperties)
+        val heartRates = listOf(
+            User.HeartRate(null, Instant.now()),
+            User.HeartRate(50, Instant.now().minusSeconds(10))
+        )
+        val status = UserUtils.getHeartRateOnlineStatus(heartRates, heartRateStreamProperties)
         assertThat(status).isEqualTo(GraphqlUserHeartRateOnlineStatus.OFFLINE)
     }
 
     @Test
     fun `getHeartRateOnlineStatus - OFFLINE because last receive time is far ago`() {
-        val lastHeartRateInfoReceiveTime = OffsetDateTime.now().minusDays(2).toInstant()
-        val status = UserUtils.getHeartRateOnlineStatus(lastHeartRateInfoReceiveTime, heartRateStreamProperties)
+        val heartRates = listOf(
+            User.HeartRate(50, Instant.now().minusSeconds(60))
+        )
+        val status = UserUtils.getHeartRateOnlineStatus(heartRates, heartRateStreamProperties)
+        assertThat(status).isEqualTo(GraphqlUserHeartRateOnlineStatus.OFFLINE)
+    }
+
+    @Test
+    fun `getHeartRateOnlineStatus - OFFLINE because no heart rate received`() {
+        val status = UserUtils.getHeartRateOnlineStatus(emptyList(), heartRateStreamProperties)
         assertThat(status).isEqualTo(GraphqlUserHeartRateOnlineStatus.OFFLINE)
     }
 }
