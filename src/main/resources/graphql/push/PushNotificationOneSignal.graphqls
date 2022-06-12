@@ -1,0 +1,24 @@
+extend type Query {
+    "Get details to connect to [OneSignal](https://onesignal.com/) and start receive notifications from it."
+    getOneSignalPushNotificationConnectionDetails: OneSignalPushNotificationConnectionDetails!
+}
+
+"""
+Details to start receiving push notifications from [OneSignal](https://onesignal.com/).
+
+Clients must request notification permissions on application launched,
+set external user id when user is logged in and delete external user id when user is logged out.
+
+Most of all notifications contains `heart_beat_live:notification_id` metadata.
+You may use this metadata to map received push notification with notifications from server.
+
+Provide following `appId` to your OneSignal SDK and use following `identifierAuthenticationToken` to specify
+OneSignal external user id.
+"""
+type OneSignalPushNotificationConnectionDetails {
+    "OneSignal app identifier."
+    appId: String!
+
+    "Identifier authentication token to set OneSignal `external user id`. Require authentication."
+    identifierAuthenticationToken: String!
+}

@@ -22,10 +22,4 @@ type Query {
         "Count of items, that you need. Must be positive, from 0 to 20." size: Int!,
         "Sorting algorithm, optional." sort: BansSorting
     ): BansPage
-
-    """
-    Return identifier authentication token for [OneSignal](https://onesignal.com/). \
-    Require authenticated user.
-    """
-    getOneSignalIdentifierAuthenticationToken: String
 }

@@ -26,7 +26,7 @@ This code send to this server information about user creation and deletion.
 
 ### Push Notifications
 Push notifications is sending using [OneSignal](https://onesignal.com) service.
-Clients must request notification permissions on application launched, set external user id is logged in and delete external user id when user is logged out.
+Clients must request notification permissions on application launched, set external user id when user is logged in and delete external user id when user is logged out.
 
 Most of all notifications contains `heart_beat_live:notification_id` metadata.
 You may use this metadata to map received push notification with notifications from server.
