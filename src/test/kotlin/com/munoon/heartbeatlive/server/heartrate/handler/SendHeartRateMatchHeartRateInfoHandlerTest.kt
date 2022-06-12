@@ -72,17 +72,13 @@ internal class SendHeartRateMatchHeartRateInfoHandlerTest : AbstractTest() {
         createUser(id = "user10", "User 10", User.HeartRate(50, Instant.now()))
         createUser(id = "user11", "User 11", User.HeartRate(50, Instant.now()))
 
-        val subscription2to1 =
-            createSubscription(userId = "user1", subscriberUserId = "user2", receiveNotification = true)
-        val subscription1to2 =
-            createSubscription(userId = "user2", subscriberUserId = "user1", receiveNotification = true)
+        createSubscription(userId = "user1", subscriberUserId = "user2", receiveNotification = true)
+        createSubscription(userId = "user2", subscriberUserId = "user1", receiveNotification = true)
 
         createSubscription(userId = "user1", subscriberUserId = "user3", receiveNotification = false)
-        val subscription1to3 =
-            createSubscription(userId = "user3", subscriberUserId = "user1", receiveNotification = true)
+        createSubscription(userId = "user3", subscriberUserId = "user1", receiveNotification = true)
 
-        val subscription4to1 =
-            createSubscription(userId = "user1", subscriberUserId = "user4", receiveNotification = true)
+        createSubscription(userId = "user1", subscriberUserId = "user4", receiveNotification = true)
         createSubscription(userId = "user4", subscriberUserId = "user1", receiveNotification = false)
 
         createSubscription(userId = "user1", subscriberUserId = "user5", receiveNotification = false)
@@ -100,56 +96,48 @@ internal class SendHeartRateMatchHeartRateInfoHandlerTest : AbstractTest() {
         createSubscription(userId = "user1", subscriberUserId = "user9", receiveNotification = true)
         createSubscription(userId = "user9", subscriberUserId = "user1", receiveNotification = true)
 
-        val subscription10to1 =
-            createSubscription(userId = "user1", subscriberUserId = "user10", receiveNotification = true)
+        createSubscription(userId = "user1", subscriberUserId = "user10", receiveNotification = true)
         createSubscription(userId = "user10", subscriberUserId = "user1", receiveNotification = true)
 
         createSubscription(userId = "user1", subscriberUserId = "user11", receiveNotification = true)
-        val subscription1to11 =
-            createSubscription(userId = "user11", subscriberUserId = "user1", receiveNotification = true)
+        createSubscription(userId = "user11", subscriberUserId = "user1", receiveNotification = true)
 
         val expectedNotifications = listOf(
             HeartRateMatchNotificationData(
                 heartRate = 50f,
                 userId = "user1",
                 matchWithUserId = "user2",
-                matchWithUserDisplayName = "User 2",
-                subscriptionId = subscription1to2.id!!
+                matchWithUserDisplayName = "User 2"
             ),
             HeartRateMatchNotificationData(
                 heartRate = 50f,
                 userId = "user2",
                 matchWithUserId = "user1",
-                matchWithUserDisplayName = "User 1",
-                subscriptionId = subscription2to1.id!!
+                matchWithUserDisplayName = "User 1"
             ),
             HeartRateMatchNotificationData(
                 heartRate = 50f,
                 userId = "user1",
                 matchWithUserId = "user3",
-                matchWithUserDisplayName = "User 3",
-                subscriptionId = subscription1to3.id!!
+                matchWithUserDisplayName = "User 3"
             ),
             HeartRateMatchNotificationData(
                 heartRate = 50f,
                 userId = "user4",
                 matchWithUserId = "user1",
-                matchWithUserDisplayName = "User 1",
-                subscriptionId = subscription4to1.id!!
+                matchWithUserDisplayName = "User 1"
             ),
             HeartRateMatchNotificationData(
                 heartRate = 50f,
                 userId = "user10",
                 matchWithUserId = "user1",
-                matchWithUserDisplayName = "User 1",
-                subscriptionId = subscription10to1.id!!
+                matchWithUserDisplayName = "User 1"
             ),
             HeartRateMatchNotificationData(
                 heartRate = 50f,
                 userId = "user1",
                 matchWithUserId = "user11",
-                matchWithUserDisplayName = "User 11",
-                subscriptionId = subscription1to11.id!!
+                matchWithUserDisplayName = "User 11"
             )
         )
 

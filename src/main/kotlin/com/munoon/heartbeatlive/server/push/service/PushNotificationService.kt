@@ -6,6 +6,7 @@ import com.munoon.heartbeatlive.server.push.PushNotificationLocale
 import com.munoon.heartbeatlive.server.push.model.SendPushNotificationData
 import com.munoon.heartbeatlive.server.push.repository.PushNotificationRepository
 import com.munoon.heartbeatlive.server.push.sender.push.PushNotificationSender
+import kotlinx.serialization.json.JsonPrimitive
 import org.springframework.context.MessageSource
 import org.springframework.stereotype.Service
 import java.util.*
@@ -17,39 +18,61 @@ class PushNotificationService(
     private val repository: PushNotificationRepository
 ) {
     suspend fun sendNotifications(notificationsData: List<PushNotificationData>) {
-        val notifications = notificationsData.toList()
-        sendNotification(notifications)
-        saveNotifications(notifications)
-    }
+        val sendPushNotifications = arrayListOf<SendPushNotificationData>()
+        val pushNotifications = arrayListOf<PushNotification>()
 
-    private suspend fun sendNotification(notificationsData: List<PushNotificationData>) {
-        notificationsData.forEach { notificationData ->
-            val data = notificationData.asSendPushNotificationData(messageSource)
-            if (data.userIds.isNotEmpty()) {
-                sender.sendNotification(data)
+        for (notificationData in notificationsData) {
+            val notificationTitle = messageSource.getMessages(notificationData.title)
+            val notificationContent = messageSource.getMessages(notificationData.content)
+
+            if (notificationData.notification == null) {
+                sendPushNotifications += notificationData.userIds.map {
+                    notificationData.asSendPushNotificationData(
+                        notificationTitle,
+                        notificationContent,
+                        userId = it,
+                        notificationId = null
+                    )
+                }
+                continue
             }
+
+            for (userId in notificationData.userIds) {
+                val pushNotification = PushNotification(
+                    userId = userId,
+                    data = notificationData.notification!!
+                )
+                pushNotifications += pushNotification
+                sendPushNotifications += notificationData.asSendPushNotificationData(
+                    notificationTitle, notificationContent,
+                    userId, pushNotification.id
+                )
+            }
+        }
+
+        if (pushNotifications.isNotEmpty()) {
+            repository.saveAll(pushNotifications).collect { }
+        }
+
+        for (pushNotification in sendPushNotifications) {
+            sender.sendNotification(pushNotification)
         }
     }
 
-    private suspend fun saveNotifications(notificationsData: List<PushNotificationData>) {
-        notificationsData.filter { it.notification != null }
-            .flatMap {
-                it.userIds.map { userId ->
-                    PushNotification(
-                        userId = userId,
-                        data = it.notification!!
-                    )
-                }
-            }
-            .let { if (it.isNotEmpty()) repository.saveAll(it).collect { } }
-    }
-
     private companion object {
-        fun PushNotificationData.asSendPushNotificationData(messageSource: MessageSource) = SendPushNotificationData(
-            userIds = userIds,
-            title = messageSource.getMessages(title),
-            content = messageSource.getMessages(content),
-            metadata = metadata,
+        const val NOTIFICATION_ID_METADATA_KEY = "heart_beat_live:notification_id"
+
+        fun PushNotificationData.asSendPushNotificationData(
+            title: Map<Locale, String>,
+            content: Map<Locale, String>,
+            userId: String,
+            notificationId: String?
+        ) = SendPushNotificationData(
+            userIds = setOf(userId),
+            title = title,
+            content = content,
+            metadata = notificationId?.let { mapOf(NOTIFICATION_ID_METADATA_KEY to JsonPrimitive(notificationId)) }
+                ?: emptyMap(),
             priority = priority
         )
 

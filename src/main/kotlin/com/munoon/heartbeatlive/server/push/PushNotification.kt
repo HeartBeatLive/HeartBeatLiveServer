@@ -3,11 +3,12 @@ package com.munoon.heartbeatlive.server.push
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import java.time.Instant
+import java.util.*
 
 @Document("pushNotification")
 data class PushNotification(
     @Id
-    val id: String? = null,
+    val id: String? = UUID.randomUUID().toString(),
 
     val userId: String,
 

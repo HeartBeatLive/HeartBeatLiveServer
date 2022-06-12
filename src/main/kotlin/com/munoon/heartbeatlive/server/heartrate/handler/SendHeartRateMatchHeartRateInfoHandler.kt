@@ -72,8 +72,7 @@ class SendHeartRateMatchHeartRateInfoHandler(
                 heartRate = heartRate,
                 userId = userAId,
                 matchWithUserId = userBId,
-                matchWithUserDisplayName = userB.getString("displayName") ?: "User",
-                subscriptionId = userASubscription.getObjectId("_id").toHexString()
+                matchWithUserDisplayName = userB.getString("displayName") ?: "User"
             )
         }
 
@@ -82,8 +81,7 @@ class SendHeartRateMatchHeartRateInfoHandler(
                 heartRate = heartRate,
                 userId = userBId,
                 matchWithUserId = userAId,
-                matchWithUserDisplayName = userA.getString("displayName") ?: "User",
-                subscriptionId = document.getObjectId("_id").toHexString()
+                matchWithUserDisplayName = userA.getString("displayName") ?: "User"
             )
         }
 
