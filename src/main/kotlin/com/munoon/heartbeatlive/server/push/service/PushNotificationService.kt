@@ -5,8 +5,9 @@ import com.munoon.heartbeatlive.server.push.PushNotificationData
 import com.munoon.heartbeatlive.server.push.PushNotificationLocale
 import com.munoon.heartbeatlive.server.push.model.SendPushNotificationData
 import com.munoon.heartbeatlive.server.push.repository.PushNotificationRepository
-import com.munoon.heartbeatlive.server.push.sender.push.PushNotificationSender
+import com.munoon.heartbeatlive.server.push.sender.PushNotificationSender
 import kotlinx.serialization.json.JsonPrimitive
+import org.slf4j.LoggerFactory
 import org.springframework.context.MessageSource
 import org.springframework.stereotype.Service
 import java.util.*
@@ -17,6 +18,8 @@ class PushNotificationService(
     private val messageSource: MessageSource,
     private val repository: PushNotificationRepository
 ) {
+    private val logger = LoggerFactory.getLogger(PushNotificationService::class.java)
+
     suspend fun sendNotifications(notificationsData: List<PushNotificationData>) {
         val sendPushNotifications = arrayListOf<SendPushNotificationData>()
         val pushNotifications = arrayListOf<PushNotification>()
@@ -55,7 +58,11 @@ class PushNotificationService(
         }
 
         for (pushNotification in sendPushNotifications) {
-            sender.sendNotification(pushNotification)
+            try {
+                sender.sendNotification(pushNotification)
+            } catch (e: Exception) {
+                logger.error("Error when sending push notification to users ${pushNotification.userIds}", e)
+            }
         }
     }
 

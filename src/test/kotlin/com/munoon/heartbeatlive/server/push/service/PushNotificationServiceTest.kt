@@ -1,13 +1,14 @@
 package com.munoon.heartbeatlive.server.push.service
 
 import com.munoon.heartbeatlive.server.AbstractTest
+import com.munoon.heartbeatlive.server.onesignal.OneSignalApiException
 import com.munoon.heartbeatlive.server.push.PushNotification
 import com.munoon.heartbeatlive.server.push.PushNotificationData
 import com.munoon.heartbeatlive.server.push.PushNotificationLocale
 import com.munoon.heartbeatlive.server.push.model.PushNotificationPriority
 import com.munoon.heartbeatlive.server.push.model.SendPushNotificationData
 import com.munoon.heartbeatlive.server.push.repository.PushNotificationRepository
-import com.munoon.heartbeatlive.server.push.sender.push.PushNotificationSender
+import com.munoon.heartbeatlive.server.push.sender.PushNotificationSender
 import com.ninjasquad.springmockk.MockkBean
 import io.kotest.common.runBlocking
 import io.kotest.matchers.collections.shouldBeIn
@@ -140,7 +141,10 @@ class PushNotificationServiceTest : AbstractTest() {
                 "Message 3"
         every { messageSource.getMessage("test_push_notification_4", any(), any()) } returns
                 "Message 4"
-        coEvery { pushNotificationSender.sendNotification(any()) } returns Unit
+        coEvery { pushNotificationSender.sendNotification(any()) } answers {
+            if (firstArg<SendPushNotificationData>().userIds == setOf("user3")) throw OneSignalApiException("Exception")
+            else Unit
+        }
 
         val notification1 = buildMockedPushNotificationData(
             mockedTitle = PushNotificationData.Message(

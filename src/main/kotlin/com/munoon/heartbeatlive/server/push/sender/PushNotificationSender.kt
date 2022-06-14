@@ -1,4 +1,4 @@
-package com.munoon.heartbeatlive.server.push.sender.push
+package com.munoon.heartbeatlive.server.push.sender
 
 import com.munoon.heartbeatlive.server.push.model.SendPushNotificationData
 
