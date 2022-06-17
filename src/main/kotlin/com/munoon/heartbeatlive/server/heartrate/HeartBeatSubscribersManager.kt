@@ -54,7 +54,7 @@ class HeartBeatSubscribersManager(private val userSubscribersLoaderService: User
 
     fun createSubscription(userId: String): Flux<HeartRateInfo> {
         return Flux.create { sink ->
-            userSubscriptions.computeIfAbsent(userId) { ArrayList() } += sink
+            userSubscriptions.computeIfAbsent(userId) { ArrayList(1) } += sink
             sink.onCancel {
                 userSubscriptions[userId]?.let { subscriptions ->
                     if (subscriptions.size == 1 && subscriptions.first() === sink) {
