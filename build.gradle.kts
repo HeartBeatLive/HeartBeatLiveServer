@@ -69,7 +69,14 @@ sourceSets {
 		java {
 			srcDir("build/generated/source/proto/main/java")
 		}
+
+		tasks[processResourcesTaskName].dependsOn("addGraphqlSchema")
 	}
+}
+
+tasks.register<Copy>("addGraphqlSchema") {
+	from("src/main/graphql")
+	into(layout.buildDirectory.dir("resources/main/graphql"))
 }
 
 tasks.withType<KotlinCompile> {

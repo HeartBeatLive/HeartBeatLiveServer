@@ -3,7 +3,7 @@ const loadFiles = require("@graphql-tools/load-files");
 const merge = require("@graphql-tools/merge");
 const fs = require("fs");
 
-const schemasDirection = "../src/main/resources/graphql";
+const schemasDirection = "../src/main/graphql";
 const apiVersion = "1.0";
 const schemaFileName = "public/schema.graphqls";
 
