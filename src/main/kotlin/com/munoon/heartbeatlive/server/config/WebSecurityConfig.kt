@@ -101,7 +101,7 @@ class WebSecurityConfig {
 
                 val firebaseToken = try {
                     firebaseAuth.verifyIdToken(token)
-                } catch (@Suppress("SwallowedException") e: FirebaseAuthException) {
+                } catch (_: FirebaseAuthException) {
                     throw JwtValidationException("JWT token is not valid!", listOf(defaultOAuth2Error))
                 }
 

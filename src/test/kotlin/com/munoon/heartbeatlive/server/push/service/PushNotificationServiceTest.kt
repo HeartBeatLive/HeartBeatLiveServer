@@ -50,6 +50,7 @@ class PushNotificationServiceTest : AbstractTest() {
     private lateinit var messageSource: MessageSource
 
     @Test
+    @Suppress("LongMethod")
     fun sendNotification(): Unit = runBlocking {
         val expectedSendNotificationData = listOf(
             SendPushNotificationData(

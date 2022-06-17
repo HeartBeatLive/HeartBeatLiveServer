@@ -220,10 +220,12 @@ class SendHeartRateMatchHeartRateInfoHandler(
         val filterWhenBotUsersReceivedNotification = Aggregation.match(
             Expr.valueOf(or(
                 Eq.valueOf(
-                    IndexOfArray.arrayOf("\$usersThatReceivedNotification").indexOf(mapOf("_id" to "\$userId"))
+                    IndexOfArray.arrayOf("\$usersThatReceivedNotification")
+                        .indexOf(mapOf("_id" to "\$userId"))
                 ).equalTo(toInt(-1)),
                 Eq.valueOf(
-                    IndexOfArray.arrayOf("\$usersThatReceivedNotification").indexOf(mapOf("_id" to "\$subscriberUserId"))
+                    IndexOfArray.arrayOf("\$usersThatReceivedNotification")
+                        .indexOf(mapOf("_id" to "\$subscriberUserId"))
                 ).equalTo(toInt(-1))
             ))
         )

@@ -37,6 +37,7 @@ internal class SendHeartRateMatchHeartRateInfoHandlerTest : AbstractTest() {
     private lateinit var pushNotificationService: PushNotificationService
 
     @Test
+    @Suppress("LongMethod")
     fun handleHeartRateInfo(): Unit = runBlocking {
         coEvery { pushNotificationService.sendNotifications(any()) } returns Unit
 

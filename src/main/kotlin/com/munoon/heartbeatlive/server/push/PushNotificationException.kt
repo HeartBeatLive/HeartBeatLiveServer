@@ -1,3 +1,4 @@
+@file:Suppress("MatchingDeclarationName")
 package com.munoon.heartbeatlive.server.push
 
 import com.munoon.heartbeatlive.server.config.error.ConvertExceptionToError

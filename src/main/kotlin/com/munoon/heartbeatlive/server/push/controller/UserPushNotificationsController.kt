@@ -51,7 +51,8 @@ class UserPushNotificationsController(
         @Argument @Positive @Max(20) size: Int,
         @Argument sort: GraphqlPushNotificationsSorting?
     ): DataFetcherResult<GraphqlPageResult<GraphqlPushNotification>>? {
-        logger.info("User '${authUserId()}' requested his push notifications (page = $page, size = $size, sort = $sort)")
+        logger.info("User '${authUserId()}' requested his push notifications " +
+                "(page = $page, size = $size, sort = $sort)")
 
         val pageable = PageRequest.of(page, size, when (sort) {
             GraphqlPushNotificationsSorting.CREATED_ASC -> Sort.by(Sort.Direction.ASC, "created")
