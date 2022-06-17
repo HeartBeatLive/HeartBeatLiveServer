@@ -38,7 +38,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-data-redis-reactive")
 
-	implementation("com.google.firebase:firebase-admin:8.1.0")
+	implementation("com.google.firebase:firebase-admin:9.0.0")
 	implementation("com.google.protobuf:protobuf-kotlin:3.20.1")
 
 	implementation("org.cache2k:cache2k-api:2.6.1.Final")
