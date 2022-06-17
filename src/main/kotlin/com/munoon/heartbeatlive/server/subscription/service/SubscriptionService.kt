@@ -104,6 +104,8 @@ class SubscriptionService(
         return subscribersCount >= subscriptionProperties[userSubscriptionPlan].maxSubscriptionsLimit
     }
 
+    fun getAllByIds(ids: Set<String>) = repository.findAllById(ids)
+
     @Async
     @EventListener
     fun handleUserDeletedEvent(event: UserEvents.UserDeletedEvent) {

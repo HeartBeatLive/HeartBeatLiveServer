@@ -40,7 +40,7 @@ class BigOrLowHeartRateDetectorInfoHandler(
         logger.info("Sending user '$userId' high/low heart rate push notification")
 
         val subscribersUserIds = userSubscribersLoaderService.load(userId).values
-        val heartRateOwnerUserDisplayName = userService.getUserById(userId).displayName ?: "User"
+        val heartRateOwnerUserDisplayName = userService.getUserById(userId).displayName
 
         val notificationData: PushNotificationData
         val heartRateOwnerNotificationData: PushNotificationData

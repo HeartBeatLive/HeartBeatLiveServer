@@ -70,7 +70,8 @@ internal class SubscriptionCreatedPushNotificationHandlerTest : AbstractTest() {
             val expectedData = NewSubscriptionPushNotificationData(
                 subscriptionId = subscription.id!!,
                 userId = subscription.userId,
-                subscriberDisplayName = userDisplayName ?: "User"
+                subscriberDisplayName = userDisplayName,
+                subscriberUserId = subscription.subscriberUserId
             )
             coVerify(exactly = 1) { pushNotificationService.sendNotifications(expectedData) }
         } }

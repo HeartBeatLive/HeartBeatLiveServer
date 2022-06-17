@@ -1,19 +1,13 @@
 package com.munoon.heartbeatlive.server.push
 
-import com.munoon.heartbeatlive.server.heartrate.HeartRateUtils.mapHeartRateToInteger
 import com.munoon.heartbeatlive.server.push.model.PushNotificationPriority
 
 sealed interface PushNotificationData {
-    val title: Message
-    val content: Message
+    val message: PushNotificationMessage
     val userIds: Set<String>
     val notification: PushNotification.Data?
     val priority: PushNotificationPriority
         get() = PushNotificationPriority.MEDIUM
-
-    data class Message(val code: String, val arguments: List<Any?>) {
-        constructor(code: String, vararg arguments: Any?) : this(code, arguments.toList())
-    }
 }
 
 sealed interface SingleUserPushNotificationData : PushNotificationData {
@@ -26,36 +20,29 @@ sealed interface SingleUserPushNotificationData : PushNotificationData {
 data class NewSubscriptionPushNotificationData(
     val subscriptionId: String,
     override val userId: String,
-    val subscriberDisplayName: String
+    val subscriberUserId: String,
+    val subscriberDisplayName: String?
 ) : SingleUserPushNotificationData {
-    override val title = PushNotificationData.Message("push_notifications.new_subscription.title")
-    override val content = PushNotificationData.Message(
-        "push_notifications.new_subscription.content", subscriberDisplayName)
-    override val notification = PushNotification.Data.NewSubscriberData(subscriptionId)
+    override val message = NewSubscriptionPushNotificationMessage(subscriberDisplayName)
+    override val notification = PushNotification.Data.NewSubscriberData(subscriptionId, subscriberUserId)
 }
 
 data class BanPushNotificationData(
     override val userId: String,
     val bannedByUserId: String,
-    val bannedByUserDisplayName: String
+    val bannedByUserDisplayName: String?
 ) : SingleUserPushNotificationData {
-    override val title = PushNotificationData.Message("push_notifications.ban.title")
-    override val content = PushNotificationData.Message(
-        "push_notifications.ban.content", bannedByUserDisplayName)
+    override val message = BanPushNotificationMessage(bannedByUserDisplayName)
     override val notification = PushNotification.Data.BanData(bannedByUserId)
 }
 
 data class HighHeartRateNotificationData(
     val heartRate: Float,
     val heartRateOwnerUserId: String,
-    val heartRateOwnerUserDisplayName: String,
+    val heartRateOwnerUserDisplayName: String?,
     override val userIds: Set<String>
 ) : PushNotificationData {
-    override val title = PushNotificationData.Message(
-        "push_notifications.high_heart_rate.title", heartRateOwnerUserDisplayName)
-    override val content = PushNotificationData.Message(
-        "push_notifications.high_heart_rate.content",
-        heartRateOwnerUserDisplayName, mapHeartRateToInteger(heartRate))
+    override val message = HighHeartRatePushNotificationMessage(heartRate, heartRateOwnerUserDisplayName)
     override val notification = PushNotification.Data.HighHeartRateData(heartRateOwnerUserId, heartRate)
     override val priority = PushNotificationPriority.HIGH
 }
@@ -63,14 +50,10 @@ data class HighHeartRateNotificationData(
 data class LowHeartRateNotificationData(
     val heartRate: Float,
     val heartRateOwnerUserId: String,
-    val heartRateOwnerUserDisplayName: String,
+    val heartRateOwnerUserDisplayName: String?,
     override val userIds: Set<String>
 ) : PushNotificationData {
-    override val title = PushNotificationData.Message(
-        "push_notifications.low_heart_rate.title", heartRateOwnerUserDisplayName)
-    override val content = PushNotificationData.Message(
-        "push_notifications.low_heart_rate.content",
-        heartRateOwnerUserDisplayName, mapHeartRateToInteger(heartRate))
+    override val message = LowHeartRatePushNotificationMessage(heartRate, heartRateOwnerUserDisplayName)
     override val notification = PushNotification.Data.LowHeartRateData(heartRateOwnerUserId, heartRate)
     override val priority = PushNotificationPriority.HIGH
 }
@@ -79,9 +62,7 @@ data class HighOwnHeartRateNotificationData(
     val heartRate: Float,
     override val userId: String,
 ) : SingleUserPushNotificationData {
-    override val title = PushNotificationData.Message("push_notifications.high_own_heart_rate.title")
-    override val content = PushNotificationData.Message(
-        "push_notifications.high_own_heart_rate.content", mapHeartRateToInteger(heartRate))
+    override val message = HighOwnHeartRatePushNotificationMessage(heartRate)
     override val notification = PushNotification.Data.HighOwnHeartRateData(heartRate)
     override val priority = PushNotificationPriority.HIGH
 }
@@ -90,9 +71,7 @@ data class LowOwnHeartRateNotificationData(
     val heartRate: Float,
     override val userId: String,
 ) : SingleUserPushNotificationData {
-    override val title = PushNotificationData.Message("push_notifications.low_own_heart_rate.title")
-    override val content = PushNotificationData.Message(
-        "push_notifications.low_own_heart_rate.content", mapHeartRateToInteger(heartRate))
+    override val message = LowOwnHeartRatePushNotificationMessage(heartRate)
     override val notification = PushNotification.Data.LowOwnHeartRateData(heartRate)
     override val priority = PushNotificationPriority.HIGH
 }
@@ -101,11 +80,8 @@ data class HeartRateMatchNotificationData(
     val heartRate: Float,
     override val userId: String,
     val matchWithUserId: String,
-    val matchWithUserDisplayName: String
+    val matchWithUserDisplayName: String?
 ) : SingleUserPushNotificationData {
-    override val title = PushNotificationData.Message("push_notifications.heart_rate_match.title")
-    override val content = PushNotificationData.Message(
-        "push_notifications.heart_rate_match.content",
-        mapHeartRateToInteger(heartRate), matchWithUserDisplayName)
+    override val message = HeartRateMatchPushNotificationMessage(heartRate, matchWithUserDisplayName)
     override val notification = PushNotification.Data.HeartRateMatchData(heartRate, matchWithUserId)
 }

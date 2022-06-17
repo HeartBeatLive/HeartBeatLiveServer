@@ -8,7 +8,7 @@ import java.util.*
 @Document("pushNotification")
 data class PushNotification(
     @Id
-    val id: String? = UUID.randomUUID().toString(),
+    val id: String = UUID.randomUUID().toString(),
 
     val userId: String,
 
@@ -17,7 +17,7 @@ data class PushNotification(
     val data: Data
 ) {
     sealed interface Data {
-        data class NewSubscriberData(val subscriptionId: String) : Data
+        data class NewSubscriberData(val subscriptionId: String, val subscriberUserId: String) : Data
         data class BanData(val bannedByUserId: String) : Data
         data class HighHeartRateData(val heartRateOwnerUserId: String, val heartRate: Float) : Data
         data class LowHeartRateData(val heartRateOwnerUserId: String, val heartRate: Float) : Data

@@ -33,7 +33,7 @@ class SubscriptionController(private val service: SubscriptionService) {
     @MutationMapping
     suspend fun subscribeBySharingCode(
         @Argument @NotNull @Length(min = 6, max = 6) sharingCode: String,
-        @Argument @Valid options: GraphqlSubscribeOptionsInput? // TODO test
+        @Argument @Valid options: GraphqlSubscribeOptionsInput?
     ): GraphqlSubscriptionInfo {
         val actualOptions = options ?: GraphqlSubscribeOptionsInput()
         logger.info("User '${authUserId()}' create subscription using sharing code '$sharingCode'")

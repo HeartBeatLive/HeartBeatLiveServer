@@ -1,6 +1,6 @@
 package com.munoon.heartbeatlive.server.user.controller
 
-import com.munoon.heartbeatlive.server.DataLoaderNames
+import com.munoon.heartbeatlive.server.DataLoaders
 import com.munoon.heartbeatlive.server.user.User
 import com.munoon.heartbeatlive.server.user.service.UserService
 import graphql.GraphQLContext
@@ -13,7 +13,7 @@ import org.dataloader.DataLoaderRegistry
 import org.junit.jupiter.api.Test
 import org.springframework.graphql.execution.DefaultBatchLoaderRegistry
 
-internal class UserBatchLoadingControllerTest {
+internal class UserBatchLoaderTest {
     @Test
     fun `userById data loader`() {
         val userService = mockk<UserService>()
@@ -23,12 +23,12 @@ internal class UserBatchLoadingControllerTest {
         every { userService.getUsersByIds(any()) } returns flowOf(user1, user2)
 
         val batchLoaderRegistry = DefaultBatchLoaderRegistry()
-        UserBatchLoadingController(batchLoaderRegistry, userService)
+        UserBatchLoader(batchLoaderRegistry, userService)
 
         val dataLoaderRegistry = DataLoaderRegistry.newRegistry().build()
         batchLoaderRegistry.registerDataLoaders(dataLoaderRegistry, GraphQLContext.newContext().build())
 
-        val dataLoader = dataLoaderRegistry.getDataLoader<String, User>(DataLoaderNames.USER_BY_ID_LOADER)
+        val dataLoader = DataLoaders.USER_BY_ID[dataLoaderRegistry]
 
         val loadUser1 = dataLoader.load("user1")
         val loadUser2 = dataLoader.load("user2")

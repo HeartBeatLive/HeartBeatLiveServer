@@ -374,6 +374,25 @@ internal class SubscriptionServiceTest : AbstractTest() {
     }
 
     @Test
+    fun getAllByIds() {
+        val subscription1 = runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2",
+            receiveHeartRateMatchNotifications = false)) }
+        val subscription2 = runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2",
+            receiveHeartRateMatchNotifications = false)) }
+        runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2",
+            receiveHeartRateMatchNotifications = false)) }
+
+        val actual = runBlocking {
+            service.getAllByIds(setOf(subscription1.id!!, subscription2.id!!)).toList(arrayListOf())
+        }
+
+        assertThat(actual)
+            .usingRecursiveComparison()
+            .ignoringFields("created")
+            .isEqualTo(listOf(subscription1, subscription2))
+    }
+
+    @Test
     fun handleUserDeletedEvent() {
         every { userBanService.handleUserDeletedEvent(any()) } returns Unit
         every { heartBeatSharingService.handleUserDeletedEvent(any()) } returns Unit

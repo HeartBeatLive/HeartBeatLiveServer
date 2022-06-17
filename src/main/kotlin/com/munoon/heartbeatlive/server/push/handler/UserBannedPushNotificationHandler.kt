@@ -21,7 +21,7 @@ class UserBannedPushNotificationHandler(
         val data = BanPushNotificationData(
             userId = event.userId,
             bannedByUserId = event.bannedByUserId,
-            bannedByUserDisplayName = userService.getUserById(event.bannedByUserId).displayName ?: "User"
+            bannedByUserDisplayName = userService.getUserById(event.bannedByUserId).displayName
         )
         pushNotificationService.sendNotifications(data)
     }

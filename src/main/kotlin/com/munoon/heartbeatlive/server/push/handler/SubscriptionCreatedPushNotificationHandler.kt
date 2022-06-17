@@ -22,7 +22,8 @@ class SubscriptionCreatedPushNotificationHandler(
         pushNotificationService.sendNotifications(NewSubscriptionPushNotificationData(
             subscriptionId = event.subscription.id!!,
             userId = event.subscription.userId,
-            subscriberDisplayName = subscriberDisplayName ?: "User"
+            subscriberUserId = event.subscription.subscriberUserId,
+            subscriberDisplayName = subscriberDisplayName
         ))
     }
 }

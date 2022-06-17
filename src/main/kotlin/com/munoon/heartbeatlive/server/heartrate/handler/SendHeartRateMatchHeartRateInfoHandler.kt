@@ -72,7 +72,7 @@ class SendHeartRateMatchHeartRateInfoHandler(
                 heartRate = heartRate,
                 userId = userAId,
                 matchWithUserId = userBId,
-                matchWithUserDisplayName = userB.getString("displayName") ?: "User"
+                matchWithUserDisplayName = userB.getString("displayName")
             )
         }
 
@@ -81,7 +81,7 @@ class SendHeartRateMatchHeartRateInfoHandler(
                 heartRate = heartRate,
                 userId = userBId,
                 matchWithUserId = userAId,
-                matchWithUserDisplayName = userA.getString("displayName") ?: "User"
+                matchWithUserDisplayName = userA.getString("displayName")
             )
         }
 

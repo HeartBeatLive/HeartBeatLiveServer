@@ -27,3 +27,4 @@ Some errors contains additional fields in `extensions`, that are useful for erro
 | subscription.not_found.by_id | Subscription is not found by specified identifier. |
 | ban.banned | User was banned by another user. |
 | ban.not_found.by_id | User ban was not found by specified identifier. |
+| push_notification.not_found.by_id | Push notification with specified identifier is not found. |

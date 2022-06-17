@@ -1,14 +1,20 @@
 package com.munoon.heartbeatlive.server.push.service
 
+import com.munoon.heartbeatlive.server.common.PageResult
 import com.munoon.heartbeatlive.server.push.PushNotification
 import com.munoon.heartbeatlive.server.push.PushNotificationData
 import com.munoon.heartbeatlive.server.push.PushNotificationLocale
+import com.munoon.heartbeatlive.server.push.PushNotificationMapper.getMessageText
+import com.munoon.heartbeatlive.server.push.PushNotificationMessage
+import com.munoon.heartbeatlive.server.push.PushNotificationNotFoundByIdException
 import com.munoon.heartbeatlive.server.push.model.SendPushNotificationData
 import com.munoon.heartbeatlive.server.push.repository.PushNotificationRepository
 import com.munoon.heartbeatlive.server.push.sender.PushNotificationSender
+import kotlinx.coroutines.reactive.asFlow
 import kotlinx.serialization.json.JsonPrimitive
 import org.slf4j.LoggerFactory
 import org.springframework.context.MessageSource
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import java.util.*
 
@@ -25,8 +31,8 @@ class PushNotificationService(
         val pushNotifications = arrayListOf<PushNotification>()
 
         for (notificationData in notificationsData) {
-            val notificationTitle = messageSource.getMessages(notificationData.title)
-            val notificationContent = messageSource.getMessages(notificationData.content)
+            val notificationTitle = messageSource.getMessages(notificationData.message.title)
+            val notificationContent = messageSource.getMessages(notificationData.message.content)
 
             if (notificationData.notification == null) {
                 sendPushNotifications += notificationData.userIds.map {
@@ -66,6 +72,15 @@ class PushNotificationService(
         }
     }
 
+    suspend fun getPushNotificationsByUserId(userId: String, pageable: Pageable): PageResult<PushNotification> =
+        PageResult(
+            data = repository.findAllByUserId(userId, pageable).asFlow(),
+            totalItemsCount = repository.countAllByUserId(userId)
+        )
+
+    suspend fun getPushNotificationById(id: String) = repository.findById(id)
+        ?: throw PushNotificationNotFoundByIdException(id)
+
     private companion object {
         const val NOTIFICATION_ID_METADATA_KEY = "heart_beat_live:notification_id"
 
@@ -83,14 +98,8 @@ class PushNotificationService(
             priority = priority
         )
 
-        fun MessageSource.getMessages(message: PushNotificationData.Message): Map<Locale, String> {
-            val code = message.code
-            val arguments = message.arguments.toTypedArray()
-            return mapOf(
-                PushNotificationLocale.EN to getMessage(code, arguments, Locale.ROOT),
-                PushNotificationLocale.RU to getMessage(code, arguments, PushNotificationLocale.RU)
-            )
-        }
+        fun MessageSource.getMessages(message: PushNotificationMessage.Message): Map<Locale, String> =
+            PushNotificationLocale.ALL_LOCALES_LIST.associateWith { getMessageText(message, it) }
     }
 }
 

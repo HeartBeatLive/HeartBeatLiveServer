@@ -3,7 +3,9 @@ package com.munoon.heartbeatlive.server.config
 import graphql.language.IntValue
 import graphql.schema.Coercing
 import graphql.schema.CoercingSerializeException
+import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLScalarType
+import graphql.schema.TypeResolver
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.graphql.execution.RuntimeWiringConfigurer
@@ -12,8 +14,14 @@ import java.time.Instant
 @Configuration
 class GraphqlScalarConfig {
     @Bean
-    fun runtimeWiringConfigurer() = RuntimeWiringConfigurer {
+    fun runtimeWiringConfigurer(typeResolvers: List<GraphqlTypeResolver>) = RuntimeWiringConfigurer {
         it.scalar(graphqlInstantScalar())
+
+        val codeRegistryBuilder = GraphQLCodeRegistry.newCodeRegistry()
+        for (typeResolver in typeResolvers) {
+            codeRegistryBuilder.typeResolver(typeResolver.typeName, typeResolver)
+        }
+        it.codeRegistry(codeRegistryBuilder)
     }
 
     @Bean
@@ -52,4 +60,8 @@ class GraphqlScalarConfig {
             }
         })
         .build()
+}
+
+interface GraphqlTypeResolver : TypeResolver {
+    val typeName: String
 }
