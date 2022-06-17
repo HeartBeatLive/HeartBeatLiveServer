@@ -1,0 +1,9 @@
+"User subscription options."
+input SubscribeOptionsInput {
+    """
+    If subscription is two way (`subscriberUserId` subscribed to `userId` and `userId` subscribed to `subscriberUserId`),
+    does the user want to receive heart rate match notifications? \
+    `false` by default.
+    """
+    receiveHeartRateMatchNotifications: Boolean
+}

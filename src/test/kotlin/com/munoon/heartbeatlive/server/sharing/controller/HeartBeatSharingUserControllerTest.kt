@@ -5,7 +5,6 @@ import com.munoon.heartbeatlive.server.sharing.HeartBeatSharing
 import com.munoon.heartbeatlive.server.sharing.service.HeartBeatSharingService
 import com.munoon.heartbeatlive.server.user.User
 import com.munoon.heartbeatlive.server.user.UserRole
-import com.munoon.heartbeatlive.server.user.model.GraphqlProfileTo
 import com.munoon.heartbeatlive.server.user.model.GraphqlPublicProfileTo
 import com.munoon.heartbeatlive.server.user.service.UserService
 import com.munoon.heartbeatlive.server.utils.AuthTestUtils.withUser
@@ -63,14 +62,11 @@ internal class HeartBeatSharingUserControllerTest : AbstractGraphqlHttpTest() {
             .execute()
             .satisfyNoErrors()
             .path("getSharingCodeById.id").isEqualsTo("sharingCode1")
-            .path("getSharingCodeById.user").isEqualsTo(GraphqlProfileTo(
-                id = "user1",
-                displayName = "Test User",
-                email = "email@example.com",
-                emailVerified = true,
-                roles = setOf(UserRole.ADMIN),
-                lastHeartRateInfoReceiveTime = null
-            ))
+            .path("getSharingCodeById.user.id").isEqualsTo("user1")
+            .path("getSharingCodeById.user.displayName").isEqualsTo("Test User")
+            .path("getSharingCodeById.user.email").isEqualsTo("email@example.com")
+            .path("getSharingCodeById.user.emailVerified").isEqualsTo(true)
+            .path("getSharingCodeById.user.roles").isEqualsTo(listOf("ADMIN"))
 
         coVerify(exactly = 1) { service.getSharingCodeById("sharingCode1") }
         coVerify(exactly = 1) { userService.getUsersByIds(setOf("user1")) }

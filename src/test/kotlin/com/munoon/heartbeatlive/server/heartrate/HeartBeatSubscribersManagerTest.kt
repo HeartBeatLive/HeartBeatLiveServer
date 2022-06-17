@@ -30,7 +30,8 @@ internal class HeartBeatSubscribersManagerTest : AbstractTest() {
     @Test
     fun sendHeartRate() {
         val subscription = runBlocking {
-            subscriptionRepository.save(Subscription(userId = "user1", subscriberUserId = "user2"))
+            subscriptionRepository.save(Subscription(userId = "user1", subscriberUserId = "user2",
+                receiveHeartRateMatchNotifications = false))
         }
 
         val (user1Listener1Messages, user1Listener1) = heartBeatSubscribersManager.createSubscription("user1")

@@ -12,7 +12,7 @@ object UserMapper {
         email = email,
         emailVerified = emailVerified,
         roles = roles,
-        lastHeartRateInfoReceiveTime = lastHeartRateInfoReceiveTime
+        heartRates = heartRates
     )
 
     fun User.asGraphqlPublicProfile() = GraphqlPublicProfileTo(
@@ -21,7 +21,7 @@ object UserMapper {
 
     fun User.asGraphqlSubscriptionUserProfile() = GraphqlSubscriptionUserProfileTo(
         displayName = displayName,
-        lastHeartRateInfoReceiveTime = lastHeartRateInfoReceiveTime
+        heartRates = heartRates
     )
 
     fun GraphqlFirebaseCreateUserInput.asNewUser() = User(

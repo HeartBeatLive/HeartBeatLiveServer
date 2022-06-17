@@ -124,7 +124,7 @@ internal class HeartBeatControllerTest {
 
         @Test
         fun stopSendingHeartRate() {
-            coEvery { userService.updateUserLastHeartRateReceiveTime("1", null) } returns User(
+            coEvery { userService.writeUserHeartRate("1", null, any()) } returns User(
                 id = "1",
                 displayName = null,
                 email = null,
@@ -137,7 +137,7 @@ internal class HeartBeatControllerTest {
                 .satisfyNoErrors()
                 .path("stopSendingHeartRate").isEqualsTo(true)
 
-            coVerify(exactly = 1) { userService.updateUserLastHeartRateReceiveTime("1", null) }
+            coVerify(exactly = 1) { userService.writeUserHeartRate("1", null, any()) }
         }
 
         @Test
@@ -147,7 +147,7 @@ internal class HeartBeatControllerTest {
                 .execute()
                 .errors().expectSingleUnauthenticatedError(path = "stopSendingHeartRate")
 
-            coVerify(exactly = 0) { userService.updateUserLastHeartRateReceiveTime(any(), any()) }
+            coVerify(exactly = 0) { userService.writeUserHeartRate(any(), any(), any()) }
         }
     }
 }

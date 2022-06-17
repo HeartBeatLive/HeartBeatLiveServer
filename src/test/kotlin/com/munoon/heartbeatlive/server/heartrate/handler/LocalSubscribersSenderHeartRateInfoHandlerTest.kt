@@ -1,7 +1,7 @@
 package com.munoon.heartbeatlive.server.heartrate.handler
 
 import com.munoon.heartbeatlive.server.heartrate.HeartBeatSubscribersManager
-import com.munoon.heartbeatlive.server.heartrate.LocalSubscribersSenderHeartRateInfoHandler
+import io.kotest.common.runBlocking
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -15,7 +15,7 @@ internal class LocalSubscribersSenderHeartRateInfoHandlerTest {
 
     @Test
     fun handleHeartRateInfo() {
-        handler.handleHeartRateInfo("user1", 123.45f)
+        runBlocking { handler.handleHeartRateInfo("user1", 123.45f) }
         coVerify(exactly = 1) { subscribersManager.sendHeartRate("user1", 123.45f) }
     }
 }

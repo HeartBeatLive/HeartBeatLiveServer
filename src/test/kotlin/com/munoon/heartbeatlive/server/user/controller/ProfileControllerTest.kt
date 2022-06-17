@@ -2,9 +2,7 @@ package com.munoon.heartbeatlive.server.user.controller
 
 import com.munoon.heartbeatlive.server.AbstractGraphqlHttpTest
 import com.munoon.heartbeatlive.server.user.User
-import com.munoon.heartbeatlive.server.user.UserMapper.asGraphqlProfile
 import com.munoon.heartbeatlive.server.user.UserRole
-import com.munoon.heartbeatlive.server.user.model.GraphqlProfileTo
 import com.munoon.heartbeatlive.server.user.model.UpdateUserInfoFromJwtTo
 import com.munoon.heartbeatlive.server.user.service.UserService
 import com.munoon.heartbeatlive.server.utils.AuthTestUtils.withUser
@@ -74,7 +72,11 @@ internal class ProfileControllerTest : AbstractGraphqlHttpTest() {
             """.trimIndent())
             .execute()
             .satisfyNoErrors()
-            .path("updateProfileDisplayName").entity(GraphqlProfileTo::class.java).isEqualTo(user.asGraphqlProfile())
+            .path("updateProfileDisplayName.id").isEqualsTo(user.id)
+            .path("updateProfileDisplayName.displayName").isEqualsTo(user.displayName!!)
+            .path("updateProfileDisplayName.email").isEqualsTo(user.email!!)
+            .path("updateProfileDisplayName.emailVerified").isEqualsTo(user.emailVerified)
+            .path("updateProfileDisplayName.roles").isEqualsTo(listOf("ADMIN"))
 
         coVerify(exactly = 1) { userService.updateUserDisplayName("1", "New Name") }
     }
@@ -132,7 +134,11 @@ internal class ProfileControllerTest : AbstractGraphqlHttpTest() {
             """.trimIndent())
             .execute()
             .satisfyNoErrors()
-            .path("updateProfileInfo").isEqualsTo(user.asGraphqlProfile())
+            .path("updateProfileInfo.id").isEqualsTo(user.id)
+            .path("updateProfileInfo.displayName").isEqualsTo(user.displayName!!)
+            .path("updateProfileInfo.email").isEqualsTo(user.email!!)
+            .path("updateProfileInfo.emailVerified").isEqualsTo(user.emailVerified)
+            .path("updateProfileInfo.roles").isEqualsTo(listOf("ADMIN"))
 
         val expectedUpdateUserInfo = UpdateUserInfoFromJwtTo(emailVerified = true)
         coVerify(exactly = 1) { userService.updateUserInfoFromJwt("1", expectedUpdateUserInfo) }
@@ -173,7 +179,11 @@ internal class ProfileControllerTest : AbstractGraphqlHttpTest() {
             """.trimIndent())
             .execute()
             .satisfyNoErrors()
-            .path("getProfile").entity(GraphqlProfileTo::class.java).isEqualTo(user.asGraphqlProfile())
+            .path("getProfile.id").isEqualsTo(user.id)
+            .path("getProfile.displayName").isEqualsTo(user.displayName!!)
+            .path("getProfile.email").isEqualsTo(user.email!!)
+            .path("getProfile.emailVerified").isEqualsTo(user.emailVerified)
+            .path("getProfile.roles").isEqualsTo(listOf("ADMIN"))
 
         coVerify(exactly = 1) { userService.getUserById("1") }
     }

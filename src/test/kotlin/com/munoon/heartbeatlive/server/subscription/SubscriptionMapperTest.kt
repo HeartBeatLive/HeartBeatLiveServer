@@ -23,7 +23,8 @@ internal class SubscriptionMapperTest {
             id = "subscription1",
             userId = "user1",
             subscriberUserId = "user2",
-            created = subscribeTime
+            created = subscribeTime,
+            receiveHeartRateMatchNotifications = false
         )
 
         val actual = subscription.asGraphQL()

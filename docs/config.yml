@@ -1,5 +1,5 @@
 introspection:
-  schemaFile: ../src/main/resources/graphql/**/*.graphqls
+  schemaFile: ../src/main/graphql/**/*.graphqls
   metadataFile: ./metadata.json
 
 info:

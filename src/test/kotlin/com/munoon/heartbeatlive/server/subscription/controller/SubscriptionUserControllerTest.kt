@@ -38,7 +38,8 @@ internal class SubscriptionUserControllerTest : AbstractGraphqlHttpTest() {
             id = "subscriptionId",
             userId = "user1",
             subscriberUserId = "user2",
-            created = Instant.now()
+            created = Instant.now(),
+            receiveHeartRateMatchNotifications = false
         )
 
         graphqlTester.withUser(id = "user1")
@@ -69,7 +70,8 @@ internal class SubscriptionUserControllerTest : AbstractGraphqlHttpTest() {
             id = "subscriptionId",
             userId = "user1",
             subscriberUserId = "user2",
-            created = Instant.now()
+            created = Instant.now(),
+            receiveHeartRateMatchNotifications = false
         )
 
         graphqlTester.withUser(id = "user1")

@@ -8,6 +8,7 @@ import com.munoon.heartbeatlive.server.subscription.Subscription
 import com.munoon.heartbeatlive.server.subscription.SubscriptionNotFoundByIdException
 import com.munoon.heartbeatlive.server.subscription.UserSubscribersLimitExceededException
 import com.munoon.heartbeatlive.server.subscription.UserSubscriptionsLimitExceededException
+import com.munoon.heartbeatlive.server.subscription.model.GraphqlSubscribeOptionsInput
 import com.munoon.heartbeatlive.server.subscription.repository.SubscriptionRepository
 import com.munoon.heartbeatlive.server.subscription.service.SubscriptionService
 import com.munoon.heartbeatlive.server.user.User
@@ -48,19 +49,22 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
     @Test
     fun subscribeBySharingCode() {
         val created = Instant.now()
-        coEvery { service.subscribeBySharingCode("ABC123", "user1") } returns Subscription(
+        val expectedOptions = GraphqlSubscribeOptionsInput(receiveHeartRateMatchNotifications = true)
+        coEvery { service.subscribeBySharingCode("ABC123", "user1", any()) } returns Subscription(
             id = "subscription1",
             userId = "user2",
             subscriberUserId = "user1",
-            created = created
+            created = created,
+            receiveHeartRateMatchNotifications = false
         )
 
         graphqlTester.withUser(id = "user1")
             .document("""
                 mutation {
-                    subscribeBySharingCode(sharingCode: "ABC123") {
-                        id, subscribeTime
-                    }
+                    subscribeBySharingCode(
+                        sharingCode: "ABC123",
+                        options: { receiveHeartRateMatchNotifications: true }
+                    ) { id, subscribeTime }
                 }
             """.trimIndent())
             .execute()
@@ -68,12 +72,12 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
             .path("subscribeBySharingCode.id").isEqualsTo("subscription1")
             .path("subscribeBySharingCode.subscribeTime").isEqualsTo(Instant.ofEpochSecond(created.epochSecond))
 
-        coVerify(exactly = 1) { service.subscribeBySharingCode(any(), any()) }
+        coVerify(exactly = 1) { service.subscribeBySharingCode("ABC123", "user1", expectedOptions) }
     }
 
     @Test
     fun `subscribeBySharingCode - self subscription`() {
-        coEvery { service.subscribeBySharingCode("ABC123", "user1") } throws
+        coEvery { service.subscribeBySharingCode("ABC123", "user1", any()) } throws
                 SelfSubscriptionAttemptException()
 
         graphqlTester.withUser(id = "user1")
@@ -91,12 +95,12 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
                 path = "subscribeBySharingCode"
             )
 
-        coVerify(exactly = 1) { service.subscribeBySharingCode(any(), any()) }
+        coVerify(exactly = 1) { service.subscribeBySharingCode(any(), any(), any()) }
     }
 
     @Test
     fun `subscribeBySharingCode - sharing code expired`() {
-        coEvery { service.subscribeBySharingCode("ABC123", "user1") } throws
+        coEvery { service.subscribeBySharingCode("ABC123", "user1", any()) } throws
                 HeartBeatSharingExpiredException()
 
         graphqlTester.withUser(id = "user1")
@@ -114,7 +118,7 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
                 path = "subscribeBySharingCode"
             )
 
-        coVerify(exactly = 1) { service.subscribeBySharingCode(any(), any()) }
+        coVerify(exactly = 1) { service.subscribeBySharingCode(any(), any(), any()) }
     }
 
     @Test
@@ -130,12 +134,12 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
             .execute()
             .errors().expectSingleValidationError("subscribeBySharingCode", "sharingCode")
 
-        coVerify(exactly = 0) { service.subscribeBySharingCode(any(), any()) }
+        coVerify(exactly = 0) { service.subscribeBySharingCode(any(), any(), any()) }
     }
 
     @Test
     fun `subscribeBySharingCode - user have too many subscribers`() {
-        coEvery { service.subscribeBySharingCode("ABC123", "user1") } throws
+        coEvery { service.subscribeBySharingCode("ABC123", "user1", any()) } throws
                 UserSubscribersLimitExceededException()
 
         graphqlTester.withUser(id = "user1")
@@ -153,12 +157,12 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
                 path = "subscribeBySharingCode"
             )
 
-        coVerify(exactly = 1) { service.subscribeBySharingCode(any(), any()) }
+        coVerify(exactly = 1) { service.subscribeBySharingCode(any(), any(), any()) }
     }
 
     @Test
     fun `subscribeBySharingCode - user have too many subscriptions`() {
-        coEvery { service.subscribeBySharingCode("ABC123", "user1") } throws
+        coEvery { service.subscribeBySharingCode("ABC123", "user1", any()) } throws
                 UserSubscriptionsLimitExceededException()
 
         graphqlTester.withUser(id = "user1")
@@ -176,7 +180,7 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
                 path = "subscribeBySharingCode"
             )
 
-        coVerify(exactly = 1) { service.subscribeBySharingCode(any(), any()) }
+        coVerify(exactly = 1) { service.subscribeBySharingCode(any(), any(), any()) }
     }
 
     @Test
@@ -192,7 +196,7 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
             .execute()
             .errors().expectSingleUnauthenticatedError(path = "subscribeBySharingCode")
 
-        coVerify(exactly = 0) { service.subscribeBySharingCode(any(), any()) }
+        coVerify(exactly = 0) { service.subscribeBySharingCode(any(), any(), any()) }
     }
 
     @Test
@@ -255,7 +259,8 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
             id = "subscriptionId",
             userId = "user1",
             subscriberUserId = "user2",
-            created = created
+            created = created,
+            receiveHeartRateMatchNotifications = false
         )
 
         graphqlTester.withUser(id = "user2")
@@ -281,7 +286,8 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
             id = "subscriptionId",
             userId = "user1",
             subscriberUserId = "user2",
-            created = created
+            created = created,
+            receiveHeartRateMatchNotifications = false
         )
 
         graphqlTester.withUser(id = "user1")
@@ -330,7 +336,8 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
             id = "subscriptionId",
             userId = "user2",
             subscriberUserId = "user3",
-            created = Instant.now()
+            created = Instant.now(),
+            receiveHeartRateMatchNotifications = false
         )
 
         graphqlTester.withUser(id = "user1")
@@ -383,10 +390,12 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
         val created2 = Instant.now()
 
         val subscription1 = runBlocking {
-            repository.save(Subscription(userId = "user1", subscriberUserId = "user2", created = created1))
+            repository.save(Subscription(userId = "user1", subscriberUserId = "user2", created = created1,
+                receiveHeartRateMatchNotifications = false))
         }
         val subscription2 = runBlocking {
-            repository.save(Subscription(userId = "user1", subscriberUserId = "user3", created = created2))
+            repository.save(Subscription(userId = "user1", subscriberUserId = "user3", created = created2,
+                receiveHeartRateMatchNotifications = false))
         }
 
         val expectedItem1 = mapOf("id" to subscription1.id, "subscribeTime" to created1.epochSecond.toInt())
@@ -427,10 +436,12 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
         val created2 = Instant.now()
 
         val subscription1 = runBlocking {
-            repository.save(Subscription(userId = "user1", subscriberUserId = "user2", created = created1))
+            repository.save(Subscription(userId = "user1", subscriberUserId = "user2", created = created1,
+                receiveHeartRateMatchNotifications = false))
         }
         val subscription2 = runBlocking {
-            repository.save(Subscription(userId = "user1", subscriberUserId = "user3", created = created2))
+            repository.save(Subscription(userId = "user1", subscriberUserId = "user3", created = created2,
+                receiveHeartRateMatchNotifications = false))
         }
 
         val expectedItem1 = mapOf("id" to subscription1.id, "subscribeTime" to created1.epochSecond.toInt())
@@ -471,10 +482,12 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
         val created2 = Instant.now()
 
         val subscription1 = runBlocking {
-            repository.save(Subscription(userId = "user2", subscriberUserId = "user1", created = created1))
+            repository.save(Subscription(userId = "user2", subscriberUserId = "user1", created = created1,
+                receiveHeartRateMatchNotifications = false))
         }
         val subscription2 = runBlocking {
-            repository.save(Subscription(userId = "user3", subscriberUserId = "user1", created = created2))
+            repository.save(Subscription(userId = "user3", subscriberUserId = "user1", created = created2,
+                receiveHeartRateMatchNotifications = false))
         }
 
         val expectedItem1 = mapOf("id" to subscription1.id, "subscribeTime" to created1.epochSecond.toInt())
@@ -515,10 +528,12 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
         val created2 = Instant.now()
 
         val subscription1 = runBlocking {
-            repository.save(Subscription(userId = "user2", subscriberUserId = "user1", created = created1))
+            repository.save(Subscription(userId = "user2", subscriberUserId = "user1", created = created1,
+                receiveHeartRateMatchNotifications = false))
         }
         val subscription2 = runBlocking {
-            repository.save(Subscription(userId = "user3", subscriberUserId = "user1", created = created2))
+            repository.save(Subscription(userId = "user3", subscriberUserId = "user1", created = created2,
+                receiveHeartRateMatchNotifications = false))
         }
 
         val expectedItem1 = mapOf("id" to subscription1.id, "subscribeTime" to created1.epochSecond.toInt())

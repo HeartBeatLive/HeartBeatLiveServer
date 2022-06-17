@@ -6,6 +6,8 @@ import org.springframework.graphql.ResponseError
 import org.springframework.graphql.client.SubscriptionErrorException
 import org.springframework.graphql.execution.ErrorType
 import org.springframework.graphql.test.tester.GraphQlTester
+import org.springframework.graphql.test.tester.HttpGraphQlTester
+import org.springframework.http.HttpHeaders
 import reactor.test.StepVerifier
 
 object GraphqlTestUtils {
@@ -70,4 +72,6 @@ object GraphqlTestUtils {
         assertThat(errors).hasSize(1)
         satisfyErrorResponse(errors.first(), errorType, code, extensions, path)
     }
+
+    fun HttpGraphQlTester.language(language: String) = mutate().header(HttpHeaders.ACCEPT_LANGUAGE, language).build()
 }

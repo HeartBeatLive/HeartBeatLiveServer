@@ -9,15 +9,20 @@ import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingExpiredException
 import com.munoon.heartbeatlive.server.sharing.service.HeartBeatSharingService
 import com.munoon.heartbeatlive.server.subscription.SelfSubscriptionAttemptException
 import com.munoon.heartbeatlive.server.subscription.Subscription
+import com.munoon.heartbeatlive.server.subscription.SubscriptionEvent
 import com.munoon.heartbeatlive.server.subscription.SubscriptionNotFoundByIdException
 import com.munoon.heartbeatlive.server.subscription.UserSubscribersLimitExceededException
 import com.munoon.heartbeatlive.server.subscription.UserSubscriptionsLimitExceededException
 import com.munoon.heartbeatlive.server.subscription.account.AccountSubscription
 import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
 import com.munoon.heartbeatlive.server.subscription.account.service.AccountSubscriptionService
+import com.munoon.heartbeatlive.server.subscription.model.GraphqlSubscribeOptionsInput
 import com.munoon.heartbeatlive.server.subscription.repository.SubscriptionRepository
 import com.munoon.heartbeatlive.server.user.UserEvents
+import com.munoon.heartbeatlive.server.user.model.GraphqlFirebaseCreateUserInput
+import com.munoon.heartbeatlive.server.user.service.UserService
 import com.ninjasquad.springmockk.MockkBean
+import io.kotest.matchers.collections.shouldContainExactly
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -32,10 +37,13 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
+import org.springframework.test.context.event.ApplicationEvents
+import org.springframework.test.context.event.RecordApplicationEvents
 import java.time.Duration
 import java.time.OffsetDateTime
 
 @SpringBootTest
+@RecordApplicationEvents
 internal class SubscriptionServiceTest : AbstractTest() {
     @Autowired
     private lateinit var service: SubscriptionService
@@ -55,6 +63,12 @@ internal class SubscriptionServiceTest : AbstractTest() {
     @MockkBean
     private lateinit var userBanService: UserBanService
 
+    @Autowired
+    private lateinit var userService: UserService
+
+    @Autowired
+    private lateinit var events: ApplicationEvents
+
     @BeforeEach
     fun setUpMocks() {
         coEvery { accountSubscriptionService.getAccountSubscriptionByUserId(any()) } returns AccountSubscription(
@@ -73,14 +87,18 @@ internal class SubscriptionServiceTest : AbstractTest() {
             userId = "user1",
             expiredAt = null
         )
+        runBlocking { userService.createUser(GraphqlFirebaseCreateUserInput(
+            id = "user2", email = null, emailVerified = false)) }
 
-        val subscription = runBlocking { service.subscribeBySharingCode(code = "ABC123", userId = "user2") }
+        val options = GraphqlSubscribeOptionsInput(receiveHeartRateMatchNotifications = true)
+        val subscription = runBlocking { service.subscribeBySharingCode(code = "ABC123", userId = "user2", options) }
 
         val expectedSubscription = Subscription(
             id = subscription.id!!,
             userId = "user1",
             subscriberUserId = "user2",
-            created = subscription.created
+            created = subscription.created,
+            receiveHeartRateMatchNotifications = true
         )
 
         assertThat(subscription).usingRecursiveComparison().isEqualTo(expectedSubscription)
@@ -93,6 +111,9 @@ internal class SubscriptionServiceTest : AbstractTest() {
 
         coVerify(exactly = 1) { heartBeatSharingService.getSharingCodeByPublicCode(any()) }
         coVerify(exactly = 1) { userBanService.checkUserBanned("user2", "user1") }
+
+        events.stream(SubscriptionEvent::class.java).toList() shouldContainExactly
+                listOf(SubscriptionEvent.SubscriptionCreatedEvent(expectedSubscription))
     }
 
     @Test
@@ -104,8 +125,10 @@ internal class SubscriptionServiceTest : AbstractTest() {
             expiredAt = null
         )
 
-        assertThatThrownBy { runBlocking { service.subscribeBySharingCode(code = "ABC123", userId = "user1") } }
-            .isExactlyInstanceOf(SelfSubscriptionAttemptException::class.java)
+        val options = GraphqlSubscribeOptionsInput()
+        assertThatThrownBy { runBlocking {
+            service.subscribeBySharingCode(code = "ABC123", userId = "user1", options)
+        } }.isExactlyInstanceOf(SelfSubscriptionAttemptException::class.java)
     }
 
     @Test
@@ -117,15 +140,20 @@ internal class SubscriptionServiceTest : AbstractTest() {
             expiredAt = OffsetDateTime.now().minus(Duration.ofDays(10)).toInstant()
         )
 
-        assertThatThrownBy { runBlocking { service.subscribeBySharingCode(code = "ABC123", userId = "user2") } }
-            .isExactlyInstanceOf(HeartBeatSharingExpiredException::class.java)
+        val options = GraphqlSubscribeOptionsInput()
+        assertThatThrownBy { runBlocking {
+            service.subscribeBySharingCode(code = "ABC123", userId = "user2", options)
+        } }.isExactlyInstanceOf(HeartBeatSharingExpiredException::class.java)
     }
 
     @Test
     fun `subscribeBySharingCode - user have too many subscribers`() {
-        runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2")) }
-        runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user3")) }
-        runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user4")) }
+        runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2",
+            receiveHeartRateMatchNotifications = false)) }
+        runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user3",
+            receiveHeartRateMatchNotifications = false)) }
+        runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user4",
+            receiveHeartRateMatchNotifications = false)) }
 
         coEvery { heartBeatSharingService.getSharingCodeByPublicCode("ABC123") } returns HeartBeatSharing(
             id = null,
@@ -134,14 +162,17 @@ internal class SubscriptionServiceTest : AbstractTest() {
             expiredAt = null
         )
 
-        assertThatThrownBy { runBlocking { service.subscribeBySharingCode(code = "ABC123", userId = "user5") } }
-            .isExactlyInstanceOf(UserSubscribersLimitExceededException::class.java)
+        val options = GraphqlSubscribeOptionsInput()
+        assertThatThrownBy { runBlocking {
+            service.subscribeBySharingCode(code = "ABC123", userId = "user5", options)
+        } }.isExactlyInstanceOf(UserSubscribersLimitExceededException::class.java)
     }
 
     @Test
     fun `subscribeBySharingCode - user subscribed on too many users`() {
         for (i in 2..10) {
-            runBlocking { repository.save(Subscription(userId = "user$i", subscriberUserId = "user1")) }
+            runBlocking { repository.save(Subscription(userId = "user$i", subscriberUserId = "user1",
+                receiveHeartRateMatchNotifications = false)) }
         }
         runBlocking { assertThat(repository.count()).isEqualTo(9) }
 
@@ -152,8 +183,10 @@ internal class SubscriptionServiceTest : AbstractTest() {
             expiredAt = null
         )
 
-        assertThatThrownBy { runBlocking { service.subscribeBySharingCode(code = "ABC123", userId = "user1") } }
-            .isExactlyInstanceOf(UserSubscriptionsLimitExceededException::class.java)
+        val options = GraphqlSubscribeOptionsInput()
+        assertThatThrownBy { runBlocking {
+            service.subscribeBySharingCode(code = "ABC123", userId = "user1", options)
+        } }.isExactlyInstanceOf(UserSubscriptionsLimitExceededException::class.java)
     }
 
     @Test
@@ -166,8 +199,10 @@ internal class SubscriptionServiceTest : AbstractTest() {
             expiredAt = null
         )
 
-        assertThatThrownBy { runBlocking { service.subscribeBySharingCode(code = "ABC123", userId = "user2") } }
-            .isEqualTo(UserBanedByOtherUserException(userId = "user2", bannedByUserId = "user1"))
+        val options = GraphqlSubscribeOptionsInput()
+        assertThatThrownBy { runBlocking {
+            service.subscribeBySharingCode(code = "ABC123", userId = "user2", options)
+        } }.isEqualTo(UserBanedByOtherUserException(userId = "user2", bannedByUserId = "user1"))
 
         coVerify(exactly = 1) { userBanService.checkUserBanned("user2", "user1") }
     }
@@ -179,7 +214,8 @@ internal class SubscriptionServiceTest : AbstractTest() {
             subscriptionPlan = UserSubscriptionPlan.PRO
         )
 
-        val subscription = runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2")) }
+        val subscription = runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2",
+            receiveHeartRateMatchNotifications = false)) }
         runBlocking { assertThat(repository.count()).isOne }
 
         coEvery { heartBeatSharingService.getSharingCodeByPublicCode("ABC123") } returns HeartBeatSharing(
@@ -189,7 +225,8 @@ internal class SubscriptionServiceTest : AbstractTest() {
             expiredAt = null
         )
 
-        val newSubscription = runBlocking { service.subscribeBySharingCode(code = "ABC123", userId = "user2") }
+        val options = GraphqlSubscribeOptionsInput()
+        val newSubscription = runBlocking { service.subscribeBySharingCode(code = "ABC123", userId = "user2", options) }
         assertThat(newSubscription).usingRecursiveComparison().ignoringFields("created").isEqualTo(subscription)
 
         runBlocking { assertThat(repository.count()).isOne }
@@ -197,7 +234,8 @@ internal class SubscriptionServiceTest : AbstractTest() {
 
     @Test
     fun `unsubscribeFromUserById - without verification`() {
-        val subscription = runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2")) }
+        val subscription = runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2",
+            receiveHeartRateMatchNotifications = false)) }
         runBlocking { assertThat(repository.count()).isOne }
         runBlocking { service.unsubscribeFromUserById(subscription.id!!, validateUserId = null) }
         runBlocking { assertThat(repository.count()).isZero }
@@ -211,7 +249,8 @@ internal class SubscriptionServiceTest : AbstractTest() {
 
     @Test
     fun `unsubscribeFromUserById - with verification`() {
-        val subscription = runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2")) }
+        val subscription = runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2",
+            receiveHeartRateMatchNotifications = false)) }
         runBlocking { assertThat(repository.count()).isOne }
         runBlocking { service.unsubscribeFromUserById(subscription.id!!, validateUserId = "user2") }
         runBlocking { assertThat(repository.count()).isZero }
@@ -225,7 +264,8 @@ internal class SubscriptionServiceTest : AbstractTest() {
 
     @Test
     fun `unsubscribeFromUserById - with verification not verified`() {
-        val subscription = runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2")) }
+        val subscription = runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2",
+            receiveHeartRateMatchNotifications = false)) }
         runBlocking { assertThat(repository.count()).isOne }
 
         assertThatThrownBy { runBlocking {
@@ -237,7 +277,8 @@ internal class SubscriptionServiceTest : AbstractTest() {
 
     @Test
     fun getSubscriptionById() {
-        val expected = runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2")) }
+        val expected = runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2",
+            receiveHeartRateMatchNotifications = false)) }
 
         val actual = runBlocking { service.getSubscriptionById(expected.id!!) }
 
@@ -252,10 +293,14 @@ internal class SubscriptionServiceTest : AbstractTest() {
 
     @Test
     fun getSubscribers() {
-        val expected1 = runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2")) }
-        val expected2 = runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user3")) }
-        runBlocking { repository.save(Subscription(userId = "user2", subscriberUserId = "user1")) } // not expected
-        runBlocking { repository.save(Subscription(userId = "user3", subscriberUserId = "user1")) } // not expected
+        val expected1 = runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2",
+            receiveHeartRateMatchNotifications = false)) }
+        val expected2 = runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user3",
+            receiveHeartRateMatchNotifications = false)) }
+        runBlocking { repository.save(Subscription(userId = "user2", subscriberUserId = "user1",
+            receiveHeartRateMatchNotifications = false)) } // not expected
+        runBlocking { repository.save(Subscription(userId = "user3", subscriberUserId = "user1",
+            receiveHeartRateMatchNotifications = false)) } // not expected
 
         val pageRequest = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "created"))
         val actual = runBlocking { service.getSubscribers("user1", pageRequest) }
@@ -271,10 +316,14 @@ internal class SubscriptionServiceTest : AbstractTest() {
 
     @Test
     fun getSubscriptions() {
-        val expected1 = runBlocking { repository.save(Subscription(userId = "user2", subscriberUserId = "user1")) }
-        val expected2 = runBlocking { repository.save(Subscription(userId = "user3", subscriberUserId = "user1")) }
-        runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2")) } // not expected
-        runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user3")) } // not expected
+        val expected1 = runBlocking { repository.save(Subscription(userId = "user2", subscriberUserId = "user1",
+            receiveHeartRateMatchNotifications = false)) }
+        val expected2 = runBlocking { repository.save(Subscription(userId = "user3", subscriberUserId = "user1",
+            receiveHeartRateMatchNotifications = false)) }
+        runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2",
+            receiveHeartRateMatchNotifications = false)) } // not expected
+        runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user3",
+            receiveHeartRateMatchNotifications = false)) } // not expected
 
         val pageRequest = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "created"))
         val actual = runBlocking { service.getSubscriptions("user1", pageRequest) }
@@ -291,7 +340,8 @@ internal class SubscriptionServiceTest : AbstractTest() {
     @Test
     fun `checkUserHaveMaximumSubscribers - true`() {
         for (i in 1..10) {
-            runBlocking { repository.save(Subscription(userId = "userId", subscriberUserId = "user$i")) }
+            runBlocking { repository.save(Subscription(userId = "userId", subscriberUserId = "user$i",
+                receiveHeartRateMatchNotifications = false)) }
         }
         runBlocking { assertThat(repository.count()).isEqualTo(10) }
 
@@ -308,7 +358,8 @@ internal class SubscriptionServiceTest : AbstractTest() {
     @Test
     fun `checkUserHaveMaximumSubscriptions - true`() {
         for (i in 1..10) {
-            runBlocking { repository.save(Subscription(userId = "user$i", subscriberUserId = "userId")) }
+            runBlocking { repository.save(Subscription(userId = "user$i", subscriberUserId = "userId",
+                receiveHeartRateMatchNotifications = false)) }
         }
         runBlocking { assertThat(repository.count()).isEqualTo(10) }
 
@@ -323,12 +374,34 @@ internal class SubscriptionServiceTest : AbstractTest() {
     }
 
     @Test
+    fun getAllByIds() {
+        val subscription1 = runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2",
+            receiveHeartRateMatchNotifications = false)) }
+        val subscription2 = runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2",
+            receiveHeartRateMatchNotifications = false)) }
+        runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2",
+            receiveHeartRateMatchNotifications = false)) }
+
+        val actual = runBlocking {
+            service.getAllByIds(setOf(subscription1.id!!, subscription2.id!!)).toList(arrayListOf())
+        }
+
+        assertThat(actual)
+            .usingRecursiveComparison()
+            .ignoringFields("created")
+            .isEqualTo(listOf(subscription1, subscription2))
+    }
+
+    @Test
     fun handleUserDeletedEvent() {
         every { userBanService.handleUserDeletedEvent(any()) } returns Unit
         every { heartBeatSharingService.handleUserDeletedEvent(any()) } returns Unit
-        runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2")) }
-        runBlocking { repository.save(Subscription(userId = "user2", subscriberUserId = "user1")) }
-        val notDelete = runBlocking { repository.save(Subscription(userId = "user2", subscriberUserId = "user3")) }
+        runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2",
+            receiveHeartRateMatchNotifications = false)) }
+        runBlocking { repository.save(Subscription(userId = "user2", subscriberUserId = "user1",
+            receiveHeartRateMatchNotifications = false)) }
+        val notDelete = runBlocking { repository.save(Subscription(userId = "user2", subscriberUserId = "user3",
+            receiveHeartRateMatchNotifications = false)) }
 
         runBlocking { assertThat(repository.count()).isEqualTo(3) }
 
@@ -346,12 +419,20 @@ internal class SubscriptionServiceTest : AbstractTest() {
     @Test
     fun handleUserBannedEvent() {
         every { userBanService.handleUserDeletedEvent(any()) } returns Unit
-        runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2")) }
-        val expected1 = runBlocking { repository.save(Subscription(userId = "user2", subscriberUserId = "user1")) }
-        val expected2 = runBlocking { repository.save(Subscription(userId = "user3", subscriberUserId = "user1")) }
-        val expected3 = runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user3")) }
-        val expected4 = runBlocking { repository.save(Subscription(userId = "user2", subscriberUserId = "user3")) }
-        val expected5 = runBlocking { repository.save(Subscription(userId = "user3", subscriberUserId = "user2")) }
+        runBlocking { userService.createUser(
+            GraphqlFirebaseCreateUserInput(id = "user1", email = null, emailVerified = false)) }
+        runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2",
+            receiveHeartRateMatchNotifications = false)) }
+        val expected1 = runBlocking { repository.save(Subscription(userId = "user2", subscriberUserId = "user1",
+            receiveHeartRateMatchNotifications = false)) }
+        val expected2 = runBlocking { repository.save(Subscription(userId = "user3", subscriberUserId = "user1",
+            receiveHeartRateMatchNotifications = false)) }
+        val expected3 = runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user3",
+            receiveHeartRateMatchNotifications = false)) }
+        val expected4 = runBlocking { repository.save(Subscription(userId = "user2", subscriberUserId = "user3",
+            receiveHeartRateMatchNotifications = false)) }
+        val expected5 = runBlocking { repository.save(Subscription(userId = "user3", subscriberUserId = "user2",
+            receiveHeartRateMatchNotifications = false)) }
         runBlocking { assertThat(repository.count()).isEqualTo(6) }
 
         eventPublisher.publishEvent(UserBanEvents.UserBannedEvent("user2", "user1"))

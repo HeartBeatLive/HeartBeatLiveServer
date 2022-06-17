@@ -45,7 +45,8 @@ internal class UserBanControllerTest : AbstractGraphqlHttpTest() {
         coEvery { subscriptionService.getSubscriptionById("subscription1") } returns Subscription(
             id = "subscription1",
             userId = "user1",
-            subscriberUserId = "user2"
+            subscriberUserId = "user2",
+            receiveHeartRateMatchNotifications = false
         )
 
         val created = Instant.now()
@@ -103,7 +104,8 @@ internal class UserBanControllerTest : AbstractGraphqlHttpTest() {
         coEvery { subscriptionService.getSubscriptionById("subscription1") } returns Subscription(
             id = "subscription1",
             userId = "user2",
-            subscriberUserId = "user1"
+            subscriberUserId = "user1",
+            receiveHeartRateMatchNotifications = false
         )
 
         graphqlTester.withUser(id = "user1")

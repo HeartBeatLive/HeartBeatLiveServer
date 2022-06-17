@@ -1,0 +1,23 @@
+"Push notification info."
+type PushNotification {
+    "Push notification identifier."
+    id: ID!
+
+    "Create time."
+    created: EpochSecondsTime!,
+
+    "Common information."
+    info: PushNotificationInfo!,
+
+    "Details."
+    data: PushNotificationData!
+}
+
+"Common push notification info."
+type PushNotificationInfo {
+    "Push notification title."
+    title: String!,
+
+    "Push notification content."
+    content: String!
+}

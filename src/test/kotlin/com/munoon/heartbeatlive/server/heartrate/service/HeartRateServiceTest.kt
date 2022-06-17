@@ -3,14 +3,17 @@ package com.munoon.heartbeatlive.server.heartrate.service
 import com.munoon.heartbeatlive.server.AbstractTest
 import com.munoon.heartbeatlive.server.heartrate.HeartBeatSubscribersManager
 import com.munoon.heartbeatlive.server.heartrate.HeartRateSubscriber
-import com.munoon.heartbeatlive.server.heartrate.LocalSubscribersSenderHeartRateInfoHandler
-import com.munoon.heartbeatlive.server.heartrate.MessagePublisherHeartRateInfoHandler
 import com.munoon.heartbeatlive.server.heartrate.TooManyHeartRateSubscriptionsExceptions
-import com.munoon.heartbeatlive.server.heartrate.UserStatusUpdaterHeartRateInfoHandler
+import com.munoon.heartbeatlive.server.heartrate.handler.BigOrLowHeartRateDetectorInfoHandler
+import com.munoon.heartbeatlive.server.heartrate.handler.LocalSubscribersSenderHeartRateInfoHandler
+import com.munoon.heartbeatlive.server.heartrate.handler.MessagePublisherHeartRateInfoHandler
+import com.munoon.heartbeatlive.server.heartrate.handler.SendHeartRateMatchHeartRateInfoHandler
+import com.munoon.heartbeatlive.server.heartrate.handler.UserStatusUpdaterHeartRateInfoHandler
 import com.munoon.heartbeatlive.server.heartrate.model.HeartRateInfo
 import com.munoon.heartbeatlive.server.heartrate.repository.HeartRateSubscriberRepository
 import com.ninjasquad.springmockk.MockkBean
 import com.ninjasquad.springmockk.SpykBean
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.verify
@@ -50,11 +53,23 @@ internal class HeartRateServiceTest : AbstractTest() {
     @MockkBean
     private lateinit var userStatusUpdaterHeartRateInfoHandler: UserStatusUpdaterHeartRateInfoHandler
 
+    @MockkBean
+    private lateinit var bigOrLowHeartRateDetectorInfoHandler: BigOrLowHeartRateDetectorInfoHandler
+
+    @MockkBean
+    private lateinit var sendHeartRateMatchHeartRateInfoHandler: SendHeartRateMatchHeartRateInfoHandler
+
     @Test
     fun sendHeartRate() {
-        every { messagePublisherHeartRateInfoHandler.handleHeartRateInfo(any(), any()) } returns Unit
-        every { localSubscribersSenderHeartRateInfoHandler.handleHeartRateInfo(any(), any()) } returns Unit
-        every { userStatusUpdaterHeartRateInfoHandler.handleHeartRateInfo(any(), any()) } returns Unit
+        every { messagePublisherHeartRateInfoHandler.filter(any(), any()) } returns true
+        coEvery { messagePublisherHeartRateInfoHandler.handleHeartRateInfo(any(), any()) } returns Unit
+        every { localSubscribersSenderHeartRateInfoHandler.filter(any(), any()) } returns true
+        coEvery { localSubscribersSenderHeartRateInfoHandler.handleHeartRateInfo(any(), any()) } returns Unit
+        every { userStatusUpdaterHeartRateInfoHandler.filter(any(), any()) } returns true
+        coEvery { userStatusUpdaterHeartRateInfoHandler.handleHeartRateInfo(any(), any()) } returns Unit
+        every { bigOrLowHeartRateDetectorInfoHandler.filter(any(), any()) } returns false
+        every { sendHeartRateMatchHeartRateInfoHandler.filter(any(), any()) } returns true
+        coEvery { sendHeartRateMatchHeartRateInfoHandler.handleHeartRateInfo(any(), any()) } returns Unit
 
         runBlocking { service.sendHeartRate("user1", 123.45f) }
 
@@ -67,7 +82,11 @@ internal class HeartRateServiceTest : AbstractTest() {
         coVerify(exactly = 1, timeout = 60000) {
             userStatusUpdaterHeartRateInfoHandler.handleHeartRateInfo("user1", 123.45f)
         }
-        coVerify(exactly = 3) { asyncTaskExecutor.execute(any()) }
+        coVerify(exactly = 1, timeout = 60000) {
+            sendHeartRateMatchHeartRateInfoHandler.handleHeartRateInfo("user1", 123.45f)
+        }
+        coVerify(exactly = 0) { bigOrLowHeartRateDetectorInfoHandler.handleHeartRateInfo(any(), any()) }
+        coVerify(exactly = 4) { asyncTaskExecutor.execute(any()) }
     }
 
     @Test

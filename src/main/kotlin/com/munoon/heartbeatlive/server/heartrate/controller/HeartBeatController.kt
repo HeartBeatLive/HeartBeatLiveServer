@@ -14,6 +14,7 @@ import org.springframework.graphql.data.method.annotation.SubscriptionMapping
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Controller
 import reactor.core.publisher.Flux
+import java.time.Instant
 import javax.validation.Valid
 
 @Controller
@@ -42,7 +43,7 @@ class HeartBeatController(
     @MutationMapping
     suspend fun stopSendingHeartRate(): Boolean {
         logger.info("User '${authUserId()}' stopped sending heart rates")
-        userService.updateUserLastHeartRateReceiveTime(authUserId(), receiveTime = null)
+        userService.writeUserHeartRate(authUserId(), heartRate = null, receiveTime = Instant.now())
         return true
     }
 }

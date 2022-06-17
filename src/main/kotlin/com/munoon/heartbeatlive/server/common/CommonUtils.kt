@@ -1,5 +1,6 @@
 package com.munoon.heartbeatlive.server.common
 
+import graphql.GraphQLContext
 import kotlinx.coroutines.flow.toList
 import kotlin.math.ceil
 
@@ -13,4 +14,6 @@ object CommonUtils {
         )
         return GraphqlPageResult(pageInfo, data.toList(arrayListOf()))
     }
+
+    fun graphqlContextOf(vararg pairs: Pair<Any, Any>): GraphQLContext = GraphQLContext.of(pairs.toMap())
 }

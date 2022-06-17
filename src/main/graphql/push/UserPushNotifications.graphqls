@@ -1,0 +1,32 @@
+extend type Query {
+    "Get user's push notifications. Require authentication."
+    getPushNotifications(
+        "Page number, starting from 0." page: Int! = 0,
+        "Page size, from 1 to 20." size: Int! = 5,
+        "Sorting algorithm, optional." sort: PushNotificationsSorting
+    ): PushNotificationsPage
+
+    """
+    Get user's push notification by it's identifier.
+    Require authentication. Authenticated user must be an owner of push notification.
+    """
+    getPushNotificationById("Push notification identifier." id: ID!): PushNotification
+}
+
+"Algorithm, that specify how push notifications pages should be sorted."
+enum PushNotificationsSorting {
+    "Sort from old to new."
+    CREATED_ASC,
+
+    "Sort from new to old."
+    CREATED_DESC
+}
+
+"This model represent page result of requested push notifications."
+type PushNotificationsPage implements PageResult {
+    "Push notifications."
+    content: [PushNotification!]!
+
+    "Page info. Contains info, that can be useful for future pages requests."
+    pageInfo: PageInfo!
+}

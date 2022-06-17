@@ -1,0 +1,56 @@
+"Push notification details based on notification type."
+union PushNotificationData = NewSubscriberPushNotificationData | BannedPushNotificationData
+    | HighHeartRatePushNotificationData | LowHeartRatePushNotificationData
+    | HighOwnHeartRatePushNotificationData | LowOwnHeartRatePushNotificationData
+    | HeartRateMatchPushNotificationData
+
+"Details of _New subscriber_ push notification."
+type NewSubscriberPushNotificationData {
+    "Subscription, that was created."
+    subscription: SubscriptionInfo
+}
+
+"Details of _You was banned_ push notification."
+type BannedPushNotificationData {
+    "User, that banned you."
+    bannedByUser: PublicProfile
+}
+
+"Details of _User x have a high heart rate_ push notification."
+type HighHeartRatePushNotificationData {
+    "Heart rate, that user _x_ had."
+    heartRate: Float!,
+
+    "User _x_."
+    heartRateOwner: PublicProfile
+}
+
+"Details of _User x have a low heart rate_ push notification."
+type LowHeartRatePushNotificationData {
+    "Heart rate, that user _x_ had."
+    heartRate: Float!,
+
+    "User _x_."
+    heartRateOwner: PublicProfile
+}
+
+"Details of _You have a high heart rate_ push notification."
+type HighOwnHeartRatePushNotificationData {
+    "Heart rate, that you had."
+    heartRate: Float!
+}
+
+"Details of _You have a low heart rate_ push notification."
+type LowOwnHeartRatePushNotificationData {
+    "Heart rate, that you had."
+    heartRate: Float!
+}
+
+"Details of _Your heart rate match with user x_ push notification."
+type HeartRateMatchPushNotificationData {
+    "Heart rate, that you both had."
+    heartRate: Float!,
+
+    "User _x_."
+    matchWithUser: PublicProfile
+}

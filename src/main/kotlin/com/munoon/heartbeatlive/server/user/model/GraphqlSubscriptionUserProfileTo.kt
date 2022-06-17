@@ -1,8 +1,8 @@
 package com.munoon.heartbeatlive.server.user.model
 
-import java.time.Instant
+import com.munoon.heartbeatlive.server.user.User
 
 data class GraphqlSubscriptionUserProfileTo(
     val displayName: String?,
-    val lastHeartRateInfoReceiveTime: Instant? // for mapping only
+    val heartRates: List<User.HeartRate> // for mapping only
 )

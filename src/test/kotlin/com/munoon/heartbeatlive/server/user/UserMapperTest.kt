@@ -22,7 +22,7 @@ internal class UserMapperTest {
             email = "email@example.com",
             emailVerified = true,
             roles = setOf(UserRole.ADMIN),
-            lastHeartRateInfoReceiveTime = lastHeartRateInfoReceiveTime
+            heartRates = listOf(User.HeartRate(10, lastHeartRateInfoReceiveTime))
         )
 
         val expected = GraphqlProfileTo(
@@ -31,7 +31,7 @@ internal class UserMapperTest {
             email = "email@example.com",
             emailVerified = true,
             roles = setOf(UserRole.ADMIN),
-            lastHeartRateInfoReceiveTime = lastHeartRateInfoReceiveTime
+            heartRates = listOf(User.HeartRate(10, lastHeartRateInfoReceiveTime))
         )
 
         val actual = user.asGraphqlProfile()
@@ -63,12 +63,12 @@ internal class UserMapperTest {
             email = "email@example.com",
             emailVerified = true,
             roles = setOf(UserRole.ADMIN),
-            lastHeartRateInfoReceiveTime = lastHeartRateInfoReceiveTime
+            heartRates = listOf(User.HeartRate(10, lastHeartRateInfoReceiveTime))
         )
 
         val expected = GraphqlSubscriptionUserProfileTo(
             displayName = "Test Name",
-            lastHeartRateInfoReceiveTime = lastHeartRateInfoReceiveTime
+            heartRates = listOf(User.HeartRate(10, lastHeartRateInfoReceiveTime))
         )
 
         val actual = user.asGraphqlSubscriptionUserProfile()

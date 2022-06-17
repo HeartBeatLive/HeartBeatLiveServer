@@ -14,13 +14,13 @@ class UserHeartRateOnlineStatusController(
 ) {
     @SchemaMapping(typeName = "Profile", field = "heartRateOnlineStatus")
     fun getProfileHeartRateOnlineStatus(profile: GraphqlProfileTo): GraphqlUserHeartRateOnlineStatus {
-        return UserUtils.getHeartRateOnlineStatus(profile.lastHeartRateInfoReceiveTime, heartRateStreamProperties)
+        return UserUtils.getHeartRateOnlineStatus(profile.heartRates, heartRateStreamProperties)
     }
 
     @SchemaMapping(typeName = "SubscriptionUserProfile", field = "heartRateOnlineStatus")
     fun getSubscriptionUserProfileHeartRateOnlineStatus(
         profile: GraphqlSubscriptionUserProfileTo
     ): GraphqlUserHeartRateOnlineStatus {
-        return UserUtils.getHeartRateOnlineStatus(profile.lastHeartRateInfoReceiveTime, heartRateStreamProperties)
+        return UserUtils.getHeartRateOnlineStatus(profile.heartRates, heartRateStreamProperties)
     }
 }
