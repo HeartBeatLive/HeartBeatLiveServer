@@ -2,10 +2,10 @@ package com.munoon.heartbeatlive.server.heartrate.handler
 
 import com.munoon.heartbeatlive.server.config.properties.HeartRateStreamProperties
 import com.munoon.heartbeatlive.server.heartrate.repository.HighLowHeartRateNotificationRepository
-import com.munoon.heartbeatlive.server.push.HighHeartRateNotificationData
-import com.munoon.heartbeatlive.server.push.HighOwnHeartRateNotificationData
-import com.munoon.heartbeatlive.server.push.LowHeartRateNotificationData
-import com.munoon.heartbeatlive.server.push.LowOwnHeartRateNotificationData
+import com.munoon.heartbeatlive.server.push.HighHeartRatePushNotificationData
+import com.munoon.heartbeatlive.server.push.HighOwnHeartRatePushNotificationData
+import com.munoon.heartbeatlive.server.push.LowHeartPushRateNotificationData
+import com.munoon.heartbeatlive.server.push.LowOwnHeartRatePushNotificationData
 import com.munoon.heartbeatlive.server.push.PushNotificationData
 import com.munoon.heartbeatlive.server.push.service.PushNotificationService
 import com.munoon.heartbeatlive.server.push.service.sendNotifications
@@ -46,25 +46,25 @@ class BigOrLowHeartRateDetectorInfoHandler(
         val heartRateOwnerNotificationData: PushNotificationData
         when {
             heartRate > heartRateStreamProperties.highLowPush.normalHeartRate.max -> {
-                notificationData = HighHeartRateNotificationData(
+                notificationData = HighHeartRatePushNotificationData(
                     heartRate = heartRate,
                     heartRateOwnerUserId = userId,
                     heartRateOwnerUserDisplayName = heartRateOwnerUserDisplayName,
                     userIds = subscribersUserIds.toSet()
                 )
-                heartRateOwnerNotificationData = HighOwnHeartRateNotificationData(
+                heartRateOwnerNotificationData = HighOwnHeartRatePushNotificationData(
                     heartRate = heartRate,
                     userId = userId
                 )
             }
             heartRate < heartRateStreamProperties.highLowPush.normalHeartRate.min -> {
-                notificationData = LowHeartRateNotificationData(
+                notificationData = LowHeartPushRateNotificationData(
                     heartRate = heartRate,
                     heartRateOwnerUserId = userId,
                     heartRateOwnerUserDisplayName = heartRateOwnerUserDisplayName,
                     userIds = subscribersUserIds.toSet()
                 )
-                heartRateOwnerNotificationData = LowOwnHeartRateNotificationData(
+                heartRateOwnerNotificationData = LowOwnHeartRatePushNotificationData(
                     heartRate = heartRate,
                     userId = userId
                 )

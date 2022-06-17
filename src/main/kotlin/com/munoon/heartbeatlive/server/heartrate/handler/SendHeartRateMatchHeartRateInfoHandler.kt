@@ -7,7 +7,7 @@ import com.munoon.heartbeatlive.server.common.MapExpression
 import com.munoon.heartbeatlive.server.common.MongodbUtils.getList
 import com.munoon.heartbeatlive.server.config.properties.HeartRateStreamProperties
 import com.munoon.heartbeatlive.server.heartrate.HeartRateUtils.mapHeartRateToInteger
-import com.munoon.heartbeatlive.server.push.HeartRateMatchNotificationData
+import com.munoon.heartbeatlive.server.push.HeartRateMatchPushNotificationData
 import com.munoon.heartbeatlive.server.push.PushNotification
 import com.munoon.heartbeatlive.server.push.PushNotificationData
 import com.munoon.heartbeatlive.server.push.service.PushNotificationService
@@ -68,7 +68,7 @@ class SendHeartRateMatchHeartRateInfoHandler(
             userASubscription.getBoolean("receiveHeartRateMatchNotifications")
 
         if (userAWantToReceiveNotificationsOfUserB && !usersThatReceivedNotification.contains(userAId)) {
-            result += HeartRateMatchNotificationData(
+            result += HeartRateMatchPushNotificationData(
                 heartRate = heartRate,
                 userId = userAId,
                 matchWithUserId = userBId,
@@ -77,7 +77,7 @@ class SendHeartRateMatchHeartRateInfoHandler(
         }
 
         if (userBWantToReceiveNotificationsOfUserA && !usersThatReceivedNotification.contains(userBId)) {
-            result += HeartRateMatchNotificationData(
+            result += HeartRateMatchPushNotificationData(
                 heartRate = heartRate,
                 userId = userBId,
                 matchWithUserId = userAId,

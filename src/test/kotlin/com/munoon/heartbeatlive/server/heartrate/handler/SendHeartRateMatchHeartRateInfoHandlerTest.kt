@@ -1,7 +1,7 @@
 package com.munoon.heartbeatlive.server.heartrate.handler
 
 import com.munoon.heartbeatlive.server.AbstractTest
-import com.munoon.heartbeatlive.server.push.HeartRateMatchNotificationData
+import com.munoon.heartbeatlive.server.push.HeartRateMatchPushNotificationData
 import com.munoon.heartbeatlive.server.push.PushNotification
 import com.munoon.heartbeatlive.server.push.repository.PushNotificationRepository
 import com.munoon.heartbeatlive.server.push.service.PushNotificationService
@@ -104,37 +104,37 @@ internal class SendHeartRateMatchHeartRateInfoHandlerTest : AbstractTest() {
         createSubscription(userId = "user11", subscriberUserId = "user1", receiveNotification = true)
 
         val expectedNotifications = listOf(
-            HeartRateMatchNotificationData(
+            HeartRateMatchPushNotificationData(
                 heartRate = 50f,
                 userId = "user1",
                 matchWithUserId = "user2",
                 matchWithUserDisplayName = "User 2"
             ),
-            HeartRateMatchNotificationData(
+            HeartRateMatchPushNotificationData(
                 heartRate = 50f,
                 userId = "user2",
                 matchWithUserId = "user1",
                 matchWithUserDisplayName = "User 1"
             ),
-            HeartRateMatchNotificationData(
+            HeartRateMatchPushNotificationData(
                 heartRate = 50f,
                 userId = "user1",
                 matchWithUserId = "user3",
                 matchWithUserDisplayName = "User 3"
             ),
-            HeartRateMatchNotificationData(
+            HeartRateMatchPushNotificationData(
                 heartRate = 50f,
                 userId = "user4",
                 matchWithUserId = "user1",
                 matchWithUserDisplayName = "User 1"
             ),
-            HeartRateMatchNotificationData(
+            HeartRateMatchPushNotificationData(
                 heartRate = 50f,
                 userId = "user10",
                 matchWithUserId = "user1",
                 matchWithUserDisplayName = "User 1"
             ),
-            HeartRateMatchNotificationData(
+            HeartRateMatchPushNotificationData(
                 heartRate = 50f,
                 userId = "user1",
                 matchWithUserId = "user11",

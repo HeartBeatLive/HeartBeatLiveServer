@@ -2,10 +2,10 @@ package com.munoon.heartbeatlive.server.heartrate.handler
 
 import com.munoon.heartbeatlive.server.AbstractTest
 import com.munoon.heartbeatlive.server.heartrate.repository.HighLowHeartRateNotificationRepository
-import com.munoon.heartbeatlive.server.push.HighHeartRateNotificationData
-import com.munoon.heartbeatlive.server.push.HighOwnHeartRateNotificationData
-import com.munoon.heartbeatlive.server.push.LowHeartRateNotificationData
-import com.munoon.heartbeatlive.server.push.LowOwnHeartRateNotificationData
+import com.munoon.heartbeatlive.server.push.HighHeartRatePushNotificationData
+import com.munoon.heartbeatlive.server.push.HighOwnHeartRatePushNotificationData
+import com.munoon.heartbeatlive.server.push.LowHeartPushRateNotificationData
+import com.munoon.heartbeatlive.server.push.LowOwnHeartRatePushNotificationData
 import com.munoon.heartbeatlive.server.push.service.PushNotificationService
 import com.munoon.heartbeatlive.server.push.service.sendNotifications
 import com.munoon.heartbeatlive.server.subscription.service.UserSubscribersLoaderService
@@ -61,13 +61,13 @@ internal class BigOrLowHeartRateDetectorInfoHandlerTest : AbstractTest() {
             Arb.float(min = 0f, max = 30f),
             Arb.map(Arb.string(), Arb.string(), minSize = 1, maxSize = 5)
         ) { user, heartRate, subscribers ->
-            val expectedNotificationOne = LowHeartRateNotificationData(
+            val expectedNotificationOne = LowHeartPushRateNotificationData(
                 heartRate = heartRate,
                 heartRateOwnerUserId = user.id,
                 heartRateOwnerUserDisplayName = user.displayName!!,
                 userIds = subscribers.values.toSet()
             )
-            val expectedNotificationTwo = LowOwnHeartRateNotificationData(
+            val expectedNotificationTwo = LowOwnHeartRatePushNotificationData(
                 heartRate = heartRate,
                 userId = user.id
             )
@@ -96,13 +96,13 @@ internal class BigOrLowHeartRateDetectorInfoHandlerTest : AbstractTest() {
             Arb.float(min = 180f, max = 999f),
             Arb.map(Arb.string(), Arb.string(), minSize = 1, maxSize = 5)
         ) { user, heartRate, subscribers ->
-            val expectedNotificationOne = HighHeartRateNotificationData(
+            val expectedNotificationOne = HighHeartRatePushNotificationData(
                 heartRate = heartRate,
                 heartRateOwnerUserId = user.id,
                 heartRateOwnerUserDisplayName = user.displayName!!,
                 userIds = subscribers.values.toSet()
             )
-            val expectedNotificationTwo = HighOwnHeartRateNotificationData(
+            val expectedNotificationTwo = HighOwnHeartRatePushNotificationData(
                 heartRate = heartRate,
                 userId = user.id
             )

@@ -36,7 +36,7 @@ data class BanPushNotificationData(
     override val notification = PushNotification.Data.BanData(bannedByUserId)
 }
 
-data class HighHeartRateNotificationData(
+data class HighHeartRatePushNotificationData(
     val heartRate: Float,
     val heartRateOwnerUserId: String,
     val heartRateOwnerUserDisplayName: String?,
@@ -47,7 +47,7 @@ data class HighHeartRateNotificationData(
     override val priority = PushNotificationPriority.HIGH
 }
 
-data class LowHeartRateNotificationData(
+data class LowHeartPushRateNotificationData(
     val heartRate: Float,
     val heartRateOwnerUserId: String,
     val heartRateOwnerUserDisplayName: String?,
@@ -58,7 +58,7 @@ data class LowHeartRateNotificationData(
     override val priority = PushNotificationPriority.HIGH
 }
 
-data class HighOwnHeartRateNotificationData(
+data class HighOwnHeartRatePushNotificationData(
     val heartRate: Float,
     override val userId: String,
 ) : SingleUserPushNotificationData {
@@ -67,7 +67,7 @@ data class HighOwnHeartRateNotificationData(
     override val priority = PushNotificationPriority.HIGH
 }
 
-data class LowOwnHeartRateNotificationData(
+data class LowOwnHeartRatePushNotificationData(
     val heartRate: Float,
     override val userId: String,
 ) : SingleUserPushNotificationData {
@@ -76,7 +76,7 @@ data class LowOwnHeartRateNotificationData(
     override val priority = PushNotificationPriority.HIGH
 }
 
-data class HeartRateMatchNotificationData(
+data class HeartRateMatchPushNotificationData(
     val heartRate: Float,
     override val userId: String,
     val matchWithUserId: String,

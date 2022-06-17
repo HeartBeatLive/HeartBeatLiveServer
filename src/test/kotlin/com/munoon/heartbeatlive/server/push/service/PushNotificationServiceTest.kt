@@ -2,9 +2,9 @@ package com.munoon.heartbeatlive.server.push.service
 
 import com.munoon.heartbeatlive.server.AbstractTest
 import com.munoon.heartbeatlive.server.onesignal.OneSignalApiException
-import com.munoon.heartbeatlive.server.push.HighOwnHeartRateNotificationData
-import com.munoon.heartbeatlive.server.push.LowHeartRateNotificationData
-import com.munoon.heartbeatlive.server.push.LowOwnHeartRateNotificationData
+import com.munoon.heartbeatlive.server.push.HighOwnHeartRatePushNotificationData
+import com.munoon.heartbeatlive.server.push.LowHeartPushRateNotificationData
+import com.munoon.heartbeatlive.server.push.LowOwnHeartRatePushNotificationData
 import com.munoon.heartbeatlive.server.push.PushNotification
 import com.munoon.heartbeatlive.server.push.PushNotificationData
 import com.munoon.heartbeatlive.server.push.PushNotificationLocale
@@ -227,17 +227,17 @@ class PushNotificationServiceTest : AbstractTest() {
         )
 
         runBlocking { service.sendNotifications(
-            LowHeartRateNotificationData(
+            LowHeartPushRateNotificationData(
                 heartRate = 10f,
                 heartRateOwnerUserId = "user2",
                 heartRateOwnerUserDisplayName = "Display Name",
                 userIds = setOf("user1", "user2")
             ),
-            LowOwnHeartRateNotificationData(
+            LowOwnHeartRatePushNotificationData(
                 heartRate = 10f,
                 userId = "user3"
             ),
-            HighOwnHeartRateNotificationData(
+            HighOwnHeartRatePushNotificationData(
                 heartRate = 10f,
                 userId = "user3"
             )
