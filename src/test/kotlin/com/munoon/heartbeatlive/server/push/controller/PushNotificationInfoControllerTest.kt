@@ -61,7 +61,7 @@ internal class PushNotificationInfoControllerTest : AbstractGraphqlHttpTest() {
     @Test
     fun `getPushNotificationInfo - high own heart rate (locale RU)`() {
         val expected = GraphqlPushNotificationInfo(
-            title = "У вас слишком высокий пульс",
+            title = "❗️ У вас слишком высокий пульс",
             content = "Ваш пульс 300 ударов в минуту."
         )
 
@@ -94,7 +94,7 @@ internal class PushNotificationInfoControllerTest : AbstractGraphqlHttpTest() {
     @Test
     fun `getPushNotificationInfo - high own heart rate (default locale)`() {
         val expected = GraphqlPushNotificationInfo(
-            title = "You have a high pulse",
+            title = "❗️ You have a high pulse",
             content = "Your pulse is 300 bpm."
         )
 
