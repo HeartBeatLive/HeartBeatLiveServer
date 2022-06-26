@@ -7,4 +7,7 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional(readOnly = true)
 interface StripeAccountRepository : CoroutineCrudRepository<StripeAccount, String> {
     suspend fun findByStripeAccountId(stripeAccountId: String): StripeAccount?
+
+    @Transactional
+    suspend fun deleteByStripeAccountId(stripeAccountId: String)
 }

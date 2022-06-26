@@ -150,6 +150,17 @@ internal class StripeAccountSubscriptionServiceTest : AbstractTest() {
         }
     }
 
+    @Test
+    fun deleteCustomerByStripeId(): Unit = runBlocking {
+        checkAll(5, Arb.string(), Arb.string()) { userId, stripeCustomerId ->
+            accountRepository.save(StripeAccount(id = userId, stripeAccountId = stripeCustomerId))
+
+            service.deleteCustomerByStripeId(stripeCustomerId)
+
+            accountRepository.count() shouldBe 0
+        }
+    }
+
     private companion object {
         fun MockKMatcherScope.matchSubscriptionCreateParams(expectedSubscription: SubscriptionCreateParams) = match<SubscriptionCreateParams> {
             assertThat(it).usingRecursiveComparison().isEqualTo(expectedSubscription)

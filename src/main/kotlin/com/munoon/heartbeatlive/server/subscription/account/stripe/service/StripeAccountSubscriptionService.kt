@@ -66,4 +66,8 @@ class StripeAccountSubscriptionService(
         return accountRepository.findByStripeAccountId(customerId)?.id
             ?: throw StripeCustomerNotFoundByIdException(customerId)
     }
+
+    suspend fun deleteCustomerByStripeId(stripeCustomerId: String) {
+        accountRepository.deleteByStripeAccountId(stripeCustomerId)
+    }
 }

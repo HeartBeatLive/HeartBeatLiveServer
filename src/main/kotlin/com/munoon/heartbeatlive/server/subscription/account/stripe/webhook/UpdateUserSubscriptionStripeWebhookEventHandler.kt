@@ -22,47 +22,49 @@ class UpdateUserSubscriptionStripeWebhookEventHandler(
     private val logger = LoggerFactory.getLogger(UpdateUserSubscriptionStripeWebhookEventHandler::class.java)
 
     @EventListener(condition = "#event.type == 'invoice.paid'")
-    fun handleEvent(event: Event): Unit = runBlocking {
+    fun handleEvent(event: Event) {
         val invoice = event.dataObjectDeserializer?.`object`?.takeIf { it.isPresent }?.get() as? Invoice
         if (invoice == null) {
-            logger.warn("Ignoring 'invoice.paid' as no invoice info received")
-            return@runBlocking
+            logger.warn("Ignoring 'invoice.paid' stripe event as no invoice info received")
+            return
         }
 
         if (invoice.customer == null) {
-            logger.warn("Ignoring 'invoice.paid' as no invoice customer received")
-            return@runBlocking
+            logger.warn("Ignoring 'invoice.paid' stripe event as no invoice customer received")
+            return
         }
 
         val lineItem = invoice.lines?.data?.firstOrNull()
         if (lineItem == null) {
-            logger.warn("Ignoring 'invoice.paid' as no invoice line item received")
-            return@runBlocking
+            logger.warn("Ignoring 'invoice.paid' stripe event as no invoice line item received")
+            return
         }
 
         val subscriptionExpireAt = lineItem.period?.end?.let { Instant.ofEpochSecond(it) }
         if (subscriptionExpireAt == null) {
-            logger.warn("Ignoring 'invoice.paid' as no end period received")
-            return@runBlocking
+            logger.warn("Ignoring 'invoice.paid' stripe event as no end period received")
+            return
         }
 
         val subscriptionPlan = stripeConfigurationProperties.products.entries
             .find { (_, productId) -> productId == lineItem.price?.product }
             ?.key
         if (subscriptionPlan == null) {
-            logger.warn("Ignoring 'invoice.paid' as subscription plan unresolved")
-            return@runBlocking
+            logger.warn("Ignoring 'invoice.paid' stripe event as subscription plan unresolved")
+            return
         }
 
-        val userId = try {
-            stripeAccountSubscriptionService.getUserIdByStripeCustomerId(invoice.customer)
-        } catch (e: StripeCustomerNotFoundByIdException) {
-            logger.warn("Ignoring 'invoice.paid' as stripe customer with id '${invoice.customer}' is not found")
-            return@runBlocking
-        }
-        val subscription = User.Subscription(subscriptionPlan, subscriptionExpireAt)
+        runBlocking {
+            val userId = try {
+                stripeAccountSubscriptionService.getUserIdByStripeCustomerId(invoice.customer)
+            } catch (e: StripeCustomerNotFoundByIdException) {
+                logger.warn("Ignoring 'invoice.paid' stripe event as stripe customer with id '${invoice.customer}' is not found")
+                return@runBlocking
+            }
+            val subscription = User.Subscription(subscriptionPlan, subscriptionExpireAt)
 
-        userService.updateUserSubscription(userId, subscription)
-        logger.info("Updated subscription for user '$userId': $subscription")
+            userService.updateUserSubscription(userId, subscription)
+            logger.info("Updated subscription for user '$userId': $subscription")
+        }
     }
 }
