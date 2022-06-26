@@ -13,10 +13,12 @@ import com.munoon.heartbeatlive.server.subscription.SubscriptionEvent
 import com.munoon.heartbeatlive.server.subscription.SubscriptionNotFoundByIdException
 import com.munoon.heartbeatlive.server.subscription.SubscriptionUtils.validateUserSubscribersCount
 import com.munoon.heartbeatlive.server.subscription.SubscriptionUtils.validateUserSubscriptionsCount
-import com.munoon.heartbeatlive.server.subscription.account.service.AccountSubscriptionService
+import com.munoon.heartbeatlive.server.subscription.account.AccountSubscriptionUtils.getActiveSubscriptionPlan
+import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
 import com.munoon.heartbeatlive.server.subscription.model.GraphqlSubscribeOptionsInput
 import com.munoon.heartbeatlive.server.subscription.repository.SubscriptionRepository
 import com.munoon.heartbeatlive.server.user.UserEvents
+import com.munoon.heartbeatlive.server.user.service.UserService
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.runBlocking
 import org.springframework.context.ApplicationEventPublisher
@@ -29,7 +31,7 @@ import org.springframework.stereotype.Service
 class SubscriptionService(
     private val repository: SubscriptionRepository,
     private val heartBeatSharingService: HeartBeatSharingService,
-    private val accountSubscriptionService: AccountSubscriptionService,
+    private val userService: UserService,
     private val subscriptionProperties: SubscriptionProperties,
     private val userBanService: UserBanService,
     private val eventPublisher: ApplicationEventPublisher
@@ -37,6 +39,7 @@ class SubscriptionService(
     suspend fun subscribeBySharingCode(
         code: String,
         userId: String,
+        userSubscriptionPlan: UserSubscriptionPlan,
         options: GraphqlSubscribeOptionsInput
     ): Subscription {
         val sharingCode = heartBeatSharingService.getSharingCodeByPublicCode(code)
@@ -46,8 +49,8 @@ class SubscriptionService(
             throw SelfSubscriptionAttemptException()
         }
         sharingCode.checkExpired()
+        validateUserSubscriptionsCount(userId, userSubscriptionPlan)
         validateUserSubscribersCount(sharingCode.userId)
-        validateUserSubscriptionsCount(userId)
         userBanService.validateUserBanned(userId, sharingCode.userId)
 
         // return existing subscription if it exists
@@ -94,14 +97,13 @@ class SubscriptionService(
 
     suspend fun checkUserHaveMaximumSubscribers(userId: String): Boolean {
         val subscribersCount = repository.countAllByUserId(userId)
-        val userSubscriptionPlan = accountSubscriptionService.getAccountSubscriptionByUserId(userId).subscriptionPlan
-        return subscribersCount >= subscriptionProperties[userSubscriptionPlan].maxSubscribersLimit
+        val userSubscriptionPlan = userService.getUserById(userId).getActiveSubscriptionPlan()
+        return subscribersCount >= subscriptionProperties[userSubscriptionPlan].limits.maxSubscribersLimit
     }
 
-    suspend fun checkUserHaveMaximumSubscriptions(userId: String): Boolean {
+    suspend fun checkUserHaveMaximumSubscriptions(userId: String, subscriptionPlan: UserSubscriptionPlan): Boolean {
         val subscribersCount = repository.countAllBySubscriberUserId(userId)
-        val userSubscriptionPlan = accountSubscriptionService.getAccountSubscriptionByUserId(userId).subscriptionPlan
-        return subscribersCount >= subscriptionProperties[userSubscriptionPlan].maxSubscriptionsLimit
+        return subscribersCount >= subscriptionProperties[subscriptionPlan].limits.maxSubscriptionsLimit
     }
 
     fun getAllByIds(ids: Set<String>) = repository.findAllById(ids)

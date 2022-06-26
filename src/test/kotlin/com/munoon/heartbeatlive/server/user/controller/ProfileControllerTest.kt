@@ -2,7 +2,6 @@ package com.munoon.heartbeatlive.server.user.controller
 
 import com.munoon.heartbeatlive.server.AbstractGraphqlHttpTest
 import com.munoon.heartbeatlive.server.user.User
-import com.munoon.heartbeatlive.server.user.UserRole
 import com.munoon.heartbeatlive.server.user.model.UpdateUserInfoFromJwtTo
 import com.munoon.heartbeatlive.server.user.service.UserService
 import com.munoon.heartbeatlive.server.utils.AuthTestUtils.withUser
@@ -57,7 +56,7 @@ internal class ProfileControllerTest : AbstractGraphqlHttpTest() {
             displayName = "New Name",
             email = "email@example.com",
             emailVerified = true,
-            roles = setOf(UserRole.ADMIN)
+            roles = setOf(User.Role.ADMIN)
         )
         coEvery { userService.updateUserDisplayName("1", "New Name") }
             .returns(user)
@@ -120,7 +119,7 @@ internal class ProfileControllerTest : AbstractGraphqlHttpTest() {
             displayName = "New Name",
             email = "email@example.com",
             emailVerified = true,
-            roles = setOf(UserRole.ADMIN)
+            roles = setOf(User.Role.ADMIN)
         )
         coEvery { userService.updateUserInfoFromJwt("1", any()) } returns user
 
@@ -167,7 +166,7 @@ internal class ProfileControllerTest : AbstractGraphqlHttpTest() {
             displayName = "Display Name",
             email = "email@example.com",
             emailVerified = true,
-            roles = setOf(UserRole.ADMIN)
+            roles = setOf(User.Role.ADMIN)
         )
         coEvery { userService.getUserById("1") }.returns(user)
 

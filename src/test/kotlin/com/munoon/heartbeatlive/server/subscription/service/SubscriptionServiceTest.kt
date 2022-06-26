@@ -13,15 +13,15 @@ import com.munoon.heartbeatlive.server.subscription.SubscriptionEvent
 import com.munoon.heartbeatlive.server.subscription.SubscriptionNotFoundByIdException
 import com.munoon.heartbeatlive.server.subscription.UserSubscribersLimitExceededException
 import com.munoon.heartbeatlive.server.subscription.UserSubscriptionsLimitExceededException
-import com.munoon.heartbeatlive.server.subscription.account.AccountSubscription
 import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
-import com.munoon.heartbeatlive.server.subscription.account.service.AccountSubscriptionService
 import com.munoon.heartbeatlive.server.subscription.model.GraphqlSubscribeOptionsInput
 import com.munoon.heartbeatlive.server.subscription.repository.SubscriptionRepository
+import com.munoon.heartbeatlive.server.user.User
 import com.munoon.heartbeatlive.server.user.UserEvents
 import com.munoon.heartbeatlive.server.user.model.GraphqlFirebaseCreateUserInput
 import com.munoon.heartbeatlive.server.user.service.UserService
 import com.ninjasquad.springmockk.MockkBean
+import com.ninjasquad.springmockk.SpykBean
 import io.kotest.matchers.collections.shouldContainExactly
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -40,6 +40,7 @@ import org.springframework.data.domain.Sort
 import org.springframework.test.context.event.ApplicationEvents
 import org.springframework.test.context.event.RecordApplicationEvents
 import java.time.Duration
+import java.time.Instant
 import java.time.OffsetDateTime
 
 @SpringBootTest
@@ -54,16 +55,13 @@ internal class SubscriptionServiceTest : AbstractTest() {
     @MockkBean
     private lateinit var heartBeatSharingService: HeartBeatSharingService
 
-    @MockkBean
-    private lateinit var accountSubscriptionService: AccountSubscriptionService
-
     @Autowired
     private lateinit var eventPublisher: ApplicationEventPublisher
 
     @MockkBean
     private lateinit var userBanService: UserBanService
 
-    @Autowired
+    @SpykBean
     private lateinit var userService: UserService
 
     @Autowired
@@ -71,9 +69,11 @@ internal class SubscriptionServiceTest : AbstractTest() {
 
     @BeforeEach
     fun setUpMocks() {
-        coEvery { accountSubscriptionService.getAccountSubscriptionByUserId(any()) } returns AccountSubscription(
-            userId = "userId",
-            subscriptionPlan = UserSubscriptionPlan.FREE
+        coEvery { userService.getUserById(any()) } returns User(
+            id = "userId",
+            displayName = null,
+            email = null,
+            emailVerified = false
         )
 
         coEvery { userBanService.checkUserBanned(any(), any()) } returns false
@@ -91,7 +91,8 @@ internal class SubscriptionServiceTest : AbstractTest() {
             id = "user2", email = null, emailVerified = false)) }
 
         val options = GraphqlSubscribeOptionsInput(receiveHeartRateMatchNotifications = true)
-        val subscription = runBlocking { service.subscribeBySharingCode(code = "ABC123", userId = "user2", options) }
+        val subscription = runBlocking { service.subscribeBySharingCode(code = "ABC123", userId = "user2",
+            userSubscriptionPlan = UserSubscriptionPlan.FREE, options) }
 
         val expectedSubscription = Subscription(
             id = subscription.id!!,
@@ -127,7 +128,7 @@ internal class SubscriptionServiceTest : AbstractTest() {
 
         val options = GraphqlSubscribeOptionsInput()
         assertThatThrownBy { runBlocking {
-            service.subscribeBySharingCode(code = "ABC123", userId = "user1", options)
+            service.subscribeBySharingCode(code = "ABC123", userId = "user1", UserSubscriptionPlan.FREE, options)
         } }.isExactlyInstanceOf(SelfSubscriptionAttemptException::class.java)
     }
 
@@ -142,7 +143,7 @@ internal class SubscriptionServiceTest : AbstractTest() {
 
         val options = GraphqlSubscribeOptionsInput()
         assertThatThrownBy { runBlocking {
-            service.subscribeBySharingCode(code = "ABC123", userId = "user2", options)
+            service.subscribeBySharingCode(code = "ABC123", userId = "user2", UserSubscriptionPlan.FREE, options)
         } }.isExactlyInstanceOf(HeartBeatSharingExpiredException::class.java)
     }
 
@@ -164,7 +165,7 @@ internal class SubscriptionServiceTest : AbstractTest() {
 
         val options = GraphqlSubscribeOptionsInput()
         assertThatThrownBy { runBlocking {
-            service.subscribeBySharingCode(code = "ABC123", userId = "user5", options)
+            service.subscribeBySharingCode(code = "ABC123", userId = "user5", UserSubscriptionPlan.FREE, options)
         } }.isExactlyInstanceOf(UserSubscribersLimitExceededException::class.java)
     }
 
@@ -185,7 +186,7 @@ internal class SubscriptionServiceTest : AbstractTest() {
 
         val options = GraphqlSubscribeOptionsInput()
         assertThatThrownBy { runBlocking {
-            service.subscribeBySharingCode(code = "ABC123", userId = "user1", options)
+            service.subscribeBySharingCode(code = "ABC123", userId = "user1", UserSubscriptionPlan.FREE, options)
         } }.isExactlyInstanceOf(UserSubscriptionsLimitExceededException::class.java)
     }
 
@@ -201,7 +202,7 @@ internal class SubscriptionServiceTest : AbstractTest() {
 
         val options = GraphqlSubscribeOptionsInput()
         assertThatThrownBy { runBlocking {
-            service.subscribeBySharingCode(code = "ABC123", userId = "user2", options)
+            service.subscribeBySharingCode(code = "ABC123", userId = "user2", UserSubscriptionPlan.FREE, options)
         } }.isEqualTo(UserBanedByOtherUserException(userId = "user2", bannedByUserId = "user1"))
 
         coVerify(exactly = 1) { userBanService.checkUserBanned("user2", "user1") }
@@ -209,9 +210,12 @@ internal class SubscriptionServiceTest : AbstractTest() {
 
     @Test
     fun `subscribeBySharingCode - already exist`() {
-        coEvery { accountSubscriptionService.getAccountSubscriptionByUserId(any()) } returns AccountSubscription(
-            userId = "userId",
-            subscriptionPlan = UserSubscriptionPlan.PRO
+        coEvery { userService.getUserById(any()) } returns User(
+            id = "userId",
+            displayName = null,
+            email = null,
+            emailVerified = false,
+            subscription = User.Subscription(UserSubscriptionPlan.PRO, Instant.now().plusSeconds(60))
         )
 
         val subscription = runBlocking { repository.save(Subscription(userId = "user1", subscriberUserId = "user2",
@@ -226,7 +230,8 @@ internal class SubscriptionServiceTest : AbstractTest() {
         )
 
         val options = GraphqlSubscribeOptionsInput()
-        val newSubscription = runBlocking { service.subscribeBySharingCode(code = "ABC123", userId = "user2", options) }
+        val newSubscription = runBlocking { service.subscribeBySharingCode(code = "ABC123", userId = "user2",
+            userSubscriptionPlan = UserSubscriptionPlan.PRO, options) }
         assertThat(newSubscription).usingRecursiveComparison().ignoringFields("created").isEqualTo(subscription)
 
         runBlocking { assertThat(repository.count()).isOne }
@@ -363,13 +368,17 @@ internal class SubscriptionServiceTest : AbstractTest() {
         }
         runBlocking { assertThat(repository.count()).isEqualTo(10) }
 
-        val result = runBlocking { service.checkUserHaveMaximumSubscriptions("userId") }
+        val result = runBlocking {
+            service.checkUserHaveMaximumSubscriptions("userId", UserSubscriptionPlan.FREE)
+        }
         assertThat(result).isTrue
     }
 
     @Test
     fun `checkUserHaveMaximumSubscriptions - false`() {
-        val result = runBlocking { service.checkUserHaveMaximumSubscriptions("userId") }
+        val result = runBlocking {
+            service.checkUserHaveMaximumSubscriptions("userId", UserSubscriptionPlan.FREE)
+        }
         assertThat(result).isFalse
     }
 

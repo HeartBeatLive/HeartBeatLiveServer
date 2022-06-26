@@ -1,5 +1,6 @@
 package com.munoon.heartbeatlive.server.user
 
+import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
@@ -28,12 +29,18 @@ object UserTestUtils {
         email = Arb.email().bind(),
         emailVerified = Arb.boolean().bind(),
         created = Arb.instant().bind(),
-        roles = Arb.set(Arb.enum<UserRole>(), range = 0..UserRole.values().size).bind(),
-        heartRates = Arb.list(heartRateArbitrary, range = 0..10).bind()
+        roles = Arb.set(Arb.enum<User.Role>(), range = 0..User.Role.values().size).bind(),
+        heartRates = Arb.list(heartRateArbitrary, range = 0..10).bind(),
+        subscription = userSubscriptionArbitrary.orNull().bind()
     ) }
 
     private val heartRateArbitrary = arbitrary { User.HeartRate(
         heartRate = Arb.int(range = 50..200).orNull().bind(),
         time = Arb.instant().bind()
+    ) }
+
+    private val userSubscriptionArbitrary = arbitrary { User.Subscription(
+        plan = Arb.enum<UserSubscriptionPlan>().bind(),
+        expiresAt = Arb.instant().bind()
     ) }
 }

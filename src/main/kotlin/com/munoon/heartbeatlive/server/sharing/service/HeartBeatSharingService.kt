@@ -31,7 +31,7 @@ class HeartBeatSharingService(
         userSubscriptionPlan: UserSubscriptionPlan
     ): HeartBeatSharing {
         val totalUserSharingCodeCount = repository.countAllByUserId(userId)
-        val limit = subscriptionProperties[userSubscriptionPlan].maxSharingCodesLimit
+        val limit = subscriptionProperties[userSubscriptionPlan].limits.maxSharingCodesLimit
         if (totalUserSharingCodeCount >= limit) {
             throw HeartBeatSharingLimitExceededException(limit)
         }

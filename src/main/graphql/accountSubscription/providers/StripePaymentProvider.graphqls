@@ -1,0 +1,26 @@
+"[Stripe](https://stripe.com/) payment provider info."
+type StripePaymentProvider implements PaymentProvider {
+    "Stripe payment provider name. Always `STRIPE`."
+    name: PaymentProviderName!
+
+    "Stripe public API key. Provide this API key to your Stripe SDK."
+    publicApiKey: String!
+}
+
+extend type Mutation {
+    """
+    Method to create Stripe subscription. This will create Stripe Subscription with `incomplete` status. \
+    Client, then, should pay for this subscription, so Subscription status will be `active`.
+    See [Stripe documentation](https://stripe.com/docs/billing/subscriptions/overview).
+    """
+    createStripeSubscription("Subscription plan price identifier." subscriptionPlanPriceId: ID!): StripeSubscription!
+}
+
+"Stripe subscription info."
+type StripeSubscription {
+    "Created Stripe Subscription identifier."
+    subscriptionId: ID!
+
+    "Stripe Payment Intent client secret. Use it to activate created Subscription."
+    clientSecret: String!
+}

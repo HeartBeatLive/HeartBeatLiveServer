@@ -1,12 +1,15 @@
 package com.munoon.heartbeatlive.server.user.service
 
 import com.munoon.heartbeatlive.server.AbstractMongoDBTest
+import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
 import com.munoon.heartbeatlive.server.user.User
 import com.munoon.heartbeatlive.server.user.UserEvents
 import com.munoon.heartbeatlive.server.user.UserNotFoundByIdException
 import com.munoon.heartbeatlive.server.user.model.GraphqlFirebaseCreateUserInput
 import com.munoon.heartbeatlive.server.user.model.UpdateUserInfoFromJwtTo
 import com.munoon.heartbeatlive.server.user.repository.UserRepository
+import io.kotest.assertions.throwables.shouldThrowExactly
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
@@ -209,6 +212,52 @@ class UserServiceTest : AbstractMongoDBTest() {
         assertThatThrownBy {
             runBlocking { userService.updateUserInfoFromJwt("abc", updateUserInfo) }
         }.isEqualTo(UserNotFoundByIdException("abc"))
+    }
+
+    @Test
+    fun updateUserSubscription() {
+        val userId = "1"
+        val expiresAt = Instant.now().plusSeconds(60)
+        val expectedUser = User(
+            id = userId,
+            displayName = null,
+            email = "testemail@gmail.com",
+            emailVerified = false,
+            subscription = User.Subscription(plan = UserSubscriptionPlan.PRO, expiresAt = expiresAt)
+        )
+
+        val oldUser = runBlocking { userService.createUser(GraphqlFirebaseCreateUserInput(
+            id = userId,
+            email = "testemail@gmail.com",
+            emailVerified = false
+        )) }
+
+        val newUserSubscription = User.Subscription(plan = UserSubscriptionPlan.PRO, expiresAt = expiresAt)
+        val updatedUser = runBlocking { userService.updateUserSubscription(userId, newUserSubscription) }
+        assertThat(updatedUser).usingRecursiveComparison().ignoringFields("created").isEqualTo(expectedUser)
+        runBlocking {
+            assertThat(userRepository.findAll().toList(arrayListOf()))
+                .usingRecursiveComparison().ignoringFields("created", "subscription.expiresAt")
+                .isEqualTo(listOf(expectedUser))
+        }
+
+        val expectedEvent = UserEvents.UserUpdatedEvent(
+            newUser = updatedUser,
+            oldUser = oldUser,
+            updateFirebaseState = true
+        )
+        assertThat(events.stream(UserEvents.UserUpdatedEvent::class.java))
+            .usingRecursiveComparison()
+            .ignoringFields("oldUser.created", "newUser.created")
+            .isEqualTo(listOf(expectedEvent))
+    }
+
+    @Test
+    fun `updateUserSubscription - not found`() {
+        val newUserSubscription = User.Subscription(plan = UserSubscriptionPlan.PRO, expiresAt = Instant.now())
+        shouldThrowExactly<UserNotFoundByIdException> {
+            runBlocking { userService.updateUserSubscription("abc", newUserSubscription) }
+        } shouldBe UserNotFoundByIdException("abc")
     }
 
     @Test

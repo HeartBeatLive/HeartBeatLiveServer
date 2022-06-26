@@ -28,3 +28,7 @@ Some errors contains additional fields in `extensions`, that are useful for erro
 | ban.banned | User was banned by another user. |
 | ban.not_found.by_id | User ban was not found by specified identifier. |
 | push_notification.not_found.by_id | Push notification with specified identifier is not found. |
+| payment.provider.not_found | No active payment provider found. |
+| payment.provider.unsupported | Payment provider that you are currently using is unsupported. |
+| account_subscription.subscription_plan.not_found.by_code_name | Account subscription plan is not found by specified code name. |
+| account_subscription.subscription_plan.price.not_found.by_id | Account subscription plan price is not found by specified identifier. |

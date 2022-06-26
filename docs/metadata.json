@@ -59,6 +59,11 @@
       "inputFields": {
         "heartRate": { "documentation": { "example": 70.22 } }
       }
+    },
+    "StripePaymentProvider": {
+      "inputFields": {
+        "name": { "documentation": { "example": "STRIPE" } }
+      }
     }
   },
   "SCALAR": {
@@ -67,6 +72,12 @@
     },
     "EpochSecondsTime": {
       "documentation": { "example": 1652271547 }
+    },
+    "Decimal": {
+      "documentation": { "example": "29.41" }
+    },
+    "Duration": {
+      "documentation": { "example": 120 }
     }
   }
 }

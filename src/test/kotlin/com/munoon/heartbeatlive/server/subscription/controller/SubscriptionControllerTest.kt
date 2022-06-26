@@ -8,6 +8,8 @@ import com.munoon.heartbeatlive.server.subscription.Subscription
 import com.munoon.heartbeatlive.server.subscription.SubscriptionNotFoundByIdException
 import com.munoon.heartbeatlive.server.subscription.UserSubscribersLimitExceededException
 import com.munoon.heartbeatlive.server.subscription.UserSubscriptionsLimitExceededException
+import com.munoon.heartbeatlive.server.subscription.account.JwtUserSubscription
+import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
 import com.munoon.heartbeatlive.server.subscription.model.GraphqlSubscribeOptionsInput
 import com.munoon.heartbeatlive.server.subscription.repository.SubscriptionRepository
 import com.munoon.heartbeatlive.server.subscription.service.SubscriptionService
@@ -50,7 +52,7 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
     fun subscribeBySharingCode() {
         val created = Instant.now()
         val expectedOptions = GraphqlSubscribeOptionsInput(receiveHeartRateMatchNotifications = true)
-        coEvery { service.subscribeBySharingCode("ABC123", "user1", any()) } returns Subscription(
+        coEvery { service.subscribeBySharingCode("ABC123", "user1", any(), any()) } returns Subscription(
             id = "subscription1",
             userId = "user2",
             subscriberUserId = "user1",
@@ -58,7 +60,8 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
             receiveHeartRateMatchNotifications = false
         )
 
-        graphqlTester.withUser(id = "user1")
+        val subscription = JwtUserSubscription(UserSubscriptionPlan.PRO, Instant.now().plusSeconds(60))
+        graphqlTester.withUser(id = "user1", subscription = subscription)
             .document("""
                 mutation {
                     subscribeBySharingCode(
@@ -72,12 +75,14 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
             .path("subscribeBySharingCode.id").isEqualsTo("subscription1")
             .path("subscribeBySharingCode.subscribeTime").isEqualsTo(Instant.ofEpochSecond(created.epochSecond))
 
-        coVerify(exactly = 1) { service.subscribeBySharingCode("ABC123", "user1", expectedOptions) }
+        coVerify(exactly = 1) {
+            service.subscribeBySharingCode("ABC123", "user1", UserSubscriptionPlan.PRO, expectedOptions)
+        }
     }
 
     @Test
     fun `subscribeBySharingCode - self subscription`() {
-        coEvery { service.subscribeBySharingCode("ABC123", "user1", any()) } throws
+        coEvery { service.subscribeBySharingCode("ABC123", "user1", any(), any()) } throws
                 SelfSubscriptionAttemptException()
 
         graphqlTester.withUser(id = "user1")
@@ -95,12 +100,12 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
                 path = "subscribeBySharingCode"
             )
 
-        coVerify(exactly = 1) { service.subscribeBySharingCode(any(), any(), any()) }
+        coVerify(exactly = 1) { service.subscribeBySharingCode(any(), any(), UserSubscriptionPlan.FREE, any()) }
     }
 
     @Test
     fun `subscribeBySharingCode - sharing code expired`() {
-        coEvery { service.subscribeBySharingCode("ABC123", "user1", any()) } throws
+        coEvery { service.subscribeBySharingCode("ABC123", "user1", any(), any()) } throws
                 HeartBeatSharingExpiredException()
 
         graphqlTester.withUser(id = "user1")
@@ -118,7 +123,7 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
                 path = "subscribeBySharingCode"
             )
 
-        coVerify(exactly = 1) { service.subscribeBySharingCode(any(), any(), any()) }
+        coVerify(exactly = 1) { service.subscribeBySharingCode(any(), any(), any(), any()) }
     }
 
     @Test
@@ -134,12 +139,12 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
             .execute()
             .errors().expectSingleValidationError("subscribeBySharingCode", "sharingCode")
 
-        coVerify(exactly = 0) { service.subscribeBySharingCode(any(), any(), any()) }
+        coVerify(exactly = 0) { service.subscribeBySharingCode(any(), any(), any(), any()) }
     }
 
     @Test
     fun `subscribeBySharingCode - user have too many subscribers`() {
-        coEvery { service.subscribeBySharingCode("ABC123", "user1", any()) } throws
+        coEvery { service.subscribeBySharingCode("ABC123", "user1", any(), any()) } throws
                 UserSubscribersLimitExceededException()
 
         graphqlTester.withUser(id = "user1")
@@ -157,12 +162,12 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
                 path = "subscribeBySharingCode"
             )
 
-        coVerify(exactly = 1) { service.subscribeBySharingCode(any(), any(), any()) }
+        coVerify(exactly = 1) { service.subscribeBySharingCode(any(), any(), any(), any()) }
     }
 
     @Test
     fun `subscribeBySharingCode - user have too many subscriptions`() {
-        coEvery { service.subscribeBySharingCode("ABC123", "user1", any()) } throws
+        coEvery { service.subscribeBySharingCode("ABC123", "user1", any(), any()) } throws
                 UserSubscriptionsLimitExceededException()
 
         graphqlTester.withUser(id = "user1")
@@ -180,7 +185,7 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
                 path = "subscribeBySharingCode"
             )
 
-        coVerify(exactly = 1) { service.subscribeBySharingCode(any(), any(), any()) }
+        coVerify(exactly = 1) { service.subscribeBySharingCode(any(), any(), any(), any()) }
     }
 
     @Test
@@ -196,7 +201,7 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
             .execute()
             .errors().expectSingleUnauthenticatedError(path = "subscribeBySharingCode")
 
-        coVerify(exactly = 0) { service.subscribeBySharingCode(any(), any(), any()) }
+        coVerify(exactly = 0) { service.subscribeBySharingCode(any(), any(), any(), any()) }
     }
 
     @Test
