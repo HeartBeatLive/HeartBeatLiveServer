@@ -10,6 +10,7 @@ import com.stripe.model.Subscription
 import com.stripe.param.CustomerCreateParams
 import com.stripe.param.SubscriptionCreateParams
 import com.stripe.param.SubscriptionCreateParams.PaymentSettings.SaveDefaultPaymentMethod
+import com.stripe.param.SubscriptionUpdateParams
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import java.util.*
@@ -66,5 +67,10 @@ class StripeAccountSubscriptionService(
 
     suspend fun deleteCustomerByStripeId(stripeCustomerId: String) {
         accountRepository.deleteByStripeAccountId(stripeCustomerId)
+    }
+
+    suspend fun cancelUserSubscription(subscriptionId: String) {
+        val subscriptionUpdateParams = SubscriptionUpdateParams.builder().setCancelAtPeriodEnd(true).build()
+        client.updateSubscription(subscriptionId, subscriptionUpdateParams, UUID.randomUUID().toString())
     }
 }

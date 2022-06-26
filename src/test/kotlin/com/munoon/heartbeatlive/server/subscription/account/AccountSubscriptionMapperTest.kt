@@ -4,10 +4,13 @@ import com.munoon.heartbeatlive.server.common.GraphqlMoney
 import com.munoon.heartbeatlive.server.config.properties.SubscriptionProperties
 import com.munoon.heartbeatlive.server.subscription.account.AccountSubscriptionMapper.asGraphqlProviderInfo
 import com.munoon.heartbeatlive.server.subscription.account.AccountSubscriptionMapper.asGraphqlSubscription
+import com.munoon.heartbeatlive.server.subscription.account.AccountSubscriptionMapper.asPaymentProviderName
 import com.munoon.heartbeatlive.server.subscription.account.AccountSubscriptionMapper.asSubscriptionJwt
+import com.munoon.heartbeatlive.server.subscription.account.model.GraphqlPaymentProviderName
 import com.munoon.heartbeatlive.server.subscription.account.model.GraphqlStripePaymentProvider
 import com.munoon.heartbeatlive.server.subscription.account.model.GraphqlSubscriptionPlan
 import com.munoon.heartbeatlive.server.subscription.account.model.StripePaymentProviderInfo
+import com.munoon.heartbeatlive.server.subscription.account.provider.PaymentProviderName
 import com.munoon.heartbeatlive.server.user.User
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
@@ -166,7 +169,9 @@ class AccountSubscriptionMapperTest : FreeSpec({
             checkAll(Arb.enum<UserSubscriptionPlan>(), Arb.instant()) { plan, expiresAt ->
                 val expected = JwtUserSubscription(plan, expiresAt)
                 val user = User(id = "userId", displayName = null, email = null, emailVerified = false,
-                    subscription = User.Subscription(plan, expiresAt))
+                    subscription = User.Subscription(
+                        plan, expiresAt, User.Subscription.StripeSubscriptionDetails("StripeSubscription1")
+                    ))
                 user.asSubscriptionJwt() shouldBe expected
             }
         }
@@ -175,6 +180,12 @@ class AccountSubscriptionMapperTest : FreeSpec({
             val user = User(id = "userId", displayName = null, email = null, emailVerified = false,
                 subscription = null)
             user.asSubscriptionJwt() shouldBe JwtUserSubscription.DEFAULT
+        }
+    }
+
+    "GraphqlPaymentProviderName.asPaymentProviderName" - {
+        "Stripe" {
+            GraphqlPaymentProviderName.STRIPE.asPaymentProviderName() shouldBe PaymentProviderName.STRIPE
         }
     }
 })

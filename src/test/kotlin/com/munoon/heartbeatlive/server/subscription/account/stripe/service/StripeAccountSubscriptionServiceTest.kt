@@ -13,9 +13,11 @@ import com.stripe.model.Subscription
 import com.stripe.param.CustomerCreateParams
 import com.stripe.param.SubscriptionCreateParams
 import com.stripe.param.SubscriptionCreateParams.PaymentSettings.SaveDefaultPaymentMethod
+import com.stripe.param.SubscriptionUpdateParams
 import io.kotest.assertions.throwables.shouldThrowExactly
 import io.kotest.common.runBlocking
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldBeUUID
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
@@ -162,15 +164,37 @@ internal class StripeAccountSubscriptionServiceTest : AbstractTest() {
         }
     }
 
+    @Test
+    fun cancelUserSubscription() {
+        coEvery { client.updateSubscription(any(), any(), any()) } returns Subscription()
+
+        runBlocking { service.cancelUserSubscription("stripeSubscription1") }
+
+        val updateParams = SubscriptionUpdateParams.builder().setCancelAtPeriodEnd(true).build()
+        coVerify(exactly = 1) { client.updateSubscription(
+            "stripeSubscription1",
+            matchSubscriptionUpdateParams(updateParams),
+            match {
+                it.shouldBeUUID()
+                true
+            }
+        ) }
+    }
+
     private companion object {
         fun MockKMatcherScope.matchSubscriptionCreateParams(expectedSubscription: SubscriptionCreateParams) = match<SubscriptionCreateParams> {
             assertThat(it).usingRecursiveComparison().isEqualTo(expectedSubscription)
             true
         }
 
+        fun MockKMatcherScope.matchSubscriptionUpdateParams(expectedSubscription: SubscriptionUpdateParams) = match<SubscriptionUpdateParams> {
+            assertThat(it).usingRecursiveComparison().isEqualTo(expectedSubscription)
+            true
+        }
 
         fun MockKMatcherScope.matchCustomerCreateParams(expectedCustomer: CustomerCreateParams) = match<CustomerCreateParams> {
             assertThat(it).usingRecursiveComparison().isEqualTo(expectedCustomer)
             true
-        }    }
+        }
+    }
 }

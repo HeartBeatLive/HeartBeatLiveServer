@@ -29,6 +29,11 @@ class UpdateUserSubscriptionStripeWebhookEventHandler(
             return
         }
 
+        if (invoice.subscription == null) {
+            logger.warn("Ignoring 'invoice.paid' stripe event as no invoice subscription received")
+            return
+        }
+
         if (invoice.customer == null) {
             logger.warn("Ignoring 'invoice.paid' stripe event as no invoice customer received")
             return
@@ -61,7 +66,8 @@ class UpdateUserSubscriptionStripeWebhookEventHandler(
                 logger.warn("Ignoring 'invoice.paid' stripe event as stripe customer with id '${invoice.customer}' is not found")
                 return@runBlocking
             }
-            val subscription = User.Subscription(subscriptionPlan, subscriptionExpireAt)
+            val details = User.Subscription.StripeSubscriptionDetails(subscriptionId = invoice.subscription)
+            val subscription = User.Subscription(subscriptionPlan, subscriptionExpireAt, details)
 
             userService.updateUserSubscription(userId, subscription)
             logger.info("Updated subscription for user '$userId': $subscription")

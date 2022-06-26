@@ -32,3 +32,4 @@ Some errors contains additional fields in `extensions`, that are useful for erro
 | payment.provider.unsupported | Payment provider that you are currently using is unsupported. |
 | account_subscription.subscription_plan.not_found.by_code_name | Account subscription plan is not found by specified code name. |
 | account_subscription.subscription_plan.price.not_found.by_id | Account subscription plan price is not found by specified identifier. |
+| account_subscription.subscription_plan.user_have_no_active_subscription | User do not have any active subscriptions. |

@@ -9,6 +9,7 @@ import com.stripe.net.ApiResource
 import com.stripe.net.FormEncoder
 import com.stripe.param.CustomerCreateParams
 import com.stripe.param.SubscriptionCreateParams
+import com.stripe.param.SubscriptionUpdateParams
 import kotlinx.coroutines.reactor.mono
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
@@ -37,6 +38,11 @@ class StripeClient(
 
     suspend fun createSubscription(subscription: SubscriptionCreateParams, idempotentKey: String): Subscription {
         return makeStripeRequest(SUBSCRIPTIONS_PATH, subscription, idempotentKey)
+    }
+
+    suspend fun updateSubscription(subscriptionId: String, subscription: SubscriptionUpdateParams, idempotentKey: String): Subscription {
+        val uriSuffix = SUBSCRIPTIONS_PATH + "/" + ApiResource.urlEncodeId(subscriptionId)
+        return makeStripeRequest(uriSuffix, subscription, idempotentKey)
     }
 
     private suspend inline fun <reified T> makeStripeRequest(

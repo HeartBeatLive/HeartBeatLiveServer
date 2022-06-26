@@ -146,7 +146,11 @@ internal class StripeAccountSubscriptionControllerTest : AbstractGraphqlHttpTest
             displayName = null,
             email = null,
             emailVerified = false,
-            subscription = User.Subscription(plan = UserSubscriptionPlan.PRO, expiresAt = Instant.now().plusSeconds(60))
+            subscription = User.Subscription(
+                plan = UserSubscriptionPlan.PRO,
+                expiresAt = Instant.now().plusSeconds(60),
+                details = User.Subscription.StripeSubscriptionDetails("stripeSubscription1")
+            )
         )
 
         val price = subscriptionProperties[UserSubscriptionPlan.PRO].prices.first()

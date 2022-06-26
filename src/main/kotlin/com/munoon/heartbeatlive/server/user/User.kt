@@ -39,8 +39,13 @@ data class User(
 
     data class Subscription(
         val plan: UserSubscriptionPlan,
-        val expiresAt: Instant
-    )
+        val expiresAt: Instant,
+        val details: SubscriptionDetails
+    ) {
+        sealed interface SubscriptionDetails
+
+        data class StripeSubscriptionDetails(val subscriptionId: String) : SubscriptionDetails
+    }
 
     data class HeartRate(
         val heartRate: Int?, // null means user stopped sending heart rate

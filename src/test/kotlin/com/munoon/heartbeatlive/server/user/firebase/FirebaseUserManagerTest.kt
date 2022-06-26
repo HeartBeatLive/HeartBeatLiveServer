@@ -52,8 +52,10 @@ internal class FirebaseUserManagerTest : AbstractTest() {
             ))
 
         val user = User(id = "1", displayName = null, email = "email@example.com", emailVerified = true)
+        val userSubscription = User.Subscription(plan = UserSubscriptionPlan.PRO, expiresAt = subscriptionExpireTime,
+            details = User.Subscription.StripeSubscriptionDetails("stripeSubscription1"))
         val updatedUser = user.copy(displayName = "New Name", roles = setOf(User.Role.ADMIN),
-            subscription = User.Subscription(plan = UserSubscriptionPlan.PRO, expiresAt = subscriptionExpireTime))
+            subscription = userSubscription)
 
         val event = UserEvents.UserUpdatedEvent(newUser = updatedUser, oldUser = user, updateFirebaseState = true)
         eventPublisher.publishEvent(event)
@@ -103,7 +105,8 @@ internal class FirebaseUserManagerTest : AbstractTest() {
             email = "email@example.com",
             emailVerified = true,
             roles = setOf(User.Role.ADMIN),
-            subscription = User.Subscription(plan = UserSubscriptionPlan.PRO, expiresAt = subscriptionExpireTime)
+            subscription = User.Subscription(plan = UserSubscriptionPlan.PRO, expiresAt = subscriptionExpireTime,
+                details = User.Subscription.StripeSubscriptionDetails("stripeSubscription1"))
         )
 
         eventPublisher.publishEvent(UserEvents.UserCreatedEvent(user))

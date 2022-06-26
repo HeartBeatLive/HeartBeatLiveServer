@@ -41,6 +41,9 @@ object UserTestUtils {
 
     private val userSubscriptionArbitrary = arbitrary { User.Subscription(
         plan = Arb.enum<UserSubscriptionPlan>().bind(),
-        expiresAt = Arb.instant().bind()
+        expiresAt = Arb.instant().bind(),
+        details = User.Subscription.StripeSubscriptionDetails(
+            subscriptionId = Arb.string(codepoints = Codepoint.alphanumeric(), size = 20).bind()
+        )
     ) }
 }

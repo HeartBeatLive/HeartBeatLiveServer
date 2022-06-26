@@ -30,7 +30,8 @@ internal class UpdateUserSubscriptionStripeWebhookEventHandlerTest : FreeSpec({
             val subscriptionEndTime = Instant.now().plusSeconds(120).epochSecond
             val expectedUserSubscription = User.Subscription(
                 plan = UserSubscriptionPlan.PRO,
-                expiresAt = Instant.ofEpochSecond(subscriptionEndTime)
+                expiresAt = Instant.ofEpochSecond(subscriptionEndTime),
+                details = User.Subscription.StripeSubscriptionDetails("stripeSubscription1")
             )
 
             val event = Event().apply {
@@ -40,6 +41,7 @@ internal class UpdateUserSubscriptionStripeWebhookEventHandlerTest : FreeSpec({
                     setObject(Invoice().apply {
                         `object` = "invoice"
                         customer = "stripeCustomer1"
+                        subscription = "stripeSubscription1"
                         lines = InvoiceLineItemCollection().apply {
                             data = listOf(
                                 InvoiceLineItem().apply {
@@ -88,6 +90,7 @@ internal class UpdateUserSubscriptionStripeWebhookEventHandlerTest : FreeSpec({
                     setObject(Invoice().apply {
                         `object` = "invoice"
                         customer = "stripeCustomer1"
+                        subscription = "stripeSubscription1"
                         lines = InvoiceLineItemCollection().apply {
                             data = listOf(
                                 InvoiceLineItem().apply {
@@ -155,6 +158,49 @@ internal class UpdateUserSubscriptionStripeWebhookEventHandlerTest : FreeSpec({
                 }
         }
 
+        "ignore as no invoice subscription received" {
+            val event = Event().apply {
+                apiVersion = Stripe.API_VERSION
+                type = "invoice.paid"
+                data = EventData().apply {
+                    setObject(Invoice().apply {
+                        `object` = "invoice"
+                        customer = "stripeCustomer1"
+                        lines = InvoiceLineItemCollection().apply {
+                            data = listOf(
+                                InvoiceLineItem().apply {
+                                    period = InvoiceLineItemPeriod().apply {
+                                        end = Instant.now().plusSeconds(120).epochSecond
+                                    }
+                                    price = Price().apply {
+                                        product = "stripeProduct1"
+                                    }
+                                }
+                            )
+                        }
+                    }.let { ApiResource.GSON.toJsonTree(it) as JsonObject })
+                }
+            }
+
+            val userService = mockk<UserService>()
+            val service = mockk<StripeAccountSubscriptionService>()
+            val properties = StripeConfigurationProperties().apply {
+                products = mapOf(UserSubscriptionPlan.PRO to "stripeProduct1")
+            }
+
+            ApplicationContextRunner()
+                .withBean(UserService::class.java, { userService })
+                .withBean(StripeAccountSubscriptionService::class.java, { service })
+                .withBean(StripeConfigurationProperties::class.java, { properties })
+                .withBean(UpdateUserSubscriptionStripeWebhookEventHandler::class.java)
+                .run { context ->
+                    context.publishEvent(event)
+
+                    coVerify(exactly = 0) { service.getUserIdByStripeCustomerId(any()) }
+                    coVerify(exactly = 0) { userService.updateUserSubscription(any(), any()) }
+                }
+        }
+
         "ignore as no invoice customer received" {
             val event = Event().apply {
                 apiVersion = Stripe.API_VERSION
@@ -162,6 +208,7 @@ internal class UpdateUserSubscriptionStripeWebhookEventHandlerTest : FreeSpec({
                 data = EventData().apply {
                     setObject(Invoice().apply {
                         `object` = "invoice"
+                        subscription = "stripeSubscription1"
                         lines = InvoiceLineItemCollection().apply {
                             data = listOf(
                                 InvoiceLineItem().apply {
@@ -205,6 +252,7 @@ internal class UpdateUserSubscriptionStripeWebhookEventHandlerTest : FreeSpec({
                     setObject(Invoice().apply {
                         `object` = "invoice"
                         customer = "stripeCustomer1"
+                        subscription = "stripeSubscription1"
                         lines = InvoiceLineItemCollection()
                     }.let { ApiResource.GSON.toJsonTree(it) as JsonObject })
                 }
@@ -237,6 +285,7 @@ internal class UpdateUserSubscriptionStripeWebhookEventHandlerTest : FreeSpec({
                     setObject(Invoice().apply {
                         `object` = "invoice"
                         customer = "stripeCustomer1"
+                        subscription = "stripeSubscription1"
                         lines = InvoiceLineItemCollection().apply {
                             data = listOf(
                                 InvoiceLineItem().apply {
@@ -278,6 +327,7 @@ internal class UpdateUserSubscriptionStripeWebhookEventHandlerTest : FreeSpec({
                     setObject(Invoice().apply {
                         `object` = "invoice"
                         customer = "stripeCustomer1"
+                        subscription = "stripeSubscription1"
                         lines = InvoiceLineItemCollection().apply {
                             data = listOf(
                                 InvoiceLineItem().apply {
@@ -321,6 +371,7 @@ internal class UpdateUserSubscriptionStripeWebhookEventHandlerTest : FreeSpec({
                     setObject(Invoice().apply {
                         `object` = "invoice"
                         customer = "stripeCustomer1"
+                        subscription = "stripeSubscription1"
                         lines = InvoiceLineItemCollection().apply {
                             data = listOf(
                                 InvoiceLineItem().apply {

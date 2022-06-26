@@ -223,7 +223,8 @@ class UserServiceTest : AbstractMongoDBTest() {
             displayName = null,
             email = "testemail@gmail.com",
             emailVerified = false,
-            subscription = User.Subscription(plan = UserSubscriptionPlan.PRO, expiresAt = expiresAt)
+            subscription = User.Subscription(plan = UserSubscriptionPlan.PRO, expiresAt = expiresAt,
+                details = User.Subscription.StripeSubscriptionDetails("stripeSubscription1"))
         )
 
         val oldUser = runBlocking { userService.createUser(GraphqlFirebaseCreateUserInput(
@@ -232,7 +233,8 @@ class UserServiceTest : AbstractMongoDBTest() {
             emailVerified = false
         )) }
 
-        val newUserSubscription = User.Subscription(plan = UserSubscriptionPlan.PRO, expiresAt = expiresAt)
+        val newUserSubscription = User.Subscription(plan = UserSubscriptionPlan.PRO, expiresAt = expiresAt,
+            details = User.Subscription.StripeSubscriptionDetails("stripeSubscription1"))
         val updatedUser = runBlocking { userService.updateUserSubscription(userId, newUserSubscription) }
         assertThat(updatedUser).usingRecursiveComparison().ignoringFields("created").isEqualTo(expectedUser)
         runBlocking {
@@ -254,7 +256,8 @@ class UserServiceTest : AbstractMongoDBTest() {
 
     @Test
     fun `updateUserSubscription - not found`() {
-        val newUserSubscription = User.Subscription(plan = UserSubscriptionPlan.PRO, expiresAt = Instant.now())
+        val newUserSubscription = User.Subscription(plan = UserSubscriptionPlan.PRO, expiresAt = Instant.now(),
+            details = User.Subscription.StripeSubscriptionDetails("stripeSubscription1"))
         shouldThrowExactly<UserNotFoundByIdException> {
             runBlocking { userService.updateUserSubscription("abc", newUserSubscription) }
         } shouldBe UserNotFoundByIdException("abc")

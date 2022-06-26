@@ -6,6 +6,14 @@ extend type Query {
     getSubscriptionPlanByCodeName("Subscription plan's code name." codeName: String!): SubscriptionPlan!
 }
 
+extend type Mutation {
+    """
+    Method to prevent subscription from renewing. User will have subscription until the end of period. \
+    Authenticated user must have active subscription.
+    """
+    stopRenewingSubscription: Boolean
+}
+
 "Subscription plan info."
 type SubscriptionPlan {
     "Code name, used in API."

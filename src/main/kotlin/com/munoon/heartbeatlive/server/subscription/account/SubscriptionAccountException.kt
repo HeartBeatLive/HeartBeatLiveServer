@@ -21,3 +21,6 @@ data class SubscriptionPlanPriceIsNotFoundByIdException(val id: String)
 
 @ConvertExceptionToError(type = ErrorType.FORBIDDEN, code = "account_subscription.subscription_plan.user_already_subscribed")
 class UserAlreadyHaveActiveSubscriptionException : RuntimeException("User already have active subscription.")
+
+@ConvertExceptionToError(type = ErrorType.FORBIDDEN, code = "account_subscription.subscription_plan.user_have_no_active_subscription")
+class UserHaveNotActiveSubscriptionException : RuntimeException("User haven't any active subscription.")
