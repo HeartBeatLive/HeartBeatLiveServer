@@ -3,9 +3,12 @@ package com.munoon.heartbeatlive.server.subscription.account.stripe.controller
 import com.munoon.heartbeatlive.server.AbstractGraphqlHttpTest
 import com.munoon.heartbeatlive.server.config.properties.StripeConfigurationProperties
 import com.munoon.heartbeatlive.server.config.properties.SubscriptionProperties
+import com.munoon.heartbeatlive.server.subscription.account.JwtUserSubscription
 import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
 import com.munoon.heartbeatlive.server.subscription.account.stripe.model.GraphqlStripeSubscription
 import com.munoon.heartbeatlive.server.subscription.account.stripe.service.StripeAccountSubscriptionService
+import com.munoon.heartbeatlive.server.user.User
+import com.munoon.heartbeatlive.server.user.service.UserService
 import com.munoon.heartbeatlive.server.utils.AuthTestUtils.withUser
 import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.expectSingleError
 import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.expectSingleUnauthenticatedError
@@ -23,6 +26,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.graphql.execution.ErrorType
+import java.time.Instant
 
 @SpringBootTest
 internal class StripeAccountSubscriptionControllerTest : AbstractGraphqlHttpTest() {
@@ -35,8 +39,11 @@ internal class StripeAccountSubscriptionControllerTest : AbstractGraphqlHttpTest
     @Autowired
     private lateinit var subscriptionProperties: SubscriptionProperties
 
+    @MockkBean
+    private lateinit var userService: UserService
+
     @BeforeEach
-    fun setUpStripeProperties() {
+    fun setUpMocks() {
         every { properties.enabled } returns true
     }
 
@@ -46,6 +53,14 @@ internal class StripeAccountSubscriptionControllerTest : AbstractGraphqlHttpTest
             subscriptionId = "stripeSubscriptionId",
             clientSecret = "stripeClientSecret"
         )
+
+        val user = User(
+            id = "user1",
+            displayName = null,
+            email = null,
+            emailVerified = false
+        )
+        coEvery { userService.getUserById(any()) } returns user
 
         coEvery { service.createSubscription(any(), any()) } returns Subscription().apply {
             id = "stripeSubscriptionId"
@@ -72,7 +87,8 @@ internal class StripeAccountSubscriptionControllerTest : AbstractGraphqlHttpTest
             .satisfyNoErrors()
             .path("createStripeSubscription").isEqualsTo(expectedStripeSubscription)
 
-        coVerify(exactly = 1) { service.createSubscription(price.stripePriceId!!, "user1") }
+        coVerify(exactly = 1) { service.createSubscription(price.stripePriceId!!, user) }
+        coVerify(exactly = 1) { userService.getUserById("user1") }
     }
 
     @Test
@@ -97,6 +113,7 @@ internal class StripeAccountSubscriptionControllerTest : AbstractGraphqlHttpTest
             )
 
         coVerify(exactly = 0) { service.createSubscription(any(), any()) }
+        coVerify(exactly = 0) { userService.getUserById(any()) }
     }
 
     @Test
@@ -119,6 +136,66 @@ internal class StripeAccountSubscriptionControllerTest : AbstractGraphqlHttpTest
             )
 
         coVerify(exactly = 0) { service.createSubscription(any(), any()) }
+        coVerify(exactly = 0) { userService.getUserById(any()) }
+    }
+
+    @Test
+    fun `createStripeSubscription - user already subscribed (db request)`() {
+        coEvery { userService.getUserById(any()) } returns User(
+            id = "userId",
+            displayName = null,
+            email = null,
+            emailVerified = false,
+            subscription = User.Subscription(plan = UserSubscriptionPlan.PRO, expiresAt = Instant.now().plusSeconds(60))
+        )
+
+        val price = subscriptionProperties[UserSubscriptionPlan.PRO].prices.first()
+        val priceId = price.getId(UserSubscriptionPlan.PRO)
+
+        graphqlTester.withUser(id = "user1")
+            .document("""
+                mutation {
+                    createStripeSubscription(subscriptionPlanPriceId: "$priceId") {
+                        subscriptionId,
+                        clientSecret
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleError(
+                errorType = ErrorType.FORBIDDEN,
+                code = "account_subscription.subscription_plan.user_already_subscribed",
+                path = "createStripeSubscription"
+            )
+
+        coVerify(exactly = 0) { service.createSubscription(any(), any()) }
+        coVerify(exactly = 1) { userService.getUserById("user1") }
+    }
+
+    @Test
+    fun `createStripeSubscription - user already subscribed (jwt token)`() {
+        val price = subscriptionProperties[UserSubscriptionPlan.PRO].prices.first()
+        val priceId = price.getId(UserSubscriptionPlan.PRO)
+
+        val userSubscription = JwtUserSubscription(UserSubscriptionPlan.PRO, Instant.now().plusSeconds(60))
+        graphqlTester.withUser(id = "user1", subscription = userSubscription)
+            .document("""
+                mutation {
+                    createStripeSubscription(subscriptionPlanPriceId: "$priceId") {
+                        subscriptionId,
+                        clientSecret
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleError(
+                errorType = ErrorType.FORBIDDEN,
+                code = "account_subscription.subscription_plan.user_already_subscribed",
+                path = "createStripeSubscription"
+            )
+
+        coVerify(exactly = 0) { service.createSubscription(any(), any()) }
+        coVerify(exactly = 0) { userService.getUserById(any()) }
     }
 
     @Test
@@ -136,5 +213,6 @@ internal class StripeAccountSubscriptionControllerTest : AbstractGraphqlHttpTest
             .errors().expectSingleUnauthenticatedError(path = "createStripeSubscription")
 
         coVerify(exactly = 0) { service.createSubscription(any(), any()) }
+        coVerify(exactly = 0) { userService.getUserById(any()) }
     }
 }

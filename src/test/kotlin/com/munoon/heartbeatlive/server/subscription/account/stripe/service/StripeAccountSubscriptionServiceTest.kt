@@ -6,7 +6,6 @@ import com.munoon.heartbeatlive.server.subscription.account.stripe.StripeCustome
 import com.munoon.heartbeatlive.server.subscription.account.stripe.client.StripeClient
 import com.munoon.heartbeatlive.server.subscription.account.stripe.repository.StripeAccountRepository
 import com.munoon.heartbeatlive.server.user.User
-import com.munoon.heartbeatlive.server.user.service.UserService
 import com.ninjasquad.springmockk.MockkBean
 import com.stripe.model.Customer
 import com.stripe.model.Event
@@ -40,9 +39,6 @@ internal class StripeAccountSubscriptionServiceTest : AbstractTest() {
     @MockkBean
     private lateinit var client: StripeClient
 
-    @MockkBean
-    private lateinit var userService: UserService
-
     @Autowired
     private lateinit var accountRepository: StripeAccountRepository
 
@@ -56,13 +52,6 @@ internal class StripeAccountSubscriptionServiceTest : AbstractTest() {
         val stripeSubscription = Subscription().apply { id = "stripeSubscription1" }
         coEvery { client.createSubscription(any(), any()) } returns stripeSubscription
         coEvery { client.createCustomer(any(), any()) } returns Customer().apply { id = "stripeCustomer1" }
-
-        coEvery { userService.getUserById("user1") } returns User(
-            id = "user1",
-            displayName = "User's Display Name",
-            email = "email@example.com",
-            emailVerified = false
-        )
 
         val expectedCustomerParams = CustomerCreateParams.builder()
             .setEmail("email@example.com")
@@ -81,12 +70,18 @@ internal class StripeAccountSubscriptionServiceTest : AbstractTest() {
             .addAllExpand(listOf("latest_invoice.payment_intent"))
             .build()
 
-        val subscription = runBlocking { service.createSubscription("stripePrice1", "user1") }
+        val user = User(
+            id = "user1",
+            displayName = "User's Display Name",
+            email = "email@example.com",
+            emailVerified = false
+        )
+
+        val subscription = runBlocking { service.createSubscription("stripePrice1", user) }
         subscription shouldBe stripeSubscription
 
         coVerify(exactly = 1) { client.createSubscription(matchSubscriptionCreateParams(expectedSubscriptionParams), any()) }
         coVerify(exactly = 1) { client.createCustomer(matchCustomerCreateParams(expectedCustomerParams), any()) }
-        coVerify(exactly = 1) { userService.getUserById("user1") }
         runBlocking { accountRepository.findAll().toList(arrayListOf()) } shouldBe listOf(
             StripeAccount(id = "user1", stripeAccountId = "stripeCustomer1")
         )
@@ -112,12 +107,18 @@ internal class StripeAccountSubscriptionServiceTest : AbstractTest() {
             .addAllExpand(listOf("latest_invoice.payment_intent"))
             .build()
 
-        val subscription = runBlocking { service.createSubscription("stripePrice1", "user1") }
+        val user = User(
+            id = "user1",
+            displayName = "User's Display Name",
+            email = "email@example.com",
+            emailVerified = false
+        )
+
+        val subscription = runBlocking { service.createSubscription("stripePrice1", user) }
         subscription shouldBe stripeSubscription
 
         coVerify(exactly = 1) { client.createSubscription(matchSubscriptionCreateParams(expectedSubscriptionParams), any()) }
         coVerify(exactly = 0) { client.createCustomer(any(), any()) }
-        coVerify(exactly = 0) { userService.getUserById(any()) }
         runBlocking { accountRepository.count() } shouldBe 1
     }
 

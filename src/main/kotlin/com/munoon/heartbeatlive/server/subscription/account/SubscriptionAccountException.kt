@@ -18,3 +18,6 @@ data class SubscriptionPlanNotFoundException(val name: String)
 @ConvertExceptionToError(type = ErrorType.NOT_FOUND, code = "account_subscription.subscription_plan.price.not_found.by_id")
 data class SubscriptionPlanPriceIsNotFoundByIdException(val id: String)
     : RuntimeException("Subscription plan price with id '$id' is not found!")
+
+@ConvertExceptionToError(type = ErrorType.FORBIDDEN, code = "account_subscription.subscription_plan.user_already_subscribed")
+class UserAlreadyHaveActiveSubscriptionException : RuntimeException("User already have active subscription.")
