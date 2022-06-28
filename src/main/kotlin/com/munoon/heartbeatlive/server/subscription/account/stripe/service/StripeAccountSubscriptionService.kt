@@ -23,6 +23,7 @@ class StripeAccountSubscriptionService(
 ) {
     private companion object {
         val SUBSCRIPTION_ELEMENTS_TO_EXPAND = listOf("latest_invoice.payment_intent")
+        const val CUSTOMER_USER_ID_METADATA_KEY = "uid"
     }
 
     suspend fun createSubscription(stripePriceId: String, user: User): Subscription {
@@ -49,6 +50,7 @@ class StripeAccountSubscriptionService(
         accountRepository.findById(user.id)?.let { return it }
 
         val customerBuilder = CustomerCreateParams.builder()
+        customerBuilder.setMetadata(mapOf(CUSTOMER_USER_ID_METADATA_KEY to user.id))
         user.email?.let { customerBuilder.setEmail(it) }
         user.displayName?.let { customerBuilder.setName(it) }
 

@@ -58,6 +58,7 @@ internal class StripeAccountSubscriptionServiceTest : AbstractTest() {
         val expectedCustomerParams = CustomerCreateParams.builder()
             .setEmail("email@example.com")
             .setName("User's Display Name")
+            .setMetadata(mapOf("uid" to "user1"))
             .build()
 
         val expectedSubscriptionParams = SubscriptionCreateParams.builder()
@@ -90,7 +91,7 @@ internal class StripeAccountSubscriptionServiceTest : AbstractTest() {
     }
 
     @Test
-    fun `createSubscription with exist stripe customer`() {
+    fun `createSubscription with existing stripe customer`() {
         runBlocking { accountRepository.save(StripeAccount(id = "user1", stripeAccountId = "stripeCustomer1")) }
         runBlocking { accountRepository.count() } shouldBe 1
 
