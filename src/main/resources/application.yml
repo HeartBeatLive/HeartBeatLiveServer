@@ -66,11 +66,13 @@ app:
         - price: 5
           currency: USD
           duration: P31D
+          refund-duration: P3D
           old-price: 10
 #          stripe-price-id: "price_1"
         - price: 2
           currency: USD
           duration: P7D
+          refund-duration: P1D
           old-price: 5
 #          stripe-price-id: "price_2"
       info:
@@ -104,5 +106,3 @@ payment:
 #    public-api-key: ""
 #    private-api-key: ""
 #    webhook-endpoint-secret: ""
-#    products:
-#      pro: ""

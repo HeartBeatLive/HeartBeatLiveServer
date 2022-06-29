@@ -24,6 +24,7 @@ data class GraphqlSubscriptionPlan(
         val id: String,
         val price: GraphqlMoney,
         val oldPrice: GraphqlMoney?,
-        val duration: Duration
+        val duration: Duration,
+        val refundDuration: Duration
     )
 }

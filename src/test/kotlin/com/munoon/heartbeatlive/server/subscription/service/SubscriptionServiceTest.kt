@@ -218,7 +218,12 @@ internal class SubscriptionServiceTest : AbstractTest() {
             subscription = User.Subscription(
                 plan = UserSubscriptionPlan.PRO,
                 expiresAt = Instant.now().plusSeconds(60),
-                details = User.Subscription.StripeSubscriptionDetails("stripeSubscription1")
+                startAt = Instant.now(),
+                refundDuration = Duration.ofDays(3),
+                details = User.Subscription.StripeSubscriptionDetails(
+                    subscriptionId = "stripeSubscription1",
+                    paymentIntentId = "stripePaymentIntent1"
+                )
             )
         )
 

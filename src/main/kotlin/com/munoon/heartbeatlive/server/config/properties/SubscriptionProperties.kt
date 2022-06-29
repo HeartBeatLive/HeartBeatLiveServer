@@ -35,6 +35,7 @@ class SubscriptionProperties {
         lateinit var duration: Duration
         var oldPrice: BigDecimal? = null
         var stripePriceId: String? = null
+        var refundDuration: Duration = Duration.ofDays(3)
 
         fun getId(subscriptionPlan: UserSubscriptionPlan): String {
             val hash = Objects.hash(subscriptionPlan.name, price, currency, duration)

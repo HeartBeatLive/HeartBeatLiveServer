@@ -12,6 +12,12 @@ extend type Mutation {
     Authenticated user must have active subscription.
     """
     stopRenewingSubscription: Boolean
+
+    """
+    Method to request a refund. User will lost his current subscription. \
+    Authenticated user must have active subscription.
+    """
+    requestARefund: Boolean
 }
 
 "Subscription plan info."
@@ -63,4 +69,7 @@ type SubscriptionPlanPrice {
 
     "Price duration. Answering question: How long I will be subscribed after paying this price?"
     duration: Duration!
+
+    "Duration, while user is able to make a refund after paying this price."
+    refundDuration: Duration!
 }

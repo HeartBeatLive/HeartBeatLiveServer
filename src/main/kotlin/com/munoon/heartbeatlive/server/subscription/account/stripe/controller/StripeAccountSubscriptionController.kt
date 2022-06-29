@@ -38,8 +38,10 @@ class StripeAccountSubscriptionController(
 
         if (!properties.enabled) throw PaymentProviderIsNotSupportedException(GraphqlPaymentProviderName.STRIPE)
 
-        val stripePriceId = subscriptionProperties.findSubscriptionPriceById(subscriptionPlanPriceId).stripePriceId
-            ?: throw SubscriptionPlanPriceIsNotFoundByIdException(subscriptionPlanPriceId)
+        val (plan, price) = subscriptionProperties.findSubscriptionPriceById(subscriptionPlanPriceId)
+        if (price.stripePriceId == null) {
+            throw SubscriptionPlanPriceIsNotFoundByIdException(subscriptionPlanPriceId)
+        }
 
         if (authUserSubscription() != UserSubscriptionPlan.FREE) {
             throw UserAlreadyHaveActiveSubscriptionException()
@@ -50,6 +52,6 @@ class StripeAccountSubscriptionController(
             throw UserAlreadyHaveActiveSubscriptionException()
         }
 
-        return service.createSubscription(stripePriceId, user).asGraphql()
+        return service.createSubscription(plan, price, user).asGraphql()
     }
 }

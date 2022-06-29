@@ -32,4 +32,12 @@ class AccountSubscriptionController(
         accountSubscriptionService.stopRenewingSubscription(authUserId())
         return true
     }
+
+    @MutationMapping
+    @PreAuthorize("isAuthenticated()")
+    suspend fun requestARefund(): Boolean {
+        logger.info("User '${authUserId()}' request a refund of his subscription")
+        accountSubscriptionService.requestARefund(authUserId())
+        return true
+    }
 }

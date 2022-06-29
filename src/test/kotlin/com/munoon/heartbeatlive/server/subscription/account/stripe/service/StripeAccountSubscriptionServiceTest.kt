@@ -1,6 +1,8 @@
 package com.munoon.heartbeatlive.server.subscription.account.stripe.service
 
 import com.munoon.heartbeatlive.server.AbstractTest
+import com.munoon.heartbeatlive.server.config.properties.SubscriptionProperties
+import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
 import com.munoon.heartbeatlive.server.subscription.account.stripe.StripeAccount
 import com.munoon.heartbeatlive.server.subscription.account.stripe.StripeCustomerNotFoundByIdException
 import com.munoon.heartbeatlive.server.subscription.account.stripe.client.StripeClient
@@ -9,8 +11,10 @@ import com.munoon.heartbeatlive.server.user.User
 import com.ninjasquad.springmockk.MockkBean
 import com.stripe.model.Customer
 import com.stripe.model.Event
+import com.stripe.model.Refund
 import com.stripe.model.Subscription
 import com.stripe.param.CustomerCreateParams
+import com.stripe.param.RefundCreateParams
 import com.stripe.param.SubscriptionCreateParams
 import com.stripe.param.SubscriptionCreateParams.PaymentSettings.SaveDefaultPaymentMethod
 import com.stripe.param.SubscriptionUpdateParams
@@ -31,6 +35,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.event.ApplicationEvents
 import org.springframework.test.context.event.RecordApplicationEvents
+import java.time.Duration
 
 @SpringBootTest
 @RecordApplicationEvents
@@ -70,6 +75,11 @@ internal class StripeAccountSubscriptionServiceTest : AbstractTest() {
                     .build()
             )
             .setPaymentBehavior(SubscriptionCreateParams.PaymentBehavior.DEFAULT_INCOMPLETE)
+            .setMetadata(mapOf(
+                "refundSeconds" to "259200",
+                "subscriptionPlan" to "PRO",
+                "uid" to "user1"
+            ))
             .addAllExpand(listOf("latest_invoice.payment_intent"))
             .build()
 
@@ -80,11 +90,15 @@ internal class StripeAccountSubscriptionServiceTest : AbstractTest() {
             emailVerified = false
         )
 
-        val subscription = runBlocking { service.createSubscription("stripePrice1", user) }
+        val price = SubscriptionProperties.SubscriptionPrice().apply {
+            stripePriceId = "stripePrice1"
+            refundDuration = Duration.ofDays(3)
+        }
+        val subscription = runBlocking { service.createSubscription(UserSubscriptionPlan.PRO, price, user) }
         subscription shouldBe stripeSubscription
 
-        coVerify(exactly = 1) { client.createSubscription(matchSubscriptionCreateParams(expectedSubscriptionParams), any()) }
-        coVerify(exactly = 1) { client.createCustomer(matchCustomerCreateParams(expectedCustomerParams), any()) }
+        coVerify(exactly = 1) { client.createSubscription(matchSubscriptionCreateParams(expectedSubscriptionParams), matchUUID()) }
+        coVerify(exactly = 1) { client.createCustomer(matchCustomerCreateParams(expectedCustomerParams), matchUUID()) }
         runBlocking { accountRepository.findAll().toList(arrayListOf()) } shouldBe listOf(
             StripeAccount(id = "user1", stripeAccountId = "stripeCustomer1")
         )
@@ -106,6 +120,11 @@ internal class StripeAccountSubscriptionServiceTest : AbstractTest() {
                     .setSaveDefaultPaymentMethod(SaveDefaultPaymentMethod.ON_SUBSCRIPTION)
                     .build()
             )
+            .setMetadata(mapOf(
+                "refundSeconds" to "259200",
+                "subscriptionPlan" to "PRO",
+                "uid" to "user1"
+            ))
             .setPaymentBehavior(SubscriptionCreateParams.PaymentBehavior.DEFAULT_INCOMPLETE)
             .addAllExpand(listOf("latest_invoice.payment_intent"))
             .build()
@@ -117,10 +136,14 @@ internal class StripeAccountSubscriptionServiceTest : AbstractTest() {
             emailVerified = false
         )
 
-        val subscription = runBlocking { service.createSubscription("stripePrice1", user) }
+        val price = SubscriptionProperties.SubscriptionPrice().apply {
+            stripePriceId = "stripePrice1"
+            refundDuration = Duration.ofDays(3)
+        }
+        val subscription = runBlocking { service.createSubscription(UserSubscriptionPlan.PRO, price, user) }
         subscription shouldBe stripeSubscription
 
-        coVerify(exactly = 1) { client.createSubscription(matchSubscriptionCreateParams(expectedSubscriptionParams), any()) }
+        coVerify(exactly = 1) { client.createSubscription(matchSubscriptionCreateParams(expectedSubscriptionParams), matchUUID()) }
         coVerify(exactly = 0) { client.createCustomer(any(), any()) }
         runBlocking { accountRepository.count() } shouldBe 1
     }
@@ -173,13 +196,27 @@ internal class StripeAccountSubscriptionServiceTest : AbstractTest() {
 
         val updateParams = SubscriptionUpdateParams.builder().setCancelAtPeriodEnd(true).build()
         coVerify(exactly = 1) { client.updateSubscription(
-            "stripeSubscription1",
-            matchSubscriptionUpdateParams(updateParams),
-            match {
-                it.shouldBeUUID()
-                true
-            }
+            "stripeSubscription1", matchSubscriptionUpdateParams(updateParams), matchUUID()) }
+    }
+
+    @Test
+    fun makeARefund() {
+        val expectRefundParams = RefundCreateParams.builder()
+            .setPaymentIntent("stripePaymentIntent1")
+            .setReason(RefundCreateParams.Reason.REQUESTED_BY_CUSTOMER)
+            .build()
+
+        coEvery { client.createARefund(any(), any()) } returns Refund()
+        coEvery { client.cancelSubscription(any(), any(), any()) } returns Subscription()
+
+        runBlocking { service.makeARefund(
+            subscriptionId = "stripeSubscription1",
+            paymentIntentId = "stripePaymentIntent1",
+            reason = RefundCreateParams.Reason.REQUESTED_BY_CUSTOMER
         ) }
+
+        coVerify(exactly = 1) { client.createARefund(matchRefundCreateParams(expectRefundParams), matchUUID()) }
+        coVerify(exactly = 1) { client.cancelSubscription("stripeSubscription1", null, matchUUID()) }
     }
 
     private companion object {
@@ -195,6 +232,16 @@ internal class StripeAccountSubscriptionServiceTest : AbstractTest() {
 
         fun MockKMatcherScope.matchCustomerCreateParams(expectedCustomer: CustomerCreateParams) = match<CustomerCreateParams> {
             assertThat(it).usingRecursiveComparison().isEqualTo(expectedCustomer)
+            true
+        }
+
+        fun MockKMatcherScope.matchRefundCreateParams(expectedRefund: RefundCreateParams) = match<RefundCreateParams> {
+            assertThat(it).usingRecursiveComparison().isEqualTo(expectedRefund)
+            true
+        }
+
+        fun MockKMatcherScope.matchUUID() = match<String> {
+            it.shouldBeUUID()
             true
         }
     }

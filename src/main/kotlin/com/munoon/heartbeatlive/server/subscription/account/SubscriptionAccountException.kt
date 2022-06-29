@@ -24,3 +24,6 @@ class UserAlreadyHaveActiveSubscriptionException : RuntimeException("User alread
 
 @ConvertExceptionToError(type = ErrorType.FORBIDDEN, code = "account_subscription.subscription_plan.user_have_no_active_subscription")
 class UserHaveNotActiveSubscriptionException : RuntimeException("User haven't any active subscription.")
+
+@ConvertExceptionToError(type = ErrorType.FORBIDDEN, code = "account_subscription.subscription_plan.refund.refund_period_ended")
+class RefundPeriodEndException : RuntimeException("Subscription refund period has ended.")

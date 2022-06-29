@@ -26,7 +26,8 @@ object AccountSubscriptionMapper {
             id = it.getId(plan),
             price = GraphqlMoney(it.price, it.currency),
             oldPrice = it.oldPrice?.let { oldPrice -> GraphqlMoney(oldPrice, it.currency) },
-            duration = it.duration
+            duration = it.duration,
+            refundDuration = it.refundDuration
         ) },
         limits = GraphqlSubscriptionPlan.Limits(
             maxSharingCodesLimit = limits.maxSharingCodesLimit,

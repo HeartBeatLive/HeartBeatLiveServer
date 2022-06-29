@@ -9,4 +9,6 @@ interface PaymentProvider {
     val providerName: PaymentProviderName
 
     suspend fun stopRenewingSubscription(user: User, details: User.Subscription.SubscriptionDetails)
+
+    suspend fun makeARefund(user: User)
 }

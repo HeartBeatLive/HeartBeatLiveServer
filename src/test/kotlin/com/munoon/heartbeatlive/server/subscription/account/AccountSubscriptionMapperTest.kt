@@ -21,6 +21,7 @@ import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import java.math.BigDecimal
 import java.time.Duration
+import java.time.Instant
 import java.util.*
 
 class AccountSubscriptionMapperTest : FreeSpec({
@@ -46,11 +47,13 @@ class AccountSubscriptionMapperTest : FreeSpec({
                     currency = "USD"
                     duration = Duration.ofDays(31)
                     oldPrice = BigDecimal(10)
+                    refundDuration = Duration.ofDays(7)
                 },
                 SubscriptionProperties.SubscriptionPrice().apply {
                     price = BigDecimal(8)
                     currency = "USD"
                     duration = Duration.ofDays(62)
+                    refundDuration = Duration.ofDays(14)
                 }
             )
             limits = SubscriptionProperties.SubscriptionLimits().apply {
@@ -75,13 +78,15 @@ class AccountSubscriptionMapperTest : FreeSpec({
                         id = subscription.prices[0].getId(UserSubscriptionPlan.PRO),
                         price = GraphqlMoney(BigDecimal(5), "USD"),
                         oldPrice = GraphqlMoney(BigDecimal(10), "USD"),
-                        duration = Duration.ofDays(31)
+                        duration = Duration.ofDays(31),
+                        refundDuration = Duration.ofDays(7)
                     ),
                     GraphqlSubscriptionPlan.Price(
                         id = subscription.prices[1].getId(UserSubscriptionPlan.PRO),
                         price = GraphqlMoney(BigDecimal(8), "USD"),
                         oldPrice = null,
-                        duration = Duration.ofDays(62)
+                        duration = Duration.ofDays(62),
+                        refundDuration = Duration.ofDays(14)
                     )
                 ),
                 limits = GraphqlSubscriptionPlan.Limits(
@@ -107,13 +112,15 @@ class AccountSubscriptionMapperTest : FreeSpec({
                         id = subscription.prices[0].getId(UserSubscriptionPlan.PRO),
                         price = GraphqlMoney(BigDecimal(5), "USD"),
                         oldPrice = GraphqlMoney(BigDecimal(10), "USD"),
-                        duration = Duration.ofDays(31)
+                        duration = Duration.ofDays(31),
+                        refundDuration = Duration.ofDays(7)
                     ),
                     GraphqlSubscriptionPlan.Price(
                         id = subscription.prices[1].getId(UserSubscriptionPlan.PRO),
                         price = GraphqlMoney(BigDecimal(8), "USD"),
                         oldPrice = null,
-                        duration = Duration.ofDays(62)
+                        duration = Duration.ofDays(62),
+                        refundDuration = Duration.ofDays(14)
                     )
                 ),
                 limits = GraphqlSubscriptionPlan.Limits(
@@ -140,13 +147,15 @@ class AccountSubscriptionMapperTest : FreeSpec({
                         id = subscription.prices[0].getId(UserSubscriptionPlan.PRO),
                         price = GraphqlMoney(BigDecimal(5), "USD"),
                         oldPrice = GraphqlMoney(BigDecimal(10), "USD"),
-                        duration = Duration.ofDays(31)
+                        duration = Duration.ofDays(31),
+                        refundDuration = Duration.ofDays(7)
                     ),
                     GraphqlSubscriptionPlan.Price(
                         id = subscription.prices[1].getId(UserSubscriptionPlan.PRO),
                         price = GraphqlMoney(BigDecimal(8), "USD"),
                         oldPrice = null,
-                        duration = Duration.ofDays(62)
+                        duration = Duration.ofDays(62),
+                        refundDuration = Duration.ofDays(14)
                     )
                 ),
                 limits = GraphqlSubscriptionPlan.Limits(
@@ -170,7 +179,14 @@ class AccountSubscriptionMapperTest : FreeSpec({
                 val expected = JwtUserSubscription(plan, expiresAt)
                 val user = User(id = "userId", displayName = null, email = null, emailVerified = false,
                     subscription = User.Subscription(
-                        plan, expiresAt, User.Subscription.StripeSubscriptionDetails("StripeSubscription1")
+                        plan = plan,
+                        expiresAt = expiresAt,
+                        startAt = Instant.now(),
+                        refundDuration = Duration.ofDays(3),
+                        details = User.Subscription.StripeSubscriptionDetails(
+                            subscriptionId = "StripeSubscription1",
+                            paymentIntentId = "PaymentIntent1"
+                        )
                     ))
                 user.asSubscriptionJwt() shouldBe expected
             }

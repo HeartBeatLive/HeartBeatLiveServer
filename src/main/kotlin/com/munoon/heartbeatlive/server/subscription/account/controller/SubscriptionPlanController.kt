@@ -1,8 +1,10 @@
 package com.munoon.heartbeatlive.server.subscription.account.controller
 
+import com.google.common.base.Enums
 import com.munoon.heartbeatlive.server.config.properties.SubscriptionProperties
 import com.munoon.heartbeatlive.server.subscription.account.AccountSubscriptionMapper.asGraphqlSubscription
-import com.munoon.heartbeatlive.server.subscription.account.AccountSubscriptionUtils
+import com.munoon.heartbeatlive.server.subscription.account.SubscriptionPlanNotFoundException
+import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
 import com.munoon.heartbeatlive.server.subscription.account.model.GraphqlSubscriptionPlan
 import org.springframework.graphql.data.method.annotation.Argument
 import org.springframework.graphql.data.method.annotation.QueryMapping
@@ -21,7 +23,8 @@ class SubscriptionPlanController(
 
     @QueryMapping
     fun getSubscriptionPlanByCodeName(@Argument codeName: String, locale: Locale?): GraphqlSubscriptionPlan {
-        val subscriptionPlan = AccountSubscriptionUtils.findAccountSubscriptionPlan(codeName)
+        val subscriptionPlan = Enums.getIfPresent(UserSubscriptionPlan::class.java, codeName.uppercase()).orNull()
+            ?: throw SubscriptionPlanNotFoundException(codeName)
         return subscriptionProperties[subscriptionPlan].asGraphqlSubscription(subscriptionPlan, locale)
     }
 }

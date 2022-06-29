@@ -11,11 +11,14 @@ import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.instant
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
+import io.kotest.property.arbitrary.long
+import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.set
 import io.kotest.property.arbitrary.string
 import io.mockk.MockKVerificationScope
 import org.assertj.core.api.Assertions
+import java.time.Duration
 
 object UserTestUtils {
     fun MockKVerificationScope.userArgumentMatch(expected: User) = match<User> {
@@ -42,8 +45,11 @@ object UserTestUtils {
     private val userSubscriptionArbitrary = arbitrary { User.Subscription(
         plan = Arb.enum<UserSubscriptionPlan>().bind(),
         expiresAt = Arb.instant().bind(),
+        startAt = Arb.instant().bind(),
+        refundDuration = Arb.long(range = 1L..10_000L).map { Duration.ofSeconds(it) }.bind(),
         details = User.Subscription.StripeSubscriptionDetails(
-            subscriptionId = Arb.string(codepoints = Codepoint.alphanumeric(), size = 20).bind()
+            subscriptionId = Arb.string(codepoints = Codepoint.alphanumeric(), size = 20).bind(),
+            paymentIntentId = Arb.string(codepoints = Codepoint.alphanumeric(), size = 20).bind()
         )
     ) }
 }

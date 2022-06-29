@@ -31,20 +31,6 @@ internal class AccountSubscriptionUtilsTest : FreeSpec({
         }
     }
 
-    "findAccountSubscriptionPlan" - {
-        "found" {
-            AccountSubscriptionUtils.findAccountSubscriptionPlan("pRO") shouldBe UserSubscriptionPlan.PRO
-            AccountSubscriptionUtils.findAccountSubscriptionPlan("PRO") shouldBe UserSubscriptionPlan.PRO
-            AccountSubscriptionUtils.findAccountSubscriptionPlan("pro") shouldBe UserSubscriptionPlan.PRO
-        }
-
-        "not found" {
-            shouldThrowExactly<SubscriptionPlanNotFoundException> {
-                AccountSubscriptionUtils.findAccountSubscriptionPlan("abc")
-            } shouldBe SubscriptionPlanNotFoundException("abc")
-        }
-    }
-
     "findSubscriptionPriceById" - {
         "found" {
             val proSubscriptionPrice1 = SubscriptionProperties.SubscriptionPrice().apply {
@@ -75,13 +61,16 @@ internal class AccountSubscriptionUtilsTest : FreeSpec({
             }
 
             val proSubscriptionPrice1Id = proSubscriptionPrice1.getId(UserSubscriptionPlan.PRO)
-            properties.findSubscriptionPriceById(proSubscriptionPrice1Id) shouldBe proSubscriptionPrice1
+            properties.findSubscriptionPriceById(proSubscriptionPrice1Id) shouldBe
+                    (UserSubscriptionPlan.PRO to proSubscriptionPrice1)
 
             val proSubscriptionPrice2Id = proSubscriptionPrice2.getId(UserSubscriptionPlan.PRO)
-            properties.findSubscriptionPriceById(proSubscriptionPrice2Id) shouldBe proSubscriptionPrice2
+            properties.findSubscriptionPriceById(proSubscriptionPrice2Id) shouldBe
+                    (UserSubscriptionPlan.PRO to proSubscriptionPrice2)
 
             val proSubscriptionPrice3Id = freeSubscriptionPrice1.getId(UserSubscriptionPlan.FREE)
-            properties.findSubscriptionPriceById(proSubscriptionPrice3Id) shouldBe freeSubscriptionPrice1
+            properties.findSubscriptionPriceById(proSubscriptionPrice3Id) shouldBe
+                    (UserSubscriptionPlan.FREE to freeSubscriptionPrice1)
         }
 
         "not found" {

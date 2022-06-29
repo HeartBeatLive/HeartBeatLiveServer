@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.graphql.execution.ErrorType
+import java.time.Duration
 import java.time.Instant
 
 @SpringBootTest
@@ -62,7 +63,7 @@ internal class StripeAccountSubscriptionControllerTest : AbstractGraphqlHttpTest
         )
         coEvery { userService.getUserById(any()) } returns user
 
-        coEvery { service.createSubscription(any(), any()) } returns Subscription().apply {
+        coEvery { service.createSubscription(any(), any(), any()) } returns Subscription().apply {
             id = "stripeSubscriptionId"
             latestInvoiceObject = Invoice().apply {
                 paymentIntentObject = PaymentIntent().apply {
@@ -87,7 +88,7 @@ internal class StripeAccountSubscriptionControllerTest : AbstractGraphqlHttpTest
             .satisfyNoErrors()
             .path("createStripeSubscription").isEqualsTo(expectedStripeSubscription)
 
-        coVerify(exactly = 1) { service.createSubscription(price.stripePriceId!!, user) }
+        coVerify(exactly = 1) { service.createSubscription(UserSubscriptionPlan.PRO, price, user) }
         coVerify(exactly = 1) { userService.getUserById("user1") }
     }
 
@@ -112,7 +113,7 @@ internal class StripeAccountSubscriptionControllerTest : AbstractGraphqlHttpTest
                 extensions = mapOf("providerName" to "STRIPE")
             )
 
-        coVerify(exactly = 0) { service.createSubscription(any(), any()) }
+        coVerify(exactly = 0) { service.createSubscription(any(), any(), any()) }
         coVerify(exactly = 0) { userService.getUserById(any()) }
     }
 
@@ -135,7 +136,7 @@ internal class StripeAccountSubscriptionControllerTest : AbstractGraphqlHttpTest
                 extensions = mapOf("id" to "abc")
             )
 
-        coVerify(exactly = 0) { service.createSubscription(any(), any()) }
+        coVerify(exactly = 0) { service.createSubscription(any(), any(), any()) }
         coVerify(exactly = 0) { userService.getUserById(any()) }
     }
 
@@ -149,7 +150,12 @@ internal class StripeAccountSubscriptionControllerTest : AbstractGraphqlHttpTest
             subscription = User.Subscription(
                 plan = UserSubscriptionPlan.PRO,
                 expiresAt = Instant.now().plusSeconds(60),
-                details = User.Subscription.StripeSubscriptionDetails("stripeSubscription1")
+                startAt = Instant.now(),
+                refundDuration = Duration.ofDays(3),
+                details = User.Subscription.StripeSubscriptionDetails(
+                    subscriptionId = "stripeSubscription1",
+                    paymentIntentId = "stripePaymentIntent1"
+                )
             )
         )
 
@@ -172,7 +178,7 @@ internal class StripeAccountSubscriptionControllerTest : AbstractGraphqlHttpTest
                 path = "createStripeSubscription"
             )
 
-        coVerify(exactly = 0) { service.createSubscription(any(), any()) }
+        coVerify(exactly = 0) { service.createSubscription(any(), any(), any()) }
         coVerify(exactly = 1) { userService.getUserById("user1") }
     }
 
@@ -198,7 +204,7 @@ internal class StripeAccountSubscriptionControllerTest : AbstractGraphqlHttpTest
                 path = "createStripeSubscription"
             )
 
-        coVerify(exactly = 0) { service.createSubscription(any(), any()) }
+        coVerify(exactly = 0) { service.createSubscription(any(), any(), any()) }
         coVerify(exactly = 0) { userService.getUserById(any()) }
     }
 
@@ -216,7 +222,7 @@ internal class StripeAccountSubscriptionControllerTest : AbstractGraphqlHttpTest
             .execute()
             .errors().expectSingleUnauthenticatedError(path = "createStripeSubscription")
 
-        coVerify(exactly = 0) { service.createSubscription(any(), any()) }
+        coVerify(exactly = 0) { service.createSubscription(any(), any(), any()) }
         coVerify(exactly = 0) { userService.getUserById(any()) }
     }
 }

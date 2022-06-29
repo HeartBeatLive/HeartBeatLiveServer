@@ -5,6 +5,7 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
 import org.springframework.security.core.GrantedAuthority
+import java.time.Duration
 import java.time.Instant
 
 @Document("users")
@@ -40,11 +41,16 @@ data class User(
     data class Subscription(
         val plan: UserSubscriptionPlan,
         val expiresAt: Instant,
-        val details: SubscriptionDetails
+        val startAt: Instant,
+        val details: SubscriptionDetails,
+        val refundDuration: Duration
     ) {
         sealed interface SubscriptionDetails
 
-        data class StripeSubscriptionDetails(val subscriptionId: String) : SubscriptionDetails
+        data class StripeSubscriptionDetails(
+            val subscriptionId: String,
+            val paymentIntentId: String
+        ) : SubscriptionDetails
     }
 
     data class HeartRate(

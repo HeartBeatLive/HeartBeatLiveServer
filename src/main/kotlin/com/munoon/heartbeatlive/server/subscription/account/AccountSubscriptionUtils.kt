@@ -16,14 +16,10 @@ object AccountSubscriptionUtils {
 
     fun User.getActiveSubscriptionPlan() = asSubscriptionJwt().getActiveSubscriptionPlan()
 
-    fun findAccountSubscriptionPlan(name: String): UserSubscriptionPlan =
-        UserSubscriptionPlan.values().find { it.name.equals(name, ignoreCase = true) }
-            ?: throw SubscriptionPlanNotFoundException(name)
-
-    fun SubscriptionProperties.findSubscriptionPriceById(id: String): SubscriptionProperties.SubscriptionPrice {
+    fun SubscriptionProperties.findSubscriptionPriceById(id: String): Pair<UserSubscriptionPlan, SubscriptionProperties.SubscriptionPrice> {
         subscription.entries.forEach { (plan, subscription) ->
             subscription.prices.forEach { price ->
-                if (price.getId(plan) == id) return price
+                if (price.getId(plan) == id) return plan to price
             }
         }
         throw SubscriptionPlanPriceIsNotFoundByIdException(id)

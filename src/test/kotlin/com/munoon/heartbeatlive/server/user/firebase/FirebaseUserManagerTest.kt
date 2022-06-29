@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.ApplicationEventPublisher
+import java.time.Duration
 import java.time.Instant
 
 @SpringBootTest
@@ -52,8 +53,16 @@ internal class FirebaseUserManagerTest : AbstractTest() {
             ))
 
         val user = User(id = "1", displayName = null, email = "email@example.com", emailVerified = true)
-        val userSubscription = User.Subscription(plan = UserSubscriptionPlan.PRO, expiresAt = subscriptionExpireTime,
-            details = User.Subscription.StripeSubscriptionDetails("stripeSubscription1"))
+        val userSubscription = User.Subscription(
+            plan = UserSubscriptionPlan.PRO,
+            expiresAt = subscriptionExpireTime,
+            startAt = Instant.now(),
+            refundDuration = Duration.ofDays(3),
+            details = User.Subscription.StripeSubscriptionDetails(
+                subscriptionId = "stripeSubscription1",
+                paymentIntentId = "stripePaymentIntent1"
+            )
+        )
         val updatedUser = user.copy(displayName = "New Name", roles = setOf(User.Role.ADMIN),
             subscription = userSubscription)
 
@@ -105,8 +114,16 @@ internal class FirebaseUserManagerTest : AbstractTest() {
             email = "email@example.com",
             emailVerified = true,
             roles = setOf(User.Role.ADMIN),
-            subscription = User.Subscription(plan = UserSubscriptionPlan.PRO, expiresAt = subscriptionExpireTime,
-                details = User.Subscription.StripeSubscriptionDetails("stripeSubscription1"))
+            subscription = User.Subscription(
+                plan = UserSubscriptionPlan.PRO,
+                expiresAt = subscriptionExpireTime,
+                startAt = Instant.now(),
+                refundDuration = Duration.ofDays(3),
+                details = User.Subscription.StripeSubscriptionDetails(
+                    subscriptionId = "stripeSubscription1",
+                    paymentIntentId = "stripePaymentIntent1"
+                )
+            )
         )
 
         eventPublisher.publishEvent(UserEvents.UserCreatedEvent(user))
