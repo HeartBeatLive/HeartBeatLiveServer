@@ -95,11 +95,11 @@ internal class AccountSubscriptionControllerTest : AbstractGraphqlHttpTest() {
     }
 
     @Test
-    fun requestARefund() {
+    fun requestARefundForSubscription() {
         coEvery { service.requestARefund(any()) } returns Unit
 
         graphqlTester.withUser(id = "user1")
-            .document("mutation { requestARefund }")
+            .document("mutation { requestARefundForSubscription }")
             .execute()
             .satisfyNoErrors()
             .path("requestARefund").isEqualsTo(true)
@@ -108,9 +108,9 @@ internal class AccountSubscriptionControllerTest : AbstractGraphqlHttpTest() {
     }
 
     @Test
-    fun `requestARefund - not authenticated`() {
+    fun `requestARefundForSubscription - not authenticated`() {
         graphqlTester
-            .document("mutation { requestARefund }")
+            .document("mutation { requestARefundForSubscription }")
             .execute()
             .errors().expectSingleUnauthenticatedError(path = "requestARefund")
 

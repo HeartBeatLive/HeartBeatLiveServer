@@ -17,7 +17,7 @@ extend type Mutation {
     Method to request a refund. User will lost his current subscription. \
     Authenticated user must have active subscription.
     """
-    requestARefund: Boolean
+    requestARefundForSubscription: Boolean
 }
 
 "Subscription plan info."
