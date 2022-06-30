@@ -14,12 +14,34 @@ import java.time.Instant
 @Component
 class UpdateUserSubscriptionStripeWebhookEventHandler(private val userService: UserService) {
     private val logger = LoggerFactory.getLogger(UpdateUserSubscriptionStripeWebhookEventHandler::class.java)
+    private companion object {
+        const val REQUIRE_INVOICE_STATUS = "paid"
+        val REQUIRE_BILLING_REASON = setOf(
+            "subscription_cycle", "subscription_create",
+            "subscription_update", "subscription", "subscription_threshold"
+        )
+    }
 
     @EventListener(condition = "#event.type == 'invoice.paid'")
     fun handleEvent(event: Event) {
         val invoice = event.dataObjectDeserializer?.`object`?.takeIf { it.isPresent }?.get() as? Invoice
         if (invoice == null) {
             logger.warn("Ignoring 'invoice.paid' stripe event as no invoice info received")
+            return
+        }
+
+        if (invoice.status != REQUIRE_INVOICE_STATUS) {
+            logger.warn("Ignoring 'invoice.paid' stripe event as invoice status is not '$REQUIRE_INVOICE_STATUS'")
+            return
+        }
+
+        if (!invoice.paid) {
+            logger.warn("Ignoring 'invoice.paid' stripe event as invoice paid = false")
+            return
+        }
+
+        if (!REQUIRE_BILLING_REASON.contains(invoice.billingReason)) {
+            logger.warn("Ignoring 'invoice.paid' stripe event as invoice billing reason is '${invoice.billingReason}' (should be one of: $REQUIRE_BILLING_REASON)")
             return
         }
 

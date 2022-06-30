@@ -45,6 +45,9 @@ internal class UpdateUserSubscriptionStripeWebhookEventHandlerTest : FreeSpec({
                 data = EventData().apply {
                     setObject(Invoice().apply {
                         `object` = "invoice"
+                        paid = true
+                        status = "paid"
+                        billingReason = "subscription_create"
                         subscription = "stripeSubscription1"
                         paymentIntent = "stripePaymentIntent1"
                         lines = InvoiceLineItemCollection().apply {
@@ -82,12 +85,15 @@ internal class UpdateUserSubscriptionStripeWebhookEventHandlerTest : FreeSpec({
         }
 
         "ignore as other type" {
-            val event = Event().apply {
+            testIgnoreEvent(Event().apply {
                 apiVersion = Stripe.API_VERSION
                 type = "test_type"
                 data = EventData().apply {
                     setObject(Invoice().apply {
                         `object` = "invoice"
+                        paid = true
+                        status = "paid"
+                        billingReason = "subscription_create"
                         subscription = "stripeSubscription1"
                         paymentIntent = "stripePaymentIntent1"
                         lines = InvoiceLineItemCollection().apply {
@@ -107,22 +113,11 @@ internal class UpdateUserSubscriptionStripeWebhookEventHandlerTest : FreeSpec({
                         }
                     }.let { ApiResource.GSON.toJsonTree(it) as JsonObject })
                 }
-            }
-
-            val userService = mockk<UserService>()
-
-            ApplicationContextRunner()
-                .withBean(UserService::class.java, { userService })
-                .withBean(UpdateUserSubscriptionStripeWebhookEventHandler::class.java)
-                .run { context ->
-                    context.publishEvent(event)
-
-                    coVerify(exactly = 0) { userService.updateUserSubscription(any(), any()) }
-                }
+            })
         }
 
         "ignore as no invoice info received" {
-            val event = Event().apply {
+            testIgnoreEvent(Event().apply {
                 apiVersion = Stripe.API_VERSION
                 type = "invoice.paid"
                 data = EventData().apply {
@@ -132,27 +127,20 @@ internal class UpdateUserSubscriptionStripeWebhookEventHandlerTest : FreeSpec({
                             .let { ApiResource.GSON.toJsonTree(it) as JsonObject }
                     )
                 }
-            }
-
-            val userService = mockk<UserService>()
-
-            ApplicationContextRunner()
-                .withBean(UserService::class.java, { userService })
-                .withBean(UpdateUserSubscriptionStripeWebhookEventHandler::class.java)
-                .run { context ->
-                    context.publishEvent(event)
-
-                    coVerify(exactly = 0) { userService.updateUserSubscription(any(), any()) }
-                }
+            })
         }
 
-        "ignore as no invoice subscription received" {
-            val event = Event().apply {
+        "ignore as invoice status != paid" {
+            testIgnoreEvent(Event().apply {
                 apiVersion = Stripe.API_VERSION
-                type = "invoice.paid"
+                type = "invoice_paid"
                 data = EventData().apply {
                     setObject(Invoice().apply {
                         `object` = "invoice"
+                        paid = true
+                        status = "created"
+                        billingReason = "subscription_create"
+                        subscription = "stripeSubscription1"
                         paymentIntent = "stripePaymentIntent1"
                         lines = InvoiceLineItemCollection().apply {
                             data = listOf(
@@ -171,53 +159,132 @@ internal class UpdateUserSubscriptionStripeWebhookEventHandlerTest : FreeSpec({
                         }
                     }.let { ApiResource.GSON.toJsonTree(it) as JsonObject })
                 }
-            }
-
-            val userService = mockk<UserService>()
-
-            ApplicationContextRunner()
-                .withBean(UserService::class.java, { userService })
-                .withBean(UpdateUserSubscriptionStripeWebhookEventHandler::class.java)
-                .run { context ->
-                    context.publishEvent(event)
-
-                    coVerify(exactly = 0) { userService.updateUserSubscription(any(), any()) }
-                }
+            })
         }
 
-        "ignore as no invoice line item received" {
-            val event = Event().apply {
+        "ignore as invoice paid = false" {
+            testIgnoreEvent(Event().apply {
+                apiVersion = Stripe.API_VERSION
+                type = "invoice_paid"
+                data = EventData().apply {
+                    setObject(Invoice().apply {
+                        `object` = "invoice"
+                        paid = false
+                        status = "paid"
+                        billingReason = "subscription_create"
+                        subscription = "stripeSubscription1"
+                        paymentIntent = "stripePaymentIntent1"
+                        lines = InvoiceLineItemCollection().apply {
+                            data = listOf(
+                                InvoiceLineItem().apply {
+                                    period = InvoiceLineItemPeriod().apply {
+                                        start = Instant.now().epochSecond
+                                        end = Instant.now().plusSeconds(120).epochSecond
+                                    }
+                                    metadata = mapOf(
+                                        StripeSubscriptionMeta.SUBSCRIPTION_PLAN.addValue(UserSubscriptionPlan.PRO),
+                                        StripeSubscriptionMeta.REFUND_DURATION.addValue(Duration.ofDays(3)),
+                                        StripeSubscriptionMeta.USER_ID.addValue("userId")
+                                    )
+                                }
+                            )
+                        }
+                    }.let { ApiResource.GSON.toJsonTree(it) as JsonObject })
+                }
+            })
+        }
+
+        "ignore as unsupported billing reason" {
+            testIgnoreEvent(Event().apply {
+                apiVersion = Stripe.API_VERSION
+                type = "invoice_paid"
+                data = EventData().apply {
+                    setObject(Invoice().apply {
+                        `object` = "invoice"
+                        paid = true
+                        status = "paid"
+                        billingReason = "manual"
+                        subscription = "stripeSubscription1"
+                        paymentIntent = "stripePaymentIntent1"
+                        lines = InvoiceLineItemCollection().apply {
+                            data = listOf(
+                                InvoiceLineItem().apply {
+                                    period = InvoiceLineItemPeriod().apply {
+                                        start = Instant.now().epochSecond
+                                        end = Instant.now().plusSeconds(120).epochSecond
+                                    }
+                                    metadata = mapOf(
+                                        StripeSubscriptionMeta.SUBSCRIPTION_PLAN.addValue(UserSubscriptionPlan.PRO),
+                                        StripeSubscriptionMeta.REFUND_DURATION.addValue(Duration.ofDays(3)),
+                                        StripeSubscriptionMeta.USER_ID.addValue("userId")
+                                    )
+                                }
+                            )
+                        }
+                    }.let { ApiResource.GSON.toJsonTree(it) as JsonObject })
+                }
+            })
+        }
+
+        "ignore as no invoice subscription received" {
+            testIgnoreEvent(Event().apply {
                 apiVersion = Stripe.API_VERSION
                 type = "invoice.paid"
                 data = EventData().apply {
                     setObject(Invoice().apply {
                         `object` = "invoice"
+                        paid = true
+                        status = "paid"
+                        billingReason = "subscription_create"
+                        paymentIntent = "stripePaymentIntent1"
+                        lines = InvoiceLineItemCollection().apply {
+                            data = listOf(
+                                InvoiceLineItem().apply {
+                                    period = InvoiceLineItemPeriod().apply {
+                                        start = Instant.now().epochSecond
+                                        end = Instant.now().plusSeconds(120).epochSecond
+                                    }
+                                    metadata = mapOf(
+                                        StripeSubscriptionMeta.SUBSCRIPTION_PLAN.addValue(UserSubscriptionPlan.PRO),
+                                        StripeSubscriptionMeta.REFUND_DURATION.addValue(Duration.ofDays(3)),
+                                        StripeSubscriptionMeta.USER_ID.addValue("userId")
+                                    )
+                                }
+                            )
+                        }
+                    }.let { ApiResource.GSON.toJsonTree(it) as JsonObject })
+                }
+            })
+        }
+
+        "ignore as no invoice line item received" {
+            testIgnoreEvent(Event().apply {
+                apiVersion = Stripe.API_VERSION
+                type = "invoice.paid"
+                data = EventData().apply {
+                    setObject(Invoice().apply {
+                        `object` = "invoice"
+                        paid = true
+                        status = "paid"
+                        billingReason = "subscription_create"
                         subscription = "stripeSubscription1"
                         paymentIntent = "stripePaymentIntent1"
                         lines = InvoiceLineItemCollection()
                     }.let { ApiResource.GSON.toJsonTree(it) as JsonObject })
                 }
-            }
-
-            val userService = mockk<UserService>()
-
-            ApplicationContextRunner()
-                .withBean(UserService::class.java, { userService })
-                .withBean(UpdateUserSubscriptionStripeWebhookEventHandler::class.java)
-                .run { context ->
-                    context.publishEvent(event)
-
-                    coVerify(exactly = 0) { userService.updateUserSubscription(any(), any()) }
-                }
+            })
         }
 
         "ignore as no start period received" {
-            val event = Event().apply {
+            testIgnoreEvent(Event().apply {
                 apiVersion = Stripe.API_VERSION
                 type = "invoice.paid"
                 data = EventData().apply {
                     setObject(Invoice().apply {
                         `object` = "invoice"
+                        paid = true
+                        status = "paid"
+                        billingReason = "subscription_create"
                         subscription = "stripeSubscription1"
                         paymentIntent = "stripePaymentIntent1"
                         lines = InvoiceLineItemCollection().apply {
@@ -236,28 +303,20 @@ internal class UpdateUserSubscriptionStripeWebhookEventHandlerTest : FreeSpec({
                         }
                     }.let { ApiResource.GSON.toJsonTree(it) as JsonObject })
                 }
-            }
-
-            val userService = mockk<UserService>()
-
-            ApplicationContextRunner()
-                .withBean(UserService::class.java, { userService })
-                .withBean(UpdateUserSubscriptionStripeWebhookEventHandler::class.java)
-                .run { context ->
-                    context.publishEvent(event)
-
-                    coVerify(exactly = 0) { userService.updateUserSubscription(any(), any()) }
-                }
+            })
         }
 
 
         "ignore as no end period received" {
-            val event = Event().apply {
+            testIgnoreEvent(Event().apply {
                 apiVersion = Stripe.API_VERSION
                 type = "invoice.paid"
                 data = EventData().apply {
                     setObject(Invoice().apply {
                         `object` = "invoice"
+                        paid = true
+                        status = "paid"
+                        billingReason = "subscription_create"
                         subscription = "stripeSubscription1"
                         paymentIntent = "stripePaymentIntent1"
                         lines = InvoiceLineItemCollection().apply {
@@ -276,27 +335,19 @@ internal class UpdateUserSubscriptionStripeWebhookEventHandlerTest : FreeSpec({
                         }
                     }.let { ApiResource.GSON.toJsonTree(it) as JsonObject })
                 }
-            }
-
-            val userService = mockk<UserService>()
-
-            ApplicationContextRunner()
-                .withBean(UserService::class.java, { userService })
-                .withBean(UpdateUserSubscriptionStripeWebhookEventHandler::class.java)
-                .run { context ->
-                    context.publishEvent(event)
-
-                    coVerify(exactly = 0) { userService.updateUserSubscription(any(), any()) }
-                }
+            })
         }
 
         "ignore as no payment intent received" {
-            val event = Event().apply {
+            testIgnoreEvent(Event().apply {
                 apiVersion = Stripe.API_VERSION
                 type = "invoice.paid"
                 data = EventData().apply {
                     setObject(Invoice().apply {
                         `object` = "invoice"
+                        paid = true
+                        status = "paid"
+                        billingReason = "subscription_create"
                         subscription = "stripeSubscription1"
                         lines = InvoiceLineItemCollection().apply {
                             data = listOf(
@@ -315,27 +366,19 @@ internal class UpdateUserSubscriptionStripeWebhookEventHandlerTest : FreeSpec({
                         }
                     }.let { ApiResource.GSON.toJsonTree(it) as JsonObject })
                 }
-            }
-
-            val userService = mockk<UserService>()
-
-            ApplicationContextRunner()
-                .withBean(UserService::class.java, { userService })
-                .withBean(UpdateUserSubscriptionStripeWebhookEventHandler::class.java)
-                .run { context ->
-                    context.publishEvent(event)
-
-                    coVerify(exactly = 0) { userService.updateUserSubscription(any(), any()) }
-                }
+            })
         }
 
         "ignore as no refund duration metadata received" {
-            val event = Event().apply {
+            testIgnoreEvent(Event().apply {
                 apiVersion = Stripe.API_VERSION
                 type = "invoice.paid"
                 data = EventData().apply {
                     setObject(Invoice().apply {
                         `object` = "invoice"
+                        paid = true
+                        status = "paid"
+                        billingReason = "subscription_create"
                         subscription = "stripeSubscription1"
                         paymentIntent = "stripePaymentIntent1"
                         lines = InvoiceLineItemCollection().apply {
@@ -354,27 +397,19 @@ internal class UpdateUserSubscriptionStripeWebhookEventHandlerTest : FreeSpec({
                         }
                     }.let { ApiResource.GSON.toJsonTree(it) as JsonObject })
                 }
-            }
-
-            val userService = mockk<UserService>()
-
-            ApplicationContextRunner()
-                .withBean(UserService::class.java, { userService })
-                .withBean(UpdateUserSubscriptionStripeWebhookEventHandler::class.java)
-                .run { context ->
-                    context.publishEvent(event)
-
-                    coVerify(exactly = 0) { userService.updateUserSubscription(any(), any()) }
-                }
+            })
         }
 
         "ignore as no subscription plan metadata received" {
-            val event = Event().apply {
+            testIgnoreEvent(Event().apply {
                 apiVersion = Stripe.API_VERSION
                 type = "invoice.paid"
                 data = EventData().apply {
                     setObject(Invoice().apply {
                         `object` = "invoice"
+                        paid = true
+                        status = "paid"
+                        billingReason = "subscription_create"
                         subscription = "stripeSubscription1"
                         paymentIntent = "stripePaymentIntent1"
                         lines = InvoiceLineItemCollection().apply {
@@ -393,27 +428,19 @@ internal class UpdateUserSubscriptionStripeWebhookEventHandlerTest : FreeSpec({
                         }
                     }.let { ApiResource.GSON.toJsonTree(it) as JsonObject })
                 }
-            }
-
-            val userService = mockk<UserService>()
-
-            ApplicationContextRunner()
-                .withBean(UserService::class.java, { userService })
-                .withBean(UpdateUserSubscriptionStripeWebhookEventHandler::class.java)
-                .run { context ->
-                    context.publishEvent(event)
-
-                    coVerify(exactly = 0) { userService.updateUserSubscription(any(), any()) }
-                }
+            })
         }
 
         "ignore as no user id metadata received" {
-            val event = Event().apply {
+            testIgnoreEvent(Event().apply {
                 apiVersion = Stripe.API_VERSION
                 type = "invoice.paid"
                 data = EventData().apply {
                     setObject(Invoice().apply {
                         `object` = "invoice"
+                        paid = true
+                        status = "paid"
+                        billingReason = "subscription_create"
                         subscription = "stripeSubscription1"
                         paymentIntent = "stripePaymentIntent1"
                         lines = InvoiceLineItemCollection().apply {
@@ -432,18 +459,20 @@ internal class UpdateUserSubscriptionStripeWebhookEventHandlerTest : FreeSpec({
                         }
                     }.let { ApiResource.GSON.toJsonTree(it) as JsonObject })
                 }
-            }
-
-            val userService = mockk<UserService>()
-
-            ApplicationContextRunner()
-                .withBean(UserService::class.java, { userService })
-                .withBean(UpdateUserSubscriptionStripeWebhookEventHandler::class.java)
-                .run { context ->
-                    context.publishEvent(event)
-
-                    coVerify(exactly = 0) { userService.updateUserSubscription(any(), any()) }
-                }
+            })
         }
     }
 })
+
+fun testIgnoreEvent(event: Event) {
+    val userService = mockk<UserService>()
+
+    ApplicationContextRunner()
+        .withBean(UserService::class.java, { userService })
+        .withBean(UpdateUserSubscriptionStripeWebhookEventHandler::class.java)
+        .run { context ->
+            context.publishEvent(event)
+
+            coVerify(exactly = 0) { userService.updateUserSubscription(any(), any()) }
+        }
+}
