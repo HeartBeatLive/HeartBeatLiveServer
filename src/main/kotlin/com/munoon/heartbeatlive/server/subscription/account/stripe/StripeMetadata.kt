@@ -6,17 +6,23 @@ import java.time.Duration
 import kotlin.reflect.KClass
 
 object StripeMetadata {
+    private val USER_ID_METADATA = StringMetadata("uid")
+
     object Subscription {
-        val REFUND_DURATION = DurationMetadata("refundSeconds")
-        val SUBSCRIPTION_PLAN = EnumMetadata("subscriptionPlan", UserSubscriptionPlan::class)
-        val USER_ID = StringMetadata("uid")
+        val REFUND_DURATION: StripeMetadata<Duration> = DurationMetadata("refundSeconds")
+        val SUBSCRIPTION_PLAN: StripeMetadata<UserSubscriptionPlan> = EnumMetadata("subscriptionPlan", UserSubscriptionPlan::class)
+        val USER_ID: StripeMetadata<String> = USER_ID_METADATA
     }
 
     object Customer {
-        val USER_ID = StringMetadata("uid")
+        val USER_ID: StripeMetadata<String> = USER_ID_METADATA
     }
 
-    abstract class StripeMetadata<T>(val key: String) {
+    object Refund {
+        val USER_ID: StripeMetadata<String> = USER_ID_METADATA
+    }
+
+    sealed class StripeMetadata<T>(val key: String) {
         fun getValue(map: Map<String, String>): T? = map[key]?.let { convertToType(it) }
         fun addValue(value: T): Pair<String, String> = key to convertToString(value)
 
@@ -24,17 +30,17 @@ object StripeMetadata {
         protected abstract fun convertToString(value: T): String
     }
 
-    class DurationMetadata(key: String) : StripeMetadata<Duration>(key) {
+    private class DurationMetadata(key: String) : StripeMetadata<Duration>(key) {
         override fun convertToType(value: String) = value.toLongOrNull()?.let { Duration.ofSeconds(it) }
         override fun convertToString(value: Duration) = value.toSeconds().toString()
     }
 
-    class StringMetadata(key: String) : StripeMetadata<String>(key) {
+    private class StringMetadata(key: String) : StripeMetadata<String>(key) {
         override fun convertToType(value: String) = value
         override fun convertToString(value: String) = value
     }
 
-    class EnumMetadata<T : Enum<T>>(key: String, private val enumClass: KClass<T>) : StripeMetadata<T>(key) {
+    private class EnumMetadata<T : Enum<T>>(key: String, private val enumClass: KClass<T>) : StripeMetadata<T>(key) {
         override fun convertToType(value: String): T? = Enums.getIfPresent(enumClass.java, value.uppercase()).orNull()
         override fun convertToString(value: T): String = value.name
     }

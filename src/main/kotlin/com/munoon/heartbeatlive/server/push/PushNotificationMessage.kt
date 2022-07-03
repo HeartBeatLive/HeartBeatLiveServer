@@ -72,3 +72,8 @@ data class HeartRateMatchPushNotificationMessage(
         "push_notifications.heart_rate_match.content",
         HeartRateUtils.mapHeartRateToInteger(heartRate), matchWithUserDisplayName ?: "User")
 }
+
+object FailedToRefundPushNotificationMessage : PushNotificationMessage {
+    override val title = PushNotificationMessage.Message("push_notifications.failed_refund.title")
+    override val content = PushNotificationMessage.Message("push_notifications.failed_refund.content")
+}

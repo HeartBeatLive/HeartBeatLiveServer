@@ -91,10 +91,13 @@ class StripeAccountSubscriptionService(
         client.updateSubscription(subscriptionId, subscriptionUpdateParams, UUID.randomUUID().toString())
     }
 
-    suspend fun makeARefund(subscriptionId: String, paymentIntentId: String, reason: RefundCreateParams.Reason) {
+    suspend fun makeARefund(userId: String, subscriptionId: String, paymentIntentId: String, reason: RefundCreateParams.Reason) {
         val refund = RefundCreateParams.builder()
             .setPaymentIntent(paymentIntentId)
             .setReason(reason)
+            .setMetadata(mapOf(
+                StripeMetadata.Refund.USER_ID.addValue(userId)
+            ))
             .build()
 
         client.createARefund(refund, UUID.randomUUID().toString())

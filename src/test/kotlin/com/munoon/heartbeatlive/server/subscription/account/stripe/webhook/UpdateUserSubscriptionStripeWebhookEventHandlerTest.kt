@@ -1,6 +1,8 @@
 package com.munoon.heartbeatlive.server.subscription.account.stripe.webhook
 
 import com.google.gson.JsonObject
+import com.munoon.heartbeatlive.server.email.SubscriptionInvoicePaidEmailMessage
+import com.munoon.heartbeatlive.server.email.service.EmailService
 import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
 import com.munoon.heartbeatlive.server.user.User
 import com.munoon.heartbeatlive.server.user.service.UserService
@@ -23,6 +25,22 @@ import java.time.Instant
 import com.munoon.heartbeatlive.server.subscription.account.stripe.StripeMetadata.Subscription as StripeSubscriptionMeta
 
 internal class UpdateUserSubscriptionStripeWebhookEventHandlerTest : FreeSpec({
+    fun testIgnoreEvent(event: Event) {
+        val userService = mockk<UserService>()
+        val emailService = mockk<EmailService>()
+
+        ApplicationContextRunner()
+            .withBean(UserService::class.java, { userService })
+            .withBean(UpdateUserSubscriptionStripeWebhookEventHandler::class.java)
+            .withBean(EmailService::class.java, { emailService })
+            .run { context ->
+                context.publishEvent(event)
+
+                coVerify(exactly = 0) { userService.updateUserSubscription(any(), any()) }
+                coVerify(exactly = 0) { emailService.send(any()) }
+            }
+    }
+
     "handleEvent" - {
         "update user subscription" {
             val subscriptionStartTime = Instant.now().epochSecond
@@ -71,16 +89,22 @@ internal class UpdateUserSubscriptionStripeWebhookEventHandlerTest : FreeSpec({
 
             val userService = mockk<UserService>() {
                 coEvery { updateUserSubscription(any(), any()) } returns User(id = "userId", displayName = null,
-                    email = null, emailVerified = false)
+                    email = "email@example.com", emailVerified = false)
+            }
+
+            val emailService = mockk<EmailService>() {
+                coEvery { send(any()) } returns Unit
             }
 
             ApplicationContextRunner()
                 .withBean(UserService::class.java, { userService })
+                .withBean(EmailService::class.java, { emailService })
                 .withBean(UpdateUserSubscriptionStripeWebhookEventHandler::class.java)
                 .run { context ->
                     context.publishEvent(event)
 
                     coVerify(exactly = 1) { userService.updateUserSubscription("user1", expectedUserSubscription) }
+                    coVerify(exactly = 1) { emailService.send(SubscriptionInvoicePaidEmailMessage("email@example.com")) }
                 }
         }
 
@@ -463,16 +487,3 @@ internal class UpdateUserSubscriptionStripeWebhookEventHandlerTest : FreeSpec({
         }
     }
 })
-
-fun testIgnoreEvent(event: Event) {
-    val userService = mockk<UserService>()
-
-    ApplicationContextRunner()
-        .withBean(UserService::class.java, { userService })
-        .withBean(UpdateUserSubscriptionStripeWebhookEventHandler::class.java)
-        .run { context ->
-            context.publishEvent(event)
-
-            coVerify(exactly = 0) { userService.updateUserSubscription(any(), any()) }
-        }
-}

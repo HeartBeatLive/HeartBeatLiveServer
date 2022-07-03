@@ -10,7 +10,7 @@ type PushNotification {
     info: PushNotificationInfo!,
 
     "Details."
-    data: PushNotificationData!
+    data: PushNotificationData
 }
 
 "Common push notification info."

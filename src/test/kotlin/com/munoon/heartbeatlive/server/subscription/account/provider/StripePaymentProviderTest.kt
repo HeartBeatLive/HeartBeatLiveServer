@@ -56,7 +56,7 @@ class StripePaymentProviderTest : FreeSpec({
     }
 
     "makeARefund" {
-        coEvery { service.makeARefund(any(), any(), any()) } returns Unit
+        coEvery { service.makeARefund(any(), any(), any(), any()) } returns Unit
 
         val user = User(
             id = "user1",
@@ -77,6 +77,7 @@ class StripePaymentProviderTest : FreeSpec({
         provider.makeARefund(user)
 
         coVerify(exactly = 1) { service.makeARefund(
+            userId = "user1",
             subscriptionId = "StripeSubscription1",
             paymentIntentId = "StripePaymentIntent1",
             reason = RefundCreateParams.Reason.REQUESTED_BY_CUSTOMER

@@ -2,6 +2,7 @@ package com.munoon.heartbeatlive.server.push.controller
 
 import com.munoon.heartbeatlive.server.DataLoaders
 import com.munoon.heartbeatlive.server.push.BanPushNotificationMessage
+import com.munoon.heartbeatlive.server.push.FailedToRefundPushNotificationMessage
 import com.munoon.heartbeatlive.server.push.HeartRateMatchPushNotificationMessage
 import com.munoon.heartbeatlive.server.push.HighHeartRatePushNotificationMessage
 import com.munoon.heartbeatlive.server.push.HighOwnHeartRatePushNotificationMessage
@@ -22,6 +23,7 @@ import org.springframework.graphql.data.method.annotation.SchemaMapping
 import org.springframework.stereotype.Controller
 import java.util.*
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletableFuture.completedFuture
 
 @Controller
 class PushNotificationInfoController(private val messageSource: MessageSource) {
@@ -67,12 +69,10 @@ class PushNotificationInfoController(private val messageSource: MessageSource) {
             ) }
 
         is PushNotification.Data.HighOwnHeartRateData ->
-            HighOwnHeartRatePushNotificationMessage(heartRate = pushNotification.data.heartRate)
-                .let { CompletableFuture.completedFuture(it) }
+            completedFuture(HighOwnHeartRatePushNotificationMessage(heartRate = pushNotification.data.heartRate))
 
         is PushNotification.Data.LowOwnHeartRateData ->
-            LowOwnHeartRatePushNotificationMessage(heartRate = pushNotification.data.heartRate)
-                .let { CompletableFuture.completedFuture(it) }
+            completedFuture(LowOwnHeartRatePushNotificationMessage(heartRate = pushNotification.data.heartRate))
 
         is PushNotification.Data.HeartRateMatchData -> DataLoaders.USER_BY_ID[dataLoaderRegistry]
             .load(pushNotification.data.matchWithUserId)
@@ -84,5 +84,7 @@ class PushNotificationInfoController(private val messageSource: MessageSource) {
         is PushNotification.Data.NewSubscriberData -> DataLoaders.USER_BY_ID[dataLoaderRegistry]
             .load(pushNotification.data.subscriberUserId)
             .thenApply { NewSubscriptionPushNotificationMessage(subscriberDisplayName = it?.displayName) }
+
+        is PushNotification.Data.FailedToRefundData -> completedFuture(FailedToRefundPushNotificationMessage)
     }
 }

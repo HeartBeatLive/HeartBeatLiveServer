@@ -151,6 +151,23 @@ class PushNotificationMapperTest : FreeSpec({
 
             pushNotification.asGraphQL() shouldBe expected
         }
+
+        "FailedToRefund notification" {
+            val expected = GraphqlPushNotification(
+                id = "notificationId",
+                created = createdTime,
+                data = null
+            )
+
+            val pushNotification = PushNotification(
+                id = "notificationId",
+                userId = "userId",
+                created = createdTime,
+                data = PushNotification.Data.FailedToRefundData
+            )
+
+            pushNotification.asGraphQL() shouldBe expected
+        }
     }
 
     "getMessageText" - {

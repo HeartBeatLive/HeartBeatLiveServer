@@ -102,7 +102,7 @@ internal class AccountSubscriptionControllerTest : AbstractGraphqlHttpTest() {
             .document("mutation { requestARefundForSubscription }")
             .execute()
             .satisfyNoErrors()
-            .path("requestARefund").isEqualsTo(true)
+            .path("requestARefundForSubscription").isEqualsTo(true)
 
         coVerify(exactly = 1) { service.requestARefund("user1") }
     }
@@ -112,7 +112,7 @@ internal class AccountSubscriptionControllerTest : AbstractGraphqlHttpTest() {
         graphqlTester
             .document("mutation { requestARefundForSubscription }")
             .execute()
-            .errors().expectSingleUnauthenticatedError(path = "requestARefund")
+            .errors().expectSingleUnauthenticatedError(path = "requestARefundForSubscription")
 
         coVerify(exactly = 0) { service.requestARefund(any()) }
     }

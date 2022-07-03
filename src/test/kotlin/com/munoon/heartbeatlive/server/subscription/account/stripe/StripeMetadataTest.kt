@@ -92,4 +92,24 @@ class StripeMetadataTest : FreeSpec({
             }
         }
     }
+
+    "Refund" - {
+        "User Id" - {
+            "read" - {
+                "ok" {
+                    val metadata = mapOf(StripeMetadata.Refund.USER_ID.key to "user1")
+                    StripeMetadata.Refund.USER_ID.getValue(metadata) shouldBe "user1"
+                }
+
+                "not found" {
+                    StripeMetadata.Refund.USER_ID.getValue(emptyMap()).shouldBeNull()
+                }
+            }
+
+            "write" {
+                val expected = StripeMetadata.Refund.USER_ID.key to "user1"
+                StripeMetadata.Refund.USER_ID.addValue("user1") shouldBe expected
+            }
+        }
+    }
 })

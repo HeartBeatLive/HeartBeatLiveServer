@@ -26,6 +26,7 @@ object PushNotificationMapper {
             is PushNotification.Data.HighOwnHeartRateData -> GraphqlHighOwnHeartRatePushNotificationData(data.heartRate)
             is PushNotification.Data.LowOwnHeartRateData -> GraphqlLowOwnHeartRatePushNotificationData(data.heartRate)
             is PushNotification.Data.NewSubscriberData -> GraphqlNewSubscriberPushNotificationData(data.subscriptionId)
+            is PushNotification.Data.FailedToRefundData -> null
         }
     )
 

@@ -5,6 +5,7 @@ import com.munoon.heartbeatlive.server.config.properties.SubscriptionProperties
 import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
 import com.munoon.heartbeatlive.server.subscription.account.stripe.StripeAccount
 import com.munoon.heartbeatlive.server.subscription.account.stripe.StripeCustomerNotFoundByIdException
+import com.munoon.heartbeatlive.server.subscription.account.stripe.StripeMetadata
 import com.munoon.heartbeatlive.server.subscription.account.stripe.client.StripeClient
 import com.munoon.heartbeatlive.server.subscription.account.stripe.repository.StripeAccountRepository
 import com.munoon.heartbeatlive.server.user.User
@@ -204,12 +205,14 @@ internal class StripeAccountSubscriptionServiceTest : AbstractTest() {
         val expectRefundParams = RefundCreateParams.builder()
             .setPaymentIntent("stripePaymentIntent1")
             .setReason(RefundCreateParams.Reason.REQUESTED_BY_CUSTOMER)
+            .setMetadata(mapOf(StripeMetadata.Refund.USER_ID.addValue("user1")))
             .build()
 
         coEvery { client.createARefund(any(), any()) } returns Refund()
         coEvery { client.cancelSubscription(any(), any(), any()) } returns Subscription()
 
         runBlocking { service.makeARefund(
+            userId = "user1",
             subscriptionId = "stripeSubscription1",
             paymentIntentId = "stripePaymentIntent1",
             reason = RefundCreateParams.Reason.REQUESTED_BY_CUSTOMER

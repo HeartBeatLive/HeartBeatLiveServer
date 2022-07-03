@@ -28,6 +28,7 @@ class StripePaymentProvider(
     override suspend fun makeARefund(user: User) {
         val subscriptionDetails = user.subscription!!.details as User.Subscription.StripeSubscriptionDetails
         service.makeARefund(
+            userId = user.id,
             subscriptionId = subscriptionDetails.subscriptionId,
             paymentIntentId = subscriptionDetails.paymentIntentId,
             reason = RefundCreateParams.Reason.REQUESTED_BY_CUSTOMER
