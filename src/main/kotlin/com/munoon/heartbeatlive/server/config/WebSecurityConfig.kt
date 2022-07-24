@@ -6,7 +6,6 @@ import com.google.firebase.FirebaseOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
 import com.munoon.heartbeatlive.server.auth.jwt.CustomJwtAuthenticationToken
-import com.munoon.heartbeatlive.server.config.properties.FirebaseAuthenticationProperties
 import com.nimbusds.jose.Header
 import com.nimbusds.jose.util.Base64URL
 import org.springframework.boot.autoconfigure.graphql.GraphQlProperties
@@ -81,9 +80,9 @@ class WebSecurityConfig {
 
     @Bean
     @Profile("!test")
-    fun firebaseAuth(properties: FirebaseAuthenticationProperties): FirebaseAuth {
+    fun firebaseAuth(): FirebaseAuth {
         val options = FirebaseOptions.builder()
-            .setCredentials(GoogleCredentials.fromStream(properties.serviceAccountFile.inputStream))
+            .setCredentials(GoogleCredentials.getApplicationDefault())
             .build()
 
         val firebaseApp = FirebaseApp.initializeApp(options)

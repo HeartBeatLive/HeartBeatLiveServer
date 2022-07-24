@@ -19,11 +19,13 @@ spring:
     basename: i18n/push_notifications
     encoding: UTF-8
 
+server:
+  port: ${PORT:8080}
+
 auth:
   firebase:
     function:
       token: "simple-firebase-function-token"
-#    service-account-file: classpath:service-account.json
 
 one-signal:
   rest-api-key: ""
