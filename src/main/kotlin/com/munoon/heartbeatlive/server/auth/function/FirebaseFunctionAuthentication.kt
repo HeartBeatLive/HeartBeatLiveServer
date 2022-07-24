@@ -1,6 +1,6 @@
 package com.munoon.heartbeatlive.server.auth.function
 
-import com.munoon.heartbeatlive.server.config.properties.FirebaseAuthenticationProperties
+import com.munoon.heartbeatlive.server.config.properties.FirebaseFunctionProperties
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.http.HttpHeaders
 import org.springframework.security.access.AccessDeniedException
@@ -10,11 +10,11 @@ import org.springframework.web.server.ServerWebExchange
 import reactor.core.publisher.Mono
 
 @Component
-class FirebaseFunctionAuthentication(private val properties: FirebaseAuthenticationProperties) {
+class FirebaseFunctionAuthentication(private val properties: FirebaseFunctionProperties) {
     suspend fun isFirebaseFunction(): Boolean {
         val exchange = getExchange() ?: return false
         val token = exchange.request.headers[HttpHeaders.AUTHORIZATION]?.firstOrNull() ?: return false
-        return properties.function.token == token
+        return properties.token == token
     }
 
     suspend fun checkIsFirebaseFunction() {
