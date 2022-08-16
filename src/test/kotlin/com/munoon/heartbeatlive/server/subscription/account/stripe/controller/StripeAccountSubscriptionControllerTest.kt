@@ -5,6 +5,8 @@ import com.munoon.heartbeatlive.server.config.properties.StripeConfigurationProp
 import com.munoon.heartbeatlive.server.config.properties.SubscriptionProperties
 import com.munoon.heartbeatlive.server.subscription.account.JwtUserSubscription
 import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
+import com.munoon.heartbeatlive.server.subscription.account.stripe.StripeRecurringChargeFailure
+import com.munoon.heartbeatlive.server.subscription.account.stripe.model.GraphqlStripeRecurringChargeFailureInfo
 import com.munoon.heartbeatlive.server.subscription.account.stripe.model.GraphqlStripeSubscription
 import com.munoon.heartbeatlive.server.subscription.account.stripe.service.StripeAccountSubscriptionService
 import com.munoon.heartbeatlive.server.user.User
@@ -51,7 +53,6 @@ internal class StripeAccountSubscriptionControllerTest : AbstractGraphqlHttpTest
     @Test
     fun createStripeSubscription() {
         val expectedStripeSubscription = GraphqlStripeSubscription(
-            subscriptionId = "stripeSubscriptionId",
             clientSecret = "stripeClientSecret"
         )
 
@@ -79,7 +80,6 @@ internal class StripeAccountSubscriptionControllerTest : AbstractGraphqlHttpTest
             .document("""
                 mutation {
                     createStripeSubscription(subscriptionPlanPriceId: "$priceId") {
-                        subscriptionId,
                         clientSecret
                     }
                 }
@@ -100,7 +100,6 @@ internal class StripeAccountSubscriptionControllerTest : AbstractGraphqlHttpTest
             .document("""
                 mutation {
                     createStripeSubscription(subscriptionPlanPriceId: "abc") {
-                        subscriptionId,
                         clientSecret
                     }
                 }
@@ -123,7 +122,6 @@ internal class StripeAccountSubscriptionControllerTest : AbstractGraphqlHttpTest
             .document("""
                 mutation {
                     createStripeSubscription(subscriptionPlanPriceId: "abc") {
-                        subscriptionId,
                         clientSecret
                     }
                 }
@@ -166,7 +164,6 @@ internal class StripeAccountSubscriptionControllerTest : AbstractGraphqlHttpTest
             .document("""
                 mutation {
                     createStripeSubscription(subscriptionPlanPriceId: "$priceId") {
-                        subscriptionId,
                         clientSecret
                     }
                 }
@@ -192,7 +189,6 @@ internal class StripeAccountSubscriptionControllerTest : AbstractGraphqlHttpTest
             .document("""
                 mutation {
                     createStripeSubscription(subscriptionPlanPriceId: "$priceId") {
-                        subscriptionId,
                         clientSecret
                     }
                 }
@@ -214,7 +210,6 @@ internal class StripeAccountSubscriptionControllerTest : AbstractGraphqlHttpTest
             .document("""
                 mutation {
                     createStripeSubscription(subscriptionPlanPriceId: "abc") {
-                        subscriptionId,
                         clientSecret
                     }
                 }
@@ -224,5 +219,84 @@ internal class StripeAccountSubscriptionControllerTest : AbstractGraphqlHttpTest
 
         coVerify(exactly = 0) { service.createSubscription(any(), any(), any()) }
         coVerify(exactly = 0) { userService.getUserById(any()) }
+    }
+
+    @Test
+    fun getStripeRecurringChargeFailureInfo() {
+        val recurringChargeFailureCreateTime = Instant.ofEpochSecond(Instant.now().epochSecond)
+        val recurringChargeFailureExpiresTime = Instant.ofEpochSecond(Instant.now().plusSeconds(60).epochSecond)
+        val expected = GraphqlStripeRecurringChargeFailureInfo(
+            recurringChargeFailureCreateTime,
+            recurringChargeFailureExpiresTime,
+            "stripeClientSecret",
+            GraphqlStripeRecurringChargeFailureInfo.FailureType.REQUIRES_ACTION
+        )
+
+        coEvery { service.getUserFailedRecurringCharge("user1") } returns StripeRecurringChargeFailure(
+            userId = "user1",
+            stripeInvoiceId = "stripeInvoiceId",
+            clientSecret = "stripeClientSecret",
+            paymentIntentStatus = "requires_action",
+            created = recurringChargeFailureCreateTime,
+            expiresAt = recurringChargeFailureExpiresTime
+        )
+
+        graphqlTester.withUser(id = "user1")
+            .document("""
+                query {
+                    getStripeRecurringChargeFailureInfo {
+                        createTime,
+                        expireTime,
+                        clientSecret,
+                        failureType
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .satisfyNoErrors()
+            .path("getStripeRecurringChargeFailureInfo").isEqualsTo(expected)
+
+        coVerify(exactly = 1) { service.getUserFailedRecurringCharge("user1") }
+    }
+
+    @Test
+    fun `getStripeRecurringChargeFailureInfo - null`() {
+        coEvery { service.getUserFailedRecurringCharge("user1") } returns null
+
+        graphqlTester.withUser(id = "user1")
+            .document("""
+                query {
+                    getStripeRecurringChargeFailureInfo {
+                        createTime,
+                        expireTime,
+                        clientSecret,
+                        failureType
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .satisfyNoErrors()
+            .path("getStripeRecurringChargeFailureInfo").valueIsNull()
+
+        coVerify(exactly = 1) { service.getUserFailedRecurringCharge("user1") }
+    }
+
+    @Test
+    fun `getStripeRecurringChargeFailureInfo - not authenticated`() {
+        graphqlTester
+            .document("""
+                query {
+                    getStripeRecurringChargeFailureInfo {
+                        createTime,
+                        expireTime,
+                        clientSecret,
+                        failureType
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleUnauthenticatedError(path = "getStripeRecurringChargeFailureInfo")
+
+        coVerify(exactly = 0) { service.getUserFailedRecurringCharge(any()) }
     }
 }

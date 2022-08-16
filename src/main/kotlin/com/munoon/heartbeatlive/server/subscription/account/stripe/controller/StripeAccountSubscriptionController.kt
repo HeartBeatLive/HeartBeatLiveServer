@@ -12,12 +12,14 @@ import com.munoon.heartbeatlive.server.subscription.account.UserAlreadyHaveActiv
 import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
 import com.munoon.heartbeatlive.server.subscription.account.model.GraphqlPaymentProviderName
 import com.munoon.heartbeatlive.server.subscription.account.stripe.StripeAccountSubscriptionMapper.asGraphql
+import com.munoon.heartbeatlive.server.subscription.account.stripe.model.GraphqlStripeRecurringChargeFailureInfo
 import com.munoon.heartbeatlive.server.subscription.account.stripe.model.GraphqlStripeSubscription
 import com.munoon.heartbeatlive.server.subscription.account.stripe.service.StripeAccountSubscriptionService
 import com.munoon.heartbeatlive.server.user.service.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.graphql.data.method.annotation.Argument
 import org.springframework.graphql.data.method.annotation.MutationMapping
+import org.springframework.graphql.data.method.annotation.QueryMapping
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Controller
 
@@ -52,6 +54,14 @@ class StripeAccountSubscriptionController(
             throw UserAlreadyHaveActiveSubscriptionException()
         }
 
+        // TODO check user have verified email address
+
         return service.createSubscription(plan, price, user).asGraphql()
+    }
+
+    @QueryMapping
+    suspend fun getStripeRecurringChargeFailureInfo(): GraphqlStripeRecurringChargeFailureInfo? {
+        logger.info("User '${authUserId()}' request a stripe recurring charge failure info")
+        return service.getUserFailedRecurringCharge(authUserId())?.asGraphql()
     }
 }

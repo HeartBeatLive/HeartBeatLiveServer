@@ -3,6 +3,7 @@ package com.munoon.heartbeatlive.server.subscription.account.stripe.client
 import com.munoon.heartbeatlive.server.config.properties.StripeConfigurationProperties
 import com.stripe.exception.ApiConnectionException
 import com.stripe.model.Customer
+import com.stripe.model.Invoice
 import com.stripe.model.Price
 import com.stripe.model.Refund
 import com.stripe.model.Subscription
@@ -182,6 +183,25 @@ internal class StripeClientTest : FreeSpec({
 
         client.createARefund(params, idempotentKey)
     })
+
+    include(testMethod(
+        methodName = "getInvoice",
+        responseJson = """
+            {
+              "object": "invoice",
+              "status": "succeeded"
+            }
+        """.trimIndent(),
+        expectMethodResponse = Invoice().apply {
+            `object` = "invoice"
+            status = "succeeded"
+        },
+        expectUrl = "https://api.stripe.com/v1/invoices/stripeInvoice1?expand[0]=payment_intent",
+        expectMethod = HttpMethod.GET,
+        expectFormData = emptyMap()
+    ) { client, idempotentKey ->
+        client.getInvoice("stripeInvoice1", idempotentKey, "payment_intent")
+    })
 })
 
 fun <T> testMethod(
@@ -235,7 +255,7 @@ suspend fun <T> testSuccessful(
         it.headers().contentType shouldBe MediaType.APPLICATION_FORM_URLENCODED
         it.headers()[HttpHeaders.AUTHORIZATION]?.first() shouldBe "Bearer StripePrivateApiKey"
         it.headers()["Idempotency-Key"]?.first() shouldBe idempotencyKey
-        it.url().toString() shouldBe expectUrl
+        URLDecoder.decode(it.url().toString(), Charsets.UTF_8) shouldBe expectUrl
         it.method() shouldBe expectMethod
 
         val request = MockClientHttpRequest(expectMethod, expectUrl)
@@ -248,7 +268,9 @@ suspend fun <T> testSuccessful(
             override fun hints(): MutableMap<String, Any> = hints
         }).block()
 
-        val form = request.bodyAsString.block().let { form -> URLDecoder.decode(form, Charsets.UTF_8) }
+        val bodyString = request.bodyAsString.block()!!
+        val form = if (bodyString.isEmpty()) emptyMap() else bodyString
+            .let { form -> URLDecoder.decode(form, Charsets.UTF_8) }
             .split("&")
             .toList()
             .associate { formItem -> formItem.split("=")[0] to formItem.split("=")[1] }

@@ -7,6 +7,14 @@ type StripePaymentProvider implements PaymentProvider {
     publicApiKey: String!
 }
 
+extend type Query {
+    """
+    Returns optional Stripe recurring charge failure info. \
+    Use this info to fix user's subscription.
+    """
+    getStripeRecurringChargeFailureInfo: StripeRecurringChargeFailureInfo
+}
+
 extend type Mutation {
     """
     Method to create Stripe subscription. This will create Stripe Subscription with `incomplete` status. \
@@ -18,9 +26,42 @@ extend type Mutation {
 
 "Stripe subscription info."
 type StripeSubscription {
-    "Created Stripe Subscription identifier."
-    subscriptionId: ID!
-
     "Stripe Payment Intent client secret. Use it to activate created Subscription."
     clientSecret: String!
+}
+
+"""
+Stripe information about recurring charge failure. \
+Use this info to fix user's subscription.
+"""
+type StripeRecurringChargeFailureInfo {
+    "Time, when failed charge was created."
+    createTime: EpochSecondsTime!
+
+    "Time, until which user can fix this failed charge."
+    expireTime: EpochSecondsTime!
+
+    "Stripe client secret, that should be used to resolve failed charge."
+    clientSecret: String!
+
+    "Stripe charge failure type."
+    failureType: StripeRecurringChargeFailureType!
+}
+
+"""
+Types of stripe recurring charge failure. \
+Depending on this type you should choose algorithm of solving failed charge.
+"""
+enum StripeRecurringChargeFailureType {
+    """
+    Charge failure type, when user should take an action (such as 3DS authentication), to resolve charge failure. \
+    See [Stripe Documentation](https://stripe.com/docs/billing/subscriptions/overview#requires-action).
+    """
+    REQUIRES_ACTION,
+
+    """
+    Charge failure type, when user should provide a new payment card. \
+    See [Stripe Documentation](https://stripe.com/docs/billing/subscriptions/overview#requires-payment-method).
+    """
+    REQUIRES_PAYMENT_METHOD
 }

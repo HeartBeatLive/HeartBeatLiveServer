@@ -6,12 +6,16 @@ import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
 import com.munoon.heartbeatlive.server.subscription.account.stripe.StripeAccount
 import com.munoon.heartbeatlive.server.subscription.account.stripe.StripeCustomerNotFoundByIdException
 import com.munoon.heartbeatlive.server.subscription.account.stripe.StripeMetadata
+import com.munoon.heartbeatlive.server.subscription.account.stripe.StripeRecurringChargeFailure
 import com.munoon.heartbeatlive.server.subscription.account.stripe.client.StripeClient
 import com.munoon.heartbeatlive.server.subscription.account.stripe.repository.StripeAccountRepository
+import com.munoon.heartbeatlive.server.subscription.account.stripe.repository.StripeRecurringChargeFailureRepository
 import com.munoon.heartbeatlive.server.user.User
 import com.ninjasquad.springmockk.MockkBean
 import com.stripe.model.Customer
 import com.stripe.model.Event
+import com.stripe.model.Invoice
+import com.stripe.model.PaymentIntent
 import com.stripe.model.Refund
 import com.stripe.model.Subscription
 import com.stripe.param.CustomerCreateParams
@@ -21,6 +25,9 @@ import com.stripe.param.SubscriptionCreateParams.PaymentSettings.SaveDefaultPaym
 import com.stripe.param.SubscriptionUpdateParams
 import io.kotest.assertions.throwables.shouldThrowExactly
 import io.kotest.common.runBlocking
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.equality.shouldBeEqualToIgnoringFields
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldBeUUID
 import io.kotest.property.Arb
@@ -37,8 +44,9 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.event.ApplicationEvents
 import org.springframework.test.context.event.RecordApplicationEvents
 import java.time.Duration
+import java.time.Instant
 
-@SpringBootTest
+@SpringBootTest(properties = ["payment.stripe.payment-requires-action-window=PT23H"])
 @RecordApplicationEvents
 internal class StripeAccountSubscriptionServiceTest : AbstractTest() {
     @Autowired
@@ -49,6 +57,9 @@ internal class StripeAccountSubscriptionServiceTest : AbstractTest() {
 
     @Autowired
     private lateinit var accountRepository: StripeAccountRepository
+
+    @Autowired
+    private lateinit var recurringChargeFailureRepository: StripeRecurringChargeFailureRepository
 
     @Autowired
     private lateinit var applicationEvents: ApplicationEvents
@@ -220,6 +231,120 @@ internal class StripeAccountSubscriptionServiceTest : AbstractTest() {
 
         coVerify(exactly = 1) { client.createARefund(matchRefundCreateParams(expectRefundParams), matchUUID()) }
         coVerify(exactly = 1) { client.cancelSubscription("stripeSubscription1", null, matchUUID()) }
+    }
+
+    @Test
+    fun saveFailedRecurringCharge() {
+        val invoiceCreationTime = Instant.ofEpochSecond(Instant.now().epochSecond)
+
+        val expected = StripeRecurringChargeFailure(
+            userId = "user1",
+            stripeInvoiceId = "stripeInvoice1",
+            clientSecret = "stripeClientSecret",
+            paymentIntentStatus = "requires_action",
+            expiresAt = invoiceCreationTime + Duration.ofHours(23)
+        )
+
+        val invoice = Invoice().apply {
+            paymentIntentObject = PaymentIntent().apply {
+                clientSecret = "stripeClientSecret"
+                status = "requires_action"
+                created = invoiceCreationTime.epochSecond
+            }
+        }
+        coEvery { client.getInvoice(any(), any(), any()) } returns invoice
+
+        runBlocking { service.saveFailedRecurringCharge("user1", "stripeInvoice1") }
+
+        val items = runBlocking { recurringChargeFailureRepository.findAll().toList(arrayListOf()) }
+        items.shouldHaveSize(1)
+        items.first().shouldBeEqualToIgnoringFields(expected, StripeRecurringChargeFailure::created)
+
+        runBlocking { service.saveFailedRecurringCharge("user1", "stripeInvoice1") }
+
+        items.shouldHaveSize(1)
+        items.first().shouldBeEqualToIgnoringFields(expected, StripeRecurringChargeFailure::created)
+
+        coVerify(exactly = 2) { client.getInvoice("stripeInvoice1", matchUUID(), "payment_intent") }
+    }
+
+    @Test
+    fun getUserFailedRecurringCharge() {
+        runBlocking {
+            val expected = StripeRecurringChargeFailure(
+                userId = "user1",
+                stripeInvoiceId = "stripeInvoice1",
+                clientSecret = "stripeClientSecret2",
+                paymentIntentStatus = "requires_action",
+                created = Instant.ofEpochSecond(Instant.now().epochSecond),
+                expiresAt = Instant.ofEpochSecond(Instant.now().epochSecond) + Duration.ofHours(23)
+            )
+
+            recurringChargeFailureRepository.save(expected)
+            recurringChargeFailureRepository.save(StripeRecurringChargeFailure(
+                userId = "user2",
+                stripeInvoiceId = "stripeInvoice2",
+                clientSecret = "stripeClientSecret2",
+                paymentIntentStatus = "requires_action",
+                created = Instant.ofEpochSecond(Instant.now().epochSecond),
+                expiresAt = Instant.ofEpochSecond(Instant.now().epochSecond) + Duration.ofHours(23)
+            ))
+
+            service.getUserFailedRecurringCharge("user1") shouldBe expected
+            service.getUserFailedRecurringCharge("user3").shouldBeNull()
+        }
+    }
+
+    @Test
+    fun `getUserFailedRecurringCharge - expired`() {
+        runBlocking {
+            recurringChargeFailureRepository.save(StripeRecurringChargeFailure(
+                userId = "user1",
+                stripeInvoiceId = "stripeInvoice1",
+                clientSecret = "stripeClientSecret1",
+                paymentIntentStatus = "requires_action",
+                created = Instant.ofEpochSecond(Instant.now().epochSecond),
+                expiresAt = Instant.now().minusSeconds(10)
+            ))
+
+            service.getUserFailedRecurringCharge("user1").shouldBeNull()
+        }
+    }
+
+    @Test
+    fun cleanUserFailedRecurringCharge() {
+        runBlocking {
+            val expected = StripeRecurringChargeFailure(
+                userId = "user1",
+                stripeInvoiceId = "stripeInvoice1",
+                clientSecret = "stripeClientSecret2",
+                paymentIntentStatus = "requires_action",
+                created = Instant.ofEpochSecond(Instant.now().epochSecond),
+                expiresAt = Instant.ofEpochSecond(Instant.now().epochSecond) + Duration.ofHours(23)
+            )
+
+            recurringChargeFailureRepository.save(expected)
+            recurringChargeFailureRepository.save(StripeRecurringChargeFailure(
+                userId = "user2",
+                stripeInvoiceId = "stripeInvoice2",
+                clientSecret = "stripeClientSecret2",
+                paymentIntentStatus = "requires_action",
+                created = Instant.ofEpochSecond(Instant.now().epochSecond),
+                expiresAt = Instant.ofEpochSecond(Instant.now().epochSecond) + Duration.ofHours(23)
+            ))
+
+            service.cleanUserFailedRecurringCharge("user2")
+
+            val items = recurringChargeFailureRepository.findAll().toList(arrayListOf())
+            items.shouldHaveSize(1)
+            items.first() shouldBe expected
+
+            service.cleanUserFailedRecurringCharge("user3")
+
+            val items2 = recurringChargeFailureRepository.findAll().toList(arrayListOf())
+            items2.shouldHaveSize(1)
+            items2.first() shouldBe expected
+        }
     }
 
     private companion object {

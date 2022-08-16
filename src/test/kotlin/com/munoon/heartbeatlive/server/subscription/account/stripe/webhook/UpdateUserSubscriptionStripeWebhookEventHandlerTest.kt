@@ -4,6 +4,7 @@ import com.google.gson.JsonObject
 import com.munoon.heartbeatlive.server.email.SubscriptionInvoicePaidEmailMessage
 import com.munoon.heartbeatlive.server.email.service.EmailService
 import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
+import com.munoon.heartbeatlive.server.subscription.account.stripe.service.StripeAccountSubscriptionService
 import com.munoon.heartbeatlive.server.user.User
 import com.munoon.heartbeatlive.server.user.service.UserService
 import com.stripe.Stripe
@@ -28,16 +29,19 @@ internal class UpdateUserSubscriptionStripeWebhookEventHandlerTest : FreeSpec({
     fun testIgnoreEvent(event: Event) {
         val userService = mockk<UserService>()
         val emailService = mockk<EmailService>()
+        val stripeAccountSubscriptionService = mockk<StripeAccountSubscriptionService>()
 
         ApplicationContextRunner()
             .withBean(UserService::class.java, { userService })
             .withBean(UpdateUserSubscriptionStripeWebhookEventHandler::class.java)
             .withBean(EmailService::class.java, { emailService })
+            .withBean(StripeAccountSubscriptionService::class.java, { stripeAccountSubscriptionService })
             .run { context ->
                 context.publishEvent(event)
 
                 coVerify(exactly = 0) { userService.updateUserSubscription(any(), any()) }
                 coVerify(exactly = 0) { emailService.send(any()) }
+                coVerify(exactly = 0) { stripeAccountSubscriptionService.cleanUserFailedRecurringCharge(any()) }
             }
     }
 
@@ -88,7 +92,7 @@ internal class UpdateUserSubscriptionStripeWebhookEventHandlerTest : FreeSpec({
             }
 
             val userService = mockk<UserService>() {
-                coEvery { updateUserSubscription(any(), any()) } returns User(id = "userId", displayName = null,
+                coEvery { updateUserSubscription(any(), any()) } returns User(id = "user1", displayName = null,
                     email = "email@example.com", emailVerified = false)
             }
 
@@ -96,15 +100,21 @@ internal class UpdateUserSubscriptionStripeWebhookEventHandlerTest : FreeSpec({
                 coEvery { send(any()) } returns Unit
             }
 
+            val stripeAccountSubscriptionService = mockk<StripeAccountSubscriptionService>() {
+                coEvery { cleanUserFailedRecurringCharge(any()) } returns Unit
+            }
+
             ApplicationContextRunner()
                 .withBean(UserService::class.java, { userService })
                 .withBean(EmailService::class.java, { emailService })
+                .withBean(StripeAccountSubscriptionService::class.java, { stripeAccountSubscriptionService })
                 .withBean(UpdateUserSubscriptionStripeWebhookEventHandler::class.java)
                 .run { context ->
                     context.publishEvent(event)
 
                     coVerify(exactly = 1) { userService.updateUserSubscription("user1", expectedUserSubscription) }
                     coVerify(exactly = 1) { emailService.send(SubscriptionInvoicePaidEmailMessage("email@example.com")) }
+                    coVerify(exactly = 1) { stripeAccountSubscriptionService.cleanUserFailedRecurringCharge("user1") }
                 }
         }
 

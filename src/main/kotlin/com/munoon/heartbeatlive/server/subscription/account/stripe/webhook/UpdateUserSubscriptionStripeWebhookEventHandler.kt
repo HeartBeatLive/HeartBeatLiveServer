@@ -3,6 +3,7 @@ package com.munoon.heartbeatlive.server.subscription.account.stripe.webhook
 import com.munoon.heartbeatlive.server.email.SubscriptionInvoicePaidEmailMessage
 import com.munoon.heartbeatlive.server.email.service.EmailService
 import com.munoon.heartbeatlive.server.subscription.account.stripe.StripeMetadata
+import com.munoon.heartbeatlive.server.subscription.account.stripe.service.StripeAccountSubscriptionService
 import com.munoon.heartbeatlive.server.user.User
 import com.munoon.heartbeatlive.server.user.service.UserService
 import com.stripe.model.Event
@@ -16,7 +17,8 @@ import java.time.Instant
 @Component
 class UpdateUserSubscriptionStripeWebhookEventHandler(
     private val userService: UserService,
-    private val emailService: EmailService
+    private val emailService: EmailService,
+    private val stripeAccountSubscriptionService: StripeAccountSubscriptionService
 ) {
     private val logger = LoggerFactory.getLogger(UpdateUserSubscriptionStripeWebhookEventHandler::class.java)
     private companion object {
@@ -116,6 +118,7 @@ class UpdateUserSubscriptionStripeWebhookEventHandler(
 
             val user = userService.updateUserSubscription(userId, subscription)
             emailService.send(SubscriptionInvoicePaidEmailMessage(user.email!!))
+            stripeAccountSubscriptionService.cleanUserFailedRecurringCharge(user.id)
             logger.info("Updated subscription for user '$userId': $subscription")
         }
     }
