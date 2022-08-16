@@ -42,6 +42,7 @@ dependencies {
 
 	implementation("com.google.firebase:firebase-admin:8.1.0")
 	implementation("com.google.protobuf:protobuf-kotlin:3.20.1")
+	implementation("com.google.cloud:google-cloud-redis:2.6.1")
 
 	implementation("org.cache2k:cache2k-api:2.6.1.Final")
 	implementation("org.cache2k:cache2k-addon:2.6.1.Final")
