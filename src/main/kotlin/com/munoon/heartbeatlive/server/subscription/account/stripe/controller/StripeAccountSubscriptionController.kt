@@ -15,6 +15,7 @@ import com.munoon.heartbeatlive.server.subscription.account.stripe.StripeAccount
 import com.munoon.heartbeatlive.server.subscription.account.stripe.model.GraphqlStripeRecurringChargeFailureInfo
 import com.munoon.heartbeatlive.server.subscription.account.stripe.model.GraphqlStripeSubscription
 import com.munoon.heartbeatlive.server.subscription.account.stripe.service.StripeAccountSubscriptionService
+import com.munoon.heartbeatlive.server.user.UserUtils.getVerifiedEmailAddress
 import com.munoon.heartbeatlive.server.user.service.UserService
 import org.slf4j.LoggerFactory
 import org.springframework.graphql.data.method.annotation.Argument
@@ -50,11 +51,10 @@ class StripeAccountSubscriptionController(
         }
 
         val user = userService.getUserById(authUserId())
+        user.getVerifiedEmailAddress() // check if user have verified email address
         if (user.getActiveSubscriptionPlan() != UserSubscriptionPlan.FREE) {
             throw UserAlreadyHaveActiveSubscriptionException()
         }
-
-        // TODO check user have verified email address
 
         return service.createSubscription(plan, price, user).asGraphql()
     }

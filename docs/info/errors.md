@@ -33,3 +33,4 @@ Some errors contains additional fields in `extensions`, that are useful for erro
 | account_subscription.subscription_plan.not_found.by_code_name | Account subscription plan is not found by specified code name. |
 | account_subscription.subscription_plan.price.not_found.by_id | Account subscription plan price is not found by specified identifier. |
 | account_subscription.subscription_plan.user_have_no_active_subscription | User do not have any active subscriptions. |
+| user.no_verified_email_address | User do not have verified email address. |

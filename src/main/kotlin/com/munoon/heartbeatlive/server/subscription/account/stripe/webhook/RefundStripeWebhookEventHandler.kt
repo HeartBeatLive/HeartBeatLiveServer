@@ -8,6 +8,7 @@ import com.munoon.heartbeatlive.server.push.service.PushNotificationService
 import com.munoon.heartbeatlive.server.push.service.sendNotifications
 import com.munoon.heartbeatlive.server.subscription.account.stripe.StripeMetadata
 import com.munoon.heartbeatlive.server.user.User
+import com.munoon.heartbeatlive.server.user.UserUtils.getVerifiedEmailAddress
 import com.munoon.heartbeatlive.server.user.service.UserService
 import com.stripe.model.Charge
 import com.stripe.model.Event
@@ -40,7 +41,7 @@ class RefundStripeWebhookEventHandler(
         }
 
         refund.handleEvent("charge.refunded", "succeeded") { user ->
-            emailService.send(SubscriptionInvoiceSuccessfullyRefundedEmailMessage(user.email!!))
+            emailService.send(SubscriptionInvoiceSuccessfullyRefundedEmailMessage(user.getVerifiedEmailAddress()))
         }
     }
 
@@ -48,8 +49,8 @@ class RefundStripeWebhookEventHandler(
     fun handleChargeFailedToRefundEvent(event: Event) {
         val refund = event.dataObjectDeserializer.`object`?.get() as Refund
         refund.handleEvent("charge.refund.updated", "failed") { user ->
-            emailService.send(SubscriptionInvoiceFailedToRefundedEmailMessage(user.email!!))
             pushNotificationService.sendNotifications(RefundFailedPushNotificationData(user.id))
+            emailService.send(SubscriptionInvoiceFailedToRefundedEmailMessage(user.getVerifiedEmailAddress()))
         }
     }
 

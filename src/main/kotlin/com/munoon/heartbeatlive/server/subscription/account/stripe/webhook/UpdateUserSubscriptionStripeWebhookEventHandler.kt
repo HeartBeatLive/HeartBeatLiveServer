@@ -5,6 +5,7 @@ import com.munoon.heartbeatlive.server.email.service.EmailService
 import com.munoon.heartbeatlive.server.subscription.account.stripe.StripeMetadata
 import com.munoon.heartbeatlive.server.subscription.account.stripe.service.StripeAccountSubscriptionService
 import com.munoon.heartbeatlive.server.user.User
+import com.munoon.heartbeatlive.server.user.UserUtils.getVerifiedEmailAddress
 import com.munoon.heartbeatlive.server.user.service.UserService
 import com.stripe.model.Event
 import com.stripe.model.Invoice
@@ -117,8 +118,8 @@ class UpdateUserSubscriptionStripeWebhookEventHandler(
             )
 
             val user = userService.updateUserSubscription(userId, subscription)
-            emailService.send(SubscriptionInvoicePaidEmailMessage(user.email!!))
             stripeAccountSubscriptionService.cleanUserFailedRecurringCharge(user.id)
+            emailService.send(SubscriptionInvoicePaidEmailMessage(user.getVerifiedEmailAddress()))
             logger.info("Updated subscription for user '$userId': $subscription")
         }
     }

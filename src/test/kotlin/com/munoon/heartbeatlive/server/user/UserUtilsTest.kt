@@ -1,7 +1,10 @@
 package com.munoon.heartbeatlive.server.user
 
 import com.munoon.heartbeatlive.server.config.properties.HeartRateStreamProperties
+import com.munoon.heartbeatlive.server.user.UserUtils.getVerifiedEmailAddress
 import com.munoon.heartbeatlive.server.user.model.GraphqlUserHeartRateOnlineStatus
+import io.kotest.assertions.throwables.shouldThrowExactly
+import io.kotest.matchers.shouldBe
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.time.Duration
@@ -46,5 +49,26 @@ internal class UserUtilsTest {
     fun `getHeartRateOnlineStatus - OFFLINE because no heart rate received`() {
         val status = UserUtils.getHeartRateOnlineStatus(emptyList(), heartRateStreamProperties)
         assertThat(status).isEqualTo(GraphqlUserHeartRateOnlineStatus.OFFLINE)
+    }
+
+    @Test
+    fun getVerifiedEmailAddress() {
+        val email = "email@example.com"
+        val user = User(id = "user1", displayName = null, email = email, emailVerified = true)
+        user.getVerifiedEmailAddress() shouldBe email
+    }
+
+    @Test
+    fun `getVerifiedEmailAddress - email address is null`() {
+        val user = User(id = "user1", displayName = null, email = null, emailVerified = true)
+        shouldThrowExactly<NoUserVerifiedEmailAddressException> { user.getVerifiedEmailAddress() } shouldBe
+                NoUserVerifiedEmailAddressException("user1")
+    }
+
+    @Test
+    fun `getVerifiedEmailAddress - email address is not verified`() {
+        val user = User(id = "user1", displayName = null, email = "email@example.com", emailVerified = false)
+        shouldThrowExactly<NoUserVerifiedEmailAddressException> { user.getVerifiedEmailAddress() } shouldBe
+                NoUserVerifiedEmailAddressException("user1")
     }
 }

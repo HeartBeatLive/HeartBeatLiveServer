@@ -4,6 +4,7 @@ import com.munoon.heartbeatlive.server.email.InvoiceFailedEmailMessage
 import com.munoon.heartbeatlive.server.email.service.EmailService
 import com.munoon.heartbeatlive.server.subscription.account.stripe.StripeMetadata
 import com.munoon.heartbeatlive.server.subscription.account.stripe.service.StripeAccountSubscriptionService
+import com.munoon.heartbeatlive.server.user.UserUtils.getVerifiedEmailAddress
 import com.munoon.heartbeatlive.server.user.service.UserService
 import com.stripe.model.Event
 import com.stripe.model.Subscription
@@ -46,7 +47,7 @@ class FailedRecurringPaymentStripeWebhookEventHandler(
         runBlocking {
             val user = userService.updateUserSubscription(userId, null)
             stripeAccountSubscriptionService.saveFailedRecurringCharge(user.id, subscription.latestInvoice)
-            emailService.send(InvoiceFailedEmailMessage(user.email!!))
+            emailService.send(InvoiceFailedEmailMessage(user.getVerifiedEmailAddress()))
         }
     }
 }

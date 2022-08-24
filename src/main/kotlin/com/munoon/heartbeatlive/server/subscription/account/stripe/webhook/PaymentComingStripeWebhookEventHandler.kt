@@ -3,6 +3,7 @@ package com.munoon.heartbeatlive.server.subscription.account.stripe.webhook
 import com.munoon.heartbeatlive.server.email.SubscriptionInvoiceComingEmailMessage
 import com.munoon.heartbeatlive.server.email.service.EmailService
 import com.munoon.heartbeatlive.server.subscription.account.stripe.StripeMetadata
+import com.munoon.heartbeatlive.server.user.UserUtils.getVerifiedEmailAddress
 import com.munoon.heartbeatlive.server.user.service.UserService
 import com.stripe.model.Event
 import com.stripe.model.Invoice
@@ -40,7 +41,7 @@ class PaymentComingStripeWebhookEventHandler(
 
         runBlocking {
             val user = userService.getUserById(userId)
-            emailService.send(SubscriptionInvoiceComingEmailMessage(user.email!!))
+            emailService.send(SubscriptionInvoiceComingEmailMessage(user.getVerifiedEmailAddress()))
         }
     }
 }

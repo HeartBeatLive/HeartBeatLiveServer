@@ -59,7 +59,7 @@ class CustomDataFetcherExceptionResolver : DataFetcherExceptionResolverAdapter()
                 env = env,
                 errorType = settings.type,
                 code = settings.code,
-                message = ex.message ?: "Exception happened!",
+                message = settings.message.takeIf { it.isNotBlank() } ?: ex.message ?: "Exception happened!",
                 extensions = extensions
             )
         }

@@ -16,4 +16,7 @@ object UserUtils {
 
         return if (userOnline) GraphqlUserHeartRateOnlineStatus.ONLINE else GraphqlUserHeartRateOnlineStatus.OFFLINE
     }
+
+    fun User.getVerifiedEmailAddress() = email?.takeIf { emailVerified }
+        ?: throw NoUserVerifiedEmailAddressException(id)
 }

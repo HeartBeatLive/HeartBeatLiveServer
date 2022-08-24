@@ -59,8 +59,8 @@ internal class StripeAccountSubscriptionControllerTest : AbstractGraphqlHttpTest
         val user = User(
             id = "user1",
             displayName = null,
-            email = null,
-            emailVerified = false
+            email = "email@example.com",
+            emailVerified = true
         )
         coEvery { userService.getUserById(any()) } returns user
 
@@ -143,8 +143,8 @@ internal class StripeAccountSubscriptionControllerTest : AbstractGraphqlHttpTest
         coEvery { userService.getUserById(any()) } returns User(
             id = "userId",
             displayName = null,
-            email = null,
-            emailVerified = false,
+            email = "email@example.com",
+            emailVerified = true,
             subscription = User.Subscription(
                 plan = UserSubscriptionPlan.PRO,
                 expiresAt = Instant.now().plusSeconds(60),
@@ -202,6 +202,37 @@ internal class StripeAccountSubscriptionControllerTest : AbstractGraphqlHttpTest
 
         coVerify(exactly = 0) { service.createSubscription(any(), any(), any()) }
         coVerify(exactly = 0) { userService.getUserById(any()) }
+    }
+
+    @Test
+    fun `createStripeSubscription - user doesnt have verified email address`() {
+        coEvery { userService.getUserById(any()) } returns User(
+            id = "userId",
+            displayName = null,
+            email = "email@example.com",
+            emailVerified = false
+        )
+
+        val price = subscriptionProperties[UserSubscriptionPlan.PRO].prices.first()
+        val priceId = price.getId(UserSubscriptionPlan.PRO)
+
+        graphqlTester.withUser(id = "user1")
+            .document("""
+                mutation {
+                    createStripeSubscription(subscriptionPlanPriceId: "$priceId") {
+                        clientSecret
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .errors().expectSingleError(
+                errorType = ErrorType.FORBIDDEN,
+                code = "user.no_verified_email_address",
+                path = "createStripeSubscription"
+            )
+
+        coVerify(exactly = 0) { service.createSubscription(any(), any(), any()) }
+        coVerify(exactly = 1) { userService.getUserById("user1") }
     }
 
     @Test

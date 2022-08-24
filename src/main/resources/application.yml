@@ -105,6 +105,7 @@ app:
 payment:
   stripe:
     enabled: false
+    payment-requires-action-window: PT32H
 #    public-api-key: ""
 #    private-api-key: ""
 #    webhook-endpoint-secret: ""
