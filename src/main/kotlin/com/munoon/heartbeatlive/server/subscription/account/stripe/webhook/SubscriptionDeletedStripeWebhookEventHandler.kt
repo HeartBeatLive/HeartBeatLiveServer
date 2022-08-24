@@ -2,6 +2,7 @@ package com.munoon.heartbeatlive.server.subscription.account.stripe.webhook
 
 import com.munoon.heartbeatlive.server.subscription.account.stripe.StripeMetadata
 import com.munoon.heartbeatlive.server.user.User
+import com.munoon.heartbeatlive.server.user.UserNotFoundByIdException
 import com.munoon.heartbeatlive.server.user.service.UserService
 import com.stripe.model.Event
 import com.stripe.model.Subscription
@@ -35,7 +36,11 @@ class SubscriptionDeletedStripeWebhookEventHandler(private val userService: User
         }
 
         runBlocking {
-            val user = userService.getUserById(userId)
+            val user = try {
+                userService.getUserById(userId)
+            } catch (e: UserNotFoundByIdException) {
+                return@runBlocking
+            }
             val subscriptionDetails = user.subscription?.details
             if (subscriptionDetails is User.Subscription.StripeSubscriptionDetails
                     && subscriptionDetails.subscriptionId == subscriptionId) {

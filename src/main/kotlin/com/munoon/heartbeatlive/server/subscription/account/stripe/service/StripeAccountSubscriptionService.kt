@@ -11,6 +11,7 @@ import com.munoon.heartbeatlive.server.subscription.account.stripe.client.Stripe
 import com.munoon.heartbeatlive.server.subscription.account.stripe.repository.StripeAccountRepository
 import com.munoon.heartbeatlive.server.subscription.account.stripe.repository.StripeRecurringChargeFailureRepository
 import com.munoon.heartbeatlive.server.user.User
+import com.munoon.heartbeatlive.server.user.UserEvents
 import com.stripe.model.Event
 import com.stripe.model.Subscription
 import com.stripe.param.CustomerCreateParams
@@ -18,7 +19,10 @@ import com.stripe.param.RefundCreateParams
 import com.stripe.param.SubscriptionCreateParams
 import com.stripe.param.SubscriptionCreateParams.PaymentSettings.SaveDefaultPaymentMethod
 import com.stripe.param.SubscriptionUpdateParams
+import kotlinx.coroutines.runBlocking
 import org.springframework.context.ApplicationEventPublisher
+import org.springframework.context.event.EventListener
+import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import java.time.Instant
 import java.util.*
@@ -128,4 +132,11 @@ class StripeAccountSubscriptionService(
         ?.takeIf { it.expiresAt > Instant.now() }
 
     suspend fun cleanUserFailedRecurringCharge(userId: String) = recurringChargeFailureRepository.deleteById(userId)
+
+    @Async
+    @EventListener
+    fun handleUserDeletedEvent(event: UserEvents.UserDeletedEvent): Unit = runBlocking {
+        val stripeAccount = accountRepository.findById(event.userId) ?: return@runBlocking
+        client.deleteCustomer(stripeAccount.stripeAccountId, UUID.randomUUID().toString())
+    }
 }

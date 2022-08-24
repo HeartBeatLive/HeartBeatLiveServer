@@ -45,6 +45,11 @@ class StripeClient(
         return makeStripeRequest(CUSTOMERS_PATH, HttpMethod.POST, customer, idempotentKey)
     }
 
+    suspend fun deleteCustomer(stripeAccountId: String, idempotentKey: String): Customer {
+        val uriSuffix = CUSTOMERS_PATH + "/" + ApiResource.urlEncodeId(stripeAccountId)
+        return makeStripeRequest(uriSuffix, HttpMethod.DELETE, null, idempotentKey)
+    }
+
     suspend fun createSubscription(subscription: SubscriptionCreateParams, idempotentKey: String): Subscription {
         return makeStripeRequest(SUBSCRIPTIONS_PATH, HttpMethod.POST, subscription, idempotentKey)
     }

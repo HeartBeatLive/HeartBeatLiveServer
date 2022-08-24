@@ -4,6 +4,7 @@ import com.google.gson.JsonObject
 import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
 import com.munoon.heartbeatlive.server.subscription.account.stripe.StripeMetadata
 import com.munoon.heartbeatlive.server.user.User
+import com.munoon.heartbeatlive.server.user.UserNotFoundByIdException
 import com.munoon.heartbeatlive.server.user.service.UserService
 import com.stripe.Stripe
 import com.stripe.model.Customer
@@ -65,6 +66,36 @@ class SubscriptionDeletedStripeWebhookEventHandlerTest : FreeSpec({
 
                     coVerify(exactly = 1) { userService.getUserById("user1") }
                     coVerify(exactly = 1) { userService.updateUserSubscription("user1", null) }
+                }
+        }
+
+        "successful with deleted user" {
+            val event = Event().apply {
+                apiVersion = Stripe.API_VERSION
+                type = "customer.subscription.deleted"
+                data = EventData().apply {
+                    setObject(Subscription().apply {
+                        `object` = "subscription"
+                        id = "stripeSubscription1"
+                        metadata = mapOf(
+                            StripeMetadata.Subscription.USER_ID.addValue("user1")
+                        )
+                    }.let { ApiResource.GSON.toJsonTree(it) as JsonObject })
+                }
+            }
+
+            val userService = mockk<UserService>() {
+                coEvery { getUserById(any()) } throws UserNotFoundByIdException("user1")
+            }
+
+            ApplicationContextRunner()
+                .withBean(UserService::class.java, { userService })
+                .withBean(SubscriptionDeletedStripeWebhookEventHandler::class.java)
+                .run { context ->
+                    context.publishEvent(event)
+
+                    coVerify(exactly = 1) { userService.getUserById("user1") }
+                    coVerify(exactly = 0) { userService.updateUserSubscription(any(), any()) }
                 }
         }
 

@@ -112,6 +112,27 @@ internal class StripeClientTest : FreeSpec({
     })
 
     include(testMethod(
+        methodName = "deleteCustomer",
+        responseJson = """
+            {
+              "id": "cus_MIz0Fb1hbeiS4S",
+              "object": "customer",
+              "deleted": true
+            }
+        """.trimIndent(),
+        expectMethodResponse = Customer().apply {
+            id = "cus_MIz0Fb1hbeiS4S"
+            `object` = "customer"
+            deleted = true
+        },
+        expectUrl = "https://api.stripe.com/v1/customers/cus_MIz0Fb1hbeiS4S",
+        expectMethod = HttpMethod.DELETE,
+        expectFormData = emptyMap()
+    ) { client, idempotentKey ->
+        client.deleteCustomer("cus_MIz0Fb1hbeiS4S", idempotentKey)
+    })
+
+    include(testMethod(
         methodName = "createSubscription",
         responseJson = RESPONSE_SUBSCRIPTION_JSON,
         expectMethodResponse = RESPONSE_SUBSCRIPTION_EXPECTED_OBJECT,

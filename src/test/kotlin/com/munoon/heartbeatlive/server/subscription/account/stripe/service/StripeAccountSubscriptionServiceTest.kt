@@ -11,6 +11,7 @@ import com.munoon.heartbeatlive.server.subscription.account.stripe.client.Stripe
 import com.munoon.heartbeatlive.server.subscription.account.stripe.repository.StripeAccountRepository
 import com.munoon.heartbeatlive.server.subscription.account.stripe.repository.StripeRecurringChargeFailureRepository
 import com.munoon.heartbeatlive.server.user.User
+import com.munoon.heartbeatlive.server.user.UserEvents
 import com.ninjasquad.springmockk.MockkBean
 import com.stripe.model.Customer
 import com.stripe.model.Event
@@ -41,6 +42,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.test.context.event.ApplicationEvents
 import org.springframework.test.context.event.RecordApplicationEvents
 import java.time.Duration
@@ -63,6 +65,9 @@ internal class StripeAccountSubscriptionServiceTest : AbstractTest() {
 
     @Autowired
     private lateinit var applicationEvents: ApplicationEvents
+
+    @Autowired
+    private lateinit var eventPubliser: ApplicationEventPublisher
 
     @Test
     fun createSubscription() {
@@ -345,6 +350,23 @@ internal class StripeAccountSubscriptionServiceTest : AbstractTest() {
             items2.shouldHaveSize(1)
             items2.first() shouldBe expected
         }
+    }
+
+    @Test
+    fun handleUserDeletedEvent(): Unit = runBlocking {
+        coEvery { client.deleteCustomer(any(), any()) } returns Customer()
+        accountRepository.save(StripeAccount("user1", "stripeCustomer1"))
+
+        eventPubliser.publishEvent(UserEvents.UserDeletedEvent("user1", false))
+
+        coVerify(exactly = 1) { client.deleteCustomer("stripeCustomer1", matchUUID()) }
+    }
+
+    @Test
+    fun `handleUserDeletedEvent - ignore`() {
+        eventPubliser.publishEvent(UserEvents.UserDeletedEvent("user1", false))
+
+        coVerify(exactly = 0) { client.deleteCustomer(any(), any()) }
     }
 
     private companion object {
