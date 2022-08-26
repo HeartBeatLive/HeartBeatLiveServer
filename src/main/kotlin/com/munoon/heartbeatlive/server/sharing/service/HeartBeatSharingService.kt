@@ -1,7 +1,6 @@
 package com.munoon.heartbeatlive.server.sharing.service
 
 import com.munoon.heartbeatlive.server.common.PageResult
-import com.munoon.heartbeatlive.server.config.properties.SubscriptionProperties
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharing
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingLimitExceededException
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingMapper.create
@@ -11,11 +10,15 @@ import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingUtils
 import com.munoon.heartbeatlive.server.sharing.model.GraphqlCreateSharingCodeInput
 import com.munoon.heartbeatlive.server.sharing.repository.HeartBeatSharingRepository
 import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
+import com.munoon.heartbeatlive.server.subscription.account.limit.MaxSharingCodesAccountSubscriptionLimit
 import com.munoon.heartbeatlive.server.user.UserEvents
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.runBlocking
+import org.springframework.context.annotation.Lazy
 import org.springframework.context.event.EventListener
+import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import java.time.Instant
@@ -23,7 +26,7 @@ import java.time.Instant
 @Service
 class HeartBeatSharingService(
     private val repository: HeartBeatSharingRepository,
-    private val subscriptionProperties: SubscriptionProperties
+    @Lazy private val maxSharingCodesAccountSubscriptionLimit: MaxSharingCodesAccountSubscriptionLimit
 ) {
     suspend fun createSharing(
         input: GraphqlCreateSharingCodeInput,
@@ -31,7 +34,7 @@ class HeartBeatSharingService(
         userSubscriptionPlan: UserSubscriptionPlan
     ): HeartBeatSharing {
         val totalUserSharingCodeCount = repository.countAllByUserId(userId)
-        val limit = subscriptionProperties[userSubscriptionPlan].limits.maxSharingCodesLimit
+        val limit = maxSharingCodesAccountSubscriptionLimit.getCurrentLimit(userSubscriptionPlan)
         if (totalUserSharingCodeCount >= limit) {
             throw HeartBeatSharingLimitExceededException(limit)
         }
@@ -84,6 +87,31 @@ class HeartBeatSharingService(
             data = repository.findAllByUserId(userId, pageable).asFlow(),
             totalItemsCount = repository.countAllByUserId(userId)
         )
+    }
+
+    suspend fun maintainUserLimit(userId: String, newLimit: Int) {
+        val currentCount = repository.countAllByUserId(userId)
+
+        // locking out of limits
+        if (currentCount > newLimit) {
+            val shouldBeLockedCount = currentCount - newLimit
+            if (shouldBeLockedCount > 0) {
+                val pageRequest = PageRequest.of(0, shouldBeLockedCount, Sort.by("created").ascending())
+                val itemsToLock = repository.findIdsByUserId(userId, pageRequest)
+
+                repository.lockAllById(itemsToLock, lock = true)
+            }
+        }
+
+        // unlocking previously locked
+        val currentlyLockedCount = repository.countAllByUserIdAndLockedTrue(userId)
+        val canBeUnlockedCount = newLimit - (currentCount - currentlyLockedCount)
+        if (canBeUnlockedCount > 0) {
+            val pageRequest = PageRequest.of(0, canBeUnlockedCount, Sort.by("created").descending())
+            val itemsToUnlock = repository.findIdsByUserId(userId, pageRequest)
+
+            repository.lockAllById(itemsToUnlock, lock = false)
+        }
     }
 
     @Async

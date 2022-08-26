@@ -5,9 +5,11 @@ import com.munoon.heartbeatlive.server.subscription.account.PaymentProviderNotFo
 import com.munoon.heartbeatlive.server.subscription.account.RefundPeriodEndException
 import com.munoon.heartbeatlive.server.subscription.account.UserHaveNotActiveSubscriptionException
 import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
+import com.munoon.heartbeatlive.server.subscription.account.limit.AccountSubscriptionLimit
 import com.munoon.heartbeatlive.server.subscription.account.model.GraphqlPaymentProviderName
 import com.munoon.heartbeatlive.server.subscription.account.provider.StripePaymentProvider
 import com.munoon.heartbeatlive.server.user.User
+import com.munoon.heartbeatlive.server.user.UserEvents
 import com.munoon.heartbeatlive.server.user.service.UserService
 import io.kotest.assertions.throwables.shouldThrowExactly
 import io.kotest.core.spec.style.FreeSpec
@@ -16,6 +18,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.spyk
+import org.springframework.boot.test.context.runner.ApplicationContextRunner
 import java.time.Duration
 import java.time.Instant
 import java.time.OffsetDateTime
@@ -26,13 +29,13 @@ class AccountSubscriptionServiceTest : FreeSpec({
             val stripePaymentProvider = StripePaymentProvider(StripeConfigurationProperties().apply {
                 publicApiKey = "publicApiKey"
             }, mockk())
-            val service = AccountSubscriptionService(listOf(stripePaymentProvider), mockk())
+            val service = AccountSubscriptionService(listOf(stripePaymentProvider), mockk(), emptyList())
 
             service.getPaymentProviderInfo(setOf(GraphqlPaymentProviderName.STRIPE)) shouldBe stripePaymentProvider.info
         }
 
         "not found" {
-            val service = AccountSubscriptionService(emptyList(), mockk())
+            val service = AccountSubscriptionService(emptyList(), mockk(), emptyList())
             shouldThrowExactly<PaymentProviderNotFoundException> {
                 service.getPaymentProviderInfo(setOf(GraphqlPaymentProviderName.STRIPE))
             }
@@ -63,7 +66,7 @@ class AccountSubscriptionServiceTest : FreeSpec({
                 coEvery { stopRenewingSubscription(any(), any()) } returns Unit
             }
 
-            val service = AccountSubscriptionService(listOf(stripePaymentProvider), userService)
+            val service = AccountSubscriptionService(listOf(stripePaymentProvider), userService, emptyList())
 
             service.stopRenewingSubscription("user1")
 
@@ -81,7 +84,7 @@ class AccountSubscriptionServiceTest : FreeSpec({
                 coEvery { getUserById(any()) } returns user
             }
 
-            val service = AccountSubscriptionService(emptyList(), userService)
+            val service = AccountSubscriptionService(emptyList(), userService, emptyList())
 
             shouldThrowExactly<UserHaveNotActiveSubscriptionException> {
                 service.stopRenewingSubscription("user1")
@@ -118,7 +121,7 @@ class AccountSubscriptionServiceTest : FreeSpec({
                 coEvery { makeARefund(any()) } returns Unit
             }
 
-            val service = AccountSubscriptionService(listOf(stripePaymentProvider), userService)
+            val service = AccountSubscriptionService(listOf(stripePaymentProvider), userService, emptyList())
             service.requestARefund("user1")
 
             coVerify(exactly = 1) { userService.getUserById("user1") }
@@ -137,7 +140,7 @@ class AccountSubscriptionServiceTest : FreeSpec({
                 )
             }
 
-            val service = AccountSubscriptionService(emptyList(), userService)
+            val service = AccountSubscriptionService(emptyList(), userService, emptyList())
             shouldThrowExactly<UserHaveNotActiveSubscriptionException> {
                 service.requestARefund("user1")
             }
@@ -166,13 +169,141 @@ class AccountSubscriptionServiceTest : FreeSpec({
                 )
             }
 
-            val service = AccountSubscriptionService(emptyList(), userService)
+            val service = AccountSubscriptionService(emptyList(), userService, emptyList())
             shouldThrowExactly<RefundPeriodEndException> {
                 service.requestARefund("user1")
             }
 
             coVerify(exactly = 1) { userService.getUserById("user1") }
             coVerify(exactly = 0) { userService.updateUserSubscription(any(), any()) }
+        }
+    }
+
+    "handleUserUpdatedEvent" - {
+        "ignore as both plans are null" {
+            val subscriptionLimit = mockk<AccountSubscriptionLimit<*>>(relaxUnitFun = true)
+            val service = AccountSubscriptionService(emptyList(), mockk(), listOf(subscriptionLimit))
+
+            ApplicationContextRunner()
+                .withBean(AccountSubscriptionService::class.java, { service })
+                .run { context ->
+                    context.publishEvent(UserEvents.UserUpdatedEvent(
+                        oldUser = User(id = "user1", displayName = null, email = null, emailVerified = false),
+                        newUser = User(id = "user1", displayName = null, email = null, emailVerified = false),
+                        updateFirebaseState = false
+                    ))
+
+                    coVerify(exactly = 0) { subscriptionLimit.maintainALimit(any(), any()) }
+                }
+        }
+
+        "old plan is null" {
+            val subscriptionLimit = mockk<AccountSubscriptionLimit<*>>(relaxUnitFun = true)
+            val service = AccountSubscriptionService(emptyList(), mockk(), listOf(subscriptionLimit))
+
+            ApplicationContextRunner()
+                .withBean(AccountSubscriptionService::class.java, { service })
+                .run { context ->
+                    context.publishEvent(UserEvents.UserUpdatedEvent(
+                        oldUser = User(id = "user1", displayName = null, email = null, emailVerified = false),
+                        newUser = User(id = "user1", displayName = null, email = null, emailVerified = false,
+                            subscription = User.Subscription(
+                                plan = UserSubscriptionPlan.PRO,
+                                expiresAt = Instant.now(), startAt = Instant.now(),
+                                details = User.Subscription.StripeSubscriptionDetails("subscription1", "payment1"),
+                                refundDuration = Duration.ofDays(1)
+                            )),
+                        updateFirebaseState = false
+                    ))
+
+                    coVerify(exactly = 1) { subscriptionLimit.maintainALimit("user1", UserSubscriptionPlan.PRO) }
+                }
+        }
+
+        "new plan is null" {
+            val subscriptionLimit = mockk<AccountSubscriptionLimit<*>>(relaxUnitFun = true)
+            val service = AccountSubscriptionService(emptyList(), mockk(), listOf(subscriptionLimit))
+
+            ApplicationContextRunner()
+                .withBean(AccountSubscriptionService::class.java, { service })
+                .run { context ->
+                    context.publishEvent(UserEvents.UserUpdatedEvent(
+                        oldUser = User(id = "user1", displayName = null, email = null, emailVerified = false,
+                            subscription = User.Subscription(
+                                plan = UserSubscriptionPlan.PRO,
+                                expiresAt = Instant.now(), startAt = Instant.now(),
+                                details = User.Subscription.StripeSubscriptionDetails("subscription1", "payment1"),
+                                refundDuration = Duration.ofDays(1)
+                            )),
+                        newUser = User(id = "user1", displayName = null, email = null, emailVerified = false),
+                        updateFirebaseState = false
+                    ))
+
+                    coVerify(exactly = 1) { subscriptionLimit.maintainALimit("user1", UserSubscriptionPlan.FREE) }
+                }
+        }
+
+        "both plan specified" {
+            val subscriptionLimit1 = mockk<AccountSubscriptionLimit<*>> {
+                coEvery { maintainALimit(any(), any()) } throws RuntimeException("test exception")
+            }
+            val subscriptionLimit2 = mockk<AccountSubscriptionLimit<*>>(relaxUnitFun = true)
+            val limits = listOf(subscriptionLimit1, subscriptionLimit2)
+            val service = AccountSubscriptionService(emptyList(), mockk(), limits)
+
+            ApplicationContextRunner()
+                .withBean(AccountSubscriptionService::class.java, { service })
+                .run { context ->
+                    context.publishEvent(UserEvents.UserUpdatedEvent(
+                        oldUser = User(id = "user1", displayName = null, email = null, emailVerified = false,
+                            subscription = User.Subscription(
+                                plan = UserSubscriptionPlan.FREE,
+                                expiresAt = Instant.now(), startAt = Instant.now(),
+                                details = User.Subscription.StripeSubscriptionDetails("subscription1", "payment1"),
+                                refundDuration = Duration.ofDays(1)
+                            )),
+                        newUser = User(id = "user1", displayName = null, email = null, emailVerified = false,
+                            subscription = User.Subscription(
+                                plan = UserSubscriptionPlan.PRO,
+                                expiresAt = Instant.now(), startAt = Instant.now(),
+                                details = User.Subscription.StripeSubscriptionDetails("subscription1", "payment1"),
+                                refundDuration = Duration.ofDays(1)
+                            )),
+                        updateFirebaseState = false
+                    ))
+
+                    coVerify(exactly = 1) { subscriptionLimit1.maintainALimit("user1", UserSubscriptionPlan.PRO) }
+                    coVerify(exactly = 1) { subscriptionLimit2.maintainALimit("user1", UserSubscriptionPlan.PRO) }
+                }
+        }
+
+        "both plan specified, but the same" {
+            val subscriptionLimit = mockk<AccountSubscriptionLimit<*>>(relaxUnitFun = true)
+            val service = AccountSubscriptionService(emptyList(), mockk(), listOf(subscriptionLimit))
+
+            ApplicationContextRunner()
+                .withBean(AccountSubscriptionService::class.java, { service })
+                .run { context ->
+                    context.publishEvent(UserEvents.UserUpdatedEvent(
+                        oldUser = User(id = "user1", displayName = null, email = null, emailVerified = false,
+                            subscription = User.Subscription(
+                                plan = UserSubscriptionPlan.PRO,
+                                expiresAt = Instant.now(), startAt = Instant.now(),
+                                details = User.Subscription.StripeSubscriptionDetails("subscription1", "payment1"),
+                                refundDuration = Duration.ofDays(1)
+                            )),
+                        newUser = User(id = "user1", displayName = null, email = null, emailVerified = false,
+                            subscription = User.Subscription(
+                                plan = UserSubscriptionPlan.PRO,
+                                expiresAt = Instant.now(), startAt = Instant.now(),
+                                details = User.Subscription.StripeSubscriptionDetails("subscription1", "payment1"),
+                                refundDuration = Duration.ofDays(1)
+                            )),
+                        updateFirebaseState = false
+                    ))
+
+                    coVerify(exactly = 0) { subscriptionLimit.maintainALimit(any(), any()) }
+                }
         }
     }
 })

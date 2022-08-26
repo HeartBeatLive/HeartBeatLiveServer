@@ -6,6 +6,7 @@ import com.munoon.heartbeatlive.server.ban.UserBanedByOtherUserException
 import com.munoon.heartbeatlive.server.ban.service.UserBanService
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharing
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingExpiredException
+import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingLockedException
 import com.munoon.heartbeatlive.server.sharing.service.HeartBeatSharingService
 import com.munoon.heartbeatlive.server.subscription.SelfSubscriptionAttemptException
 import com.munoon.heartbeatlive.server.subscription.Subscription
@@ -22,6 +23,7 @@ import com.munoon.heartbeatlive.server.user.model.GraphqlFirebaseCreateUserInput
 import com.munoon.heartbeatlive.server.user.service.UserService
 import com.ninjasquad.springmockk.MockkBean
 import com.ninjasquad.springmockk.SpykBean
+import io.kotest.assertions.throwables.shouldThrowExactly
 import io.kotest.matchers.collections.shouldContainExactly
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -145,6 +147,22 @@ internal class SubscriptionServiceTest : AbstractTest() {
         assertThatThrownBy { runBlocking {
             service.subscribeBySharingCode(code = "ABC123", userId = "user2", UserSubscriptionPlan.FREE, options)
         } }.isExactlyInstanceOf(HeartBeatSharingExpiredException::class.java)
+    }
+
+    @Test
+    fun `subscribeBySharingCode - sharing code locked`() {
+        coEvery { heartBeatSharingService.getSharingCodeByPublicCode("ABC123") } returns HeartBeatSharing(
+            id = null,
+            publicCode = "ABC123",
+            userId = "user1",
+            locked = true,
+            expiredAt = null
+        )
+
+        val options = GraphqlSubscribeOptionsInput()
+        shouldThrowExactly<HeartBeatSharingLockedException> { runBlocking {
+            service.subscribeBySharingCode(code = "ABC123", userId = "user2", UserSubscriptionPlan.FREE, options)
+        } }
     }
 
     @Test

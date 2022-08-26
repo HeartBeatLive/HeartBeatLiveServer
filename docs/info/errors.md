@@ -21,6 +21,7 @@ Some errors contains additional fields in `extensions`, that are useful for erro
 | heart_beat_sharing.not_found.by_id | Heart beat sharing is not found by identifier. |
 | heart_beat_sharing.limit_exceeded | Heart beats sharing count limit is exceeded. |
 | heart_beat_sharing.expired | Heart beat sharing is expired. |
+| heart_beat_sharing.locked | Heart beat sharing is locked. |
 | subscription.subscribers_limit_exceeded | User have too many subscribers. |
 | subscription.subscriptions_limit_exceeded | User have too many subscriptions. |
 | subscription.self_subscribe | User is trying to subscribe to himself. |

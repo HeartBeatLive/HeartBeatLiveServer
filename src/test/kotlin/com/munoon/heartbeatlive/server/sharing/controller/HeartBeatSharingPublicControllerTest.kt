@@ -3,7 +3,6 @@ package com.munoon.heartbeatlive.server.sharing.controller
 import com.munoon.heartbeatlive.server.AbstractGraphqlHttpTest
 import com.munoon.heartbeatlive.server.ban.service.UserBanService
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharing
-import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingExpiredException
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingNotFoundByPublicCodeException
 import com.munoon.heartbeatlive.server.sharing.service.HeartBeatSharingService
 import com.munoon.heartbeatlive.server.subscription.service.SubscriptionService
@@ -121,8 +120,9 @@ internal class HeartBeatSharingPublicControllerTest : AbstractGraphqlHttpTest() 
 
     @Test
     fun `getSharingCodeByPublicCode - public code expired`() {
-        coEvery { heartBeatSharingService.getSharingCodeByPublicCode("ABC123") } throws
-                HeartBeatSharingExpiredException()
+        coEvery { heartBeatSharingService.getSharingCodeByPublicCode("ABC123") } returns
+                HeartBeatSharing(id = "heartBeatSharing1", publicCode = "ABC123", userId = "user1",
+                    locked = false, expiredAt = Instant.now().minusSeconds(1_000))
 
         graphqlTester.document("""
             query {
@@ -138,6 +138,32 @@ internal class HeartBeatSharingPublicControllerTest : AbstractGraphqlHttpTest() 
             .errors().expectSingleError(
                 errorType = ErrorType.FORBIDDEN,
                 code = "heart_beat_sharing.expired",
+                path = "getSharingCodeByPublicCode"
+            )
+
+        coVerify(exactly = 1) { heartBeatSharingService.getSharingCodeByPublicCode("ABC123") }
+    }
+
+    @Test
+    fun `getSharingCodeByPublicCode - public code locked`() {
+        coEvery { heartBeatSharingService.getSharingCodeByPublicCode("ABC123") } returns
+                HeartBeatSharing(id = "heartBeatSharing1", publicCode = "ABC123", userId = "user1",
+                    locked = true, expiredAt = null)
+
+        graphqlTester.document("""
+            query {
+                getSharingCodeByPublicCode(publicCode: "ABC123") {
+                    publicCode,
+                    sharingUrl,
+                    created,
+                    expiredAt
+                }
+            }
+        """.trimIndent())
+            .execute()
+            .errors().expectSingleError(
+                errorType = ErrorType.FORBIDDEN,
+                code = "heart_beat_sharing.locked",
                 path = "getSharingCodeByPublicCode"
             )
 

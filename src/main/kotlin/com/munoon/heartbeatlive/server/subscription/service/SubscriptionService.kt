@@ -6,6 +6,7 @@ import com.munoon.heartbeatlive.server.ban.service.UserBanService
 import com.munoon.heartbeatlive.server.common.PageResult
 import com.munoon.heartbeatlive.server.config.properties.SubscriptionProperties
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingUtils.checkExpired
+import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingUtils.checkUnlocked
 import com.munoon.heartbeatlive.server.sharing.service.HeartBeatSharingService
 import com.munoon.heartbeatlive.server.subscription.SelfSubscriptionAttemptException
 import com.munoon.heartbeatlive.server.subscription.Subscription
@@ -48,6 +49,7 @@ class SubscriptionService(
         if (sharingCode.userId == userId) {
             throw SelfSubscriptionAttemptException()
         }
+        sharingCode.checkUnlocked()
         sharingCode.checkExpired()
         validateUserSubscriptionsCount(userId, userSubscriptionPlan)
         validateUserSubscribersCount(sharingCode.userId)

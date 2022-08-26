@@ -24,4 +24,10 @@ object HeartBeatSharingUtils {
             throw HeartBeatSharingExpiredException()
         }
     }
+
+    fun HeartBeatSharing.checkUnlocked() {
+        if (locked) {
+            throw HeartBeatSharingLockedException()
+        }
+    }
 }

@@ -17,4 +17,7 @@ type SharingCode {
 
     "Time, until which this this sharing code is valid. Client should check this field before sending subscription request."
     expiredAt: EpochSecondsTime
+
+    "Weather sharing code is locked. Currently, the only reason why sharing code could be locked is subscription plan limit."
+    locked: Boolean
 }

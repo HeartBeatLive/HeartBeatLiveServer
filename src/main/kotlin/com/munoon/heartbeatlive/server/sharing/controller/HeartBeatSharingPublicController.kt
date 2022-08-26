@@ -7,6 +7,7 @@ import com.munoon.heartbeatlive.server.ban.service.UserBanService
 import com.munoon.heartbeatlive.server.config.properties.UserSharingProperties
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingMapper.asPublicGraphQL
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingUtils.checkExpired
+import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingUtils.checkUnlocked
 import com.munoon.heartbeatlive.server.sharing.model.GraphqlPublicSharingCode
 import com.munoon.heartbeatlive.server.sharing.service.HeartBeatSharingService
 import com.munoon.heartbeatlive.server.subscription.SubscriptionUtils.validateUserSubscribersCount
@@ -35,6 +36,7 @@ class HeartBeatSharingPublicController(
         return service.getSharingCodeByPublicCode(publicCode)
             .also { sharingCode ->
                 // validate if someone still can subscribe to user
+                sharingCode.checkUnlocked()
                 sharingCode.checkExpired()
                 subscriptionService.validateUserSubscribersCount(sharingCode.userId)
                 authUser()?.also { authUser -> userBanService.validateUserBanned(authUser.userId, sharingCode.userId) }

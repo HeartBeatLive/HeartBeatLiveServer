@@ -5,7 +5,7 @@ import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
 import java.time.Instant
 
-@Document("heartBeatSharing")
+@Document(HeartBeatSharing.COLLECTION_NAME)
 data class HeartBeatSharing(
     @Id
     val id: String?,
@@ -17,9 +17,12 @@ data class HeartBeatSharing(
 
     val created: Instant = Instant.now(),
 
+    val locked: Boolean = false,
+
     val expiredAt: Instant?
 ) {
     companion object {
+        const val COLLECTION_NAME = "heartBeatSharing"
         const val UNIQUE_PUBLIC_CODE_INDEX = "heartBeatSharing_unique_publicCode_index"
     }
 }

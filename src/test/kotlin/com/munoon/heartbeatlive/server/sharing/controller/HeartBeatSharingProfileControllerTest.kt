@@ -47,6 +47,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
             publicCode = "ABC123",
             userId = "user1",
             created,
+            locked = false,
             expiredAt
         )
 
@@ -54,7 +55,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
             .document("""
                 query {
                     getSharingCodeById(id: "sharingCode1") {
-                        id, publicCode, sharingUrl, created, expiredAt
+                        id, publicCode, sharingUrl, created, locked, expiredAt
                     }
                 }
             """.trimIndent())
@@ -64,6 +65,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
             .path("getSharingCodeById.publicCode").isEqualsTo("ABC123")
             .path("getSharingCodeById.sharingUrl").isEqualsTo("https://heartbeatlive.com/sharing/ABC123")
             .path("getSharingCodeById.created").isEqualsTo(created.epochSecond)
+            .path("getSharingCodeById.locked").isEqualsTo(false)
             .path("getSharingCodeById.expiredAt").isEqualsTo(expiredAt.epochSecond)
 
         coVerify(exactly = 1) { service.getSharingCodeById("sharingCode1") }
@@ -78,7 +80,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
             .document("""
                 query {
                     getSharingCodeById(id: "sharingCode1") {
-                        id, publicCode, sharingUrl, created, expiredAt
+                        id, publicCode, sharingUrl, created, locked, expiredAt
                     }
                 }
             """.trimIndent())
@@ -106,7 +108,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
             .document("""
                 query {
                     getSharingCodeById(id: "sharingCode1") {
-                        id, publicCode, sharingUrl, created, expiredAt
+                        id, publicCode, sharingUrl, created, locked, expiredAt
                     }
                 }
             """.trimIndent())
@@ -127,7 +129,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
             .document("""
                 query {
                     getSharingCodeById(id: "sharingCode1") {
-                        id, publicCode, sharingUrl, created, expiredAt
+                        id, publicCode, sharingUrl, created, locked, expiredAt
                     }
                 }
             """.trimIndent())
@@ -150,6 +152,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
             publicCode = "ABC123",
             userId = "user1",
             created,
+            locked = false,
             expiredAt
         )
 
@@ -158,7 +161,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
             .document("""
                 mutation {
                     createSharingCode(data: { expiredAt: ${expiredAt.epochSecond} }) {
-                        id, publicCode, sharingUrl, created, expiredAt
+                        id, publicCode, sharingUrl, created, locked, expiredAt
                     }
                 }
             """.trimIndent())
@@ -168,6 +171,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
             .path("createSharingCode.publicCode").isEqualsTo("ABC123")
             .path("createSharingCode.sharingUrl").isEqualsTo("https://heartbeatlive.com/sharing/ABC123")
             .path("createSharingCode.created").isEqualsTo(created.epochSecond)
+            .path("createSharingCode.locked").isEqualsTo(false)
             .path("createSharingCode.expiredAt").isEqualsTo(expiredAt.epochSecond)
 
         val expectedInput = GraphqlCreateSharingCodeInput(expiredAt = Instant.ofEpochSecond(expiredAt.epochSecond))
@@ -183,6 +187,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
             publicCode = "ABC123",
             userId = "user1",
             created,
+            locked = false,
             expiredAt
         )
 
@@ -191,7 +196,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
             .document("""
                 mutation {
                     createSharingCode(data: { expiredAt: ${expiredAt.epochSecond} }) {
-                        id, publicCode, sharingUrl, created, expiredAt
+                        id, publicCode, sharingUrl, created, locked, expiredAt
                     }
                 }
             """.trimIndent())
@@ -201,6 +206,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
             .path("createSharingCode.publicCode").isEqualsTo("ABC123")
             .path("createSharingCode.sharingUrl").isEqualsTo("https://heartbeatlive.com/sharing/ABC123")
             .path("createSharingCode.created").isEqualsTo(created.epochSecond)
+            .path("createSharingCode.locked").isEqualsTo(false)
             .path("createSharingCode.expiredAt").isEqualsTo(expiredAt.epochSecond)
 
         val expectedInput = GraphqlCreateSharingCodeInput(expiredAt = Instant.ofEpochSecond(expiredAt.epochSecond))
@@ -216,6 +222,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
             publicCode = "ABC123",
             userId = "user1",
             created,
+            locked = false,
             expiredAt
         )
 
@@ -224,7 +231,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
             .document("""
                 mutation {
                     createSharingCode {
-                        id, publicCode, sharingUrl, created, expiredAt
+                        id, publicCode, sharingUrl, created, locked, expiredAt
                     }
                 }
             """.trimIndent())
@@ -234,6 +241,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
             .path("createSharingCode.publicCode").isEqualsTo("ABC123")
             .path("createSharingCode.sharingUrl").isEqualsTo("https://heartbeatlive.com/sharing/ABC123")
             .path("createSharingCode.created").isEqualsTo(created.epochSecond)
+            .path("createSharingCode.locked").isEqualsTo(false)
             .path("createSharingCode.expiredAt").isEqualsTo(expiredAt.epochSecond)
 
         val expectedInput = GraphqlCreateSharingCodeInput(expiredAt = null)
@@ -249,7 +257,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
             .document("""
                 mutation {
                     createSharingCode {
-                        id, publicCode, sharingUrl, created, expiredAt
+                        id, publicCode, sharingUrl, created, locked, expiredAt
                     }
                 }
             """.trimIndent())
@@ -273,7 +281,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
             .document("""
                 mutation {
                     createSharingCode(data: { expiredAt: ${expiredAt.epochSecond} }) {
-                        id, publicCode, sharingUrl, created, expiredAt
+                        id, publicCode, sharingUrl, created, locked, expiredAt
                     }
                 }
             """.trimIndent())
@@ -294,7 +302,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
             .document("""
                 mutation {
                     createSharingCode {
-                        id, publicCode, sharingUrl, created, expiredAt
+                        id, publicCode, sharingUrl, created, locked, expiredAt
                     }
                 }
             """.trimIndent())
@@ -317,6 +325,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
             publicCode = "ABC123",
             userId = "user1",
             created,
+            locked = false,
             expiredAt
         )
 
@@ -324,7 +333,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
             .document("""
                 mutation {
                     updateSharingCodeExpireTime(id: "sharingCode1", expiredAt: ${expiredAt.epochSecond}) {
-                        id, publicCode, sharingUrl, created, expiredAt
+                        id, publicCode, sharingUrl, created, locked, expiredAt
                     }
                 }
             """.trimIndent())
@@ -334,6 +343,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
             .path("updateSharingCodeExpireTime.publicCode").isEqualsTo("ABC123")
             .path("updateSharingCodeExpireTime.sharingUrl").isEqualsTo("https://heartbeatlive.com/sharing/ABC123")
             .path("updateSharingCodeExpireTime.created").isEqualsTo(created.epochSecond)
+            .path("updateSharingCodeExpireTime.locked").isEqualsTo(false)
             .path("updateSharingCodeExpireTime.expiredAt").isEqualsTo(expiredAt.epochSecond)
 
         coVerify(exactly = 1) {
@@ -351,7 +361,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
             .document("""
                 mutation {
                     updateSharingCodeExpireTime(id: "sharingCode1", expiredAt: ${expiredAt.epochSecond}) {
-                        id, publicCode, sharingUrl, created, expiredAt
+                        id, publicCode, sharingUrl, created, locked, expiredAt
                     }
                 }
             """.trimIndent())
@@ -377,7 +387,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
             .document("""
                 mutation {
                     updateSharingCodeExpireTime(id: "sharingCode1", expiredAt: ${expiredAt.epochSecond}) {
-                        id, publicCode, sharingUrl, created, expiredAt
+                        id, publicCode, sharingUrl, created, locked, expiredAt
                     }
                 }
             """.trimIndent())
@@ -400,7 +410,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
             .document("""
                 mutation {
                     updateSharingCodeExpireTime(id: "sharingCode1", expiredAt: ${expiredAt.epochSecond}) {
-                        id, publicCode, sharingUrl, created, expiredAt
+                        id, publicCode, sharingUrl, created, locked, expiredAt
                     }
                 }
             """.trimIndent())
@@ -482,6 +492,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
                 "publicCode" to sharing3.publicCode,
                 "sharingUrl" to "https://heartbeatlive.com/sharing/${sharing3.publicCode}",
                 "created" to sharing3.created.epochSecond.toInt(),
+                "locked" to false,
                 "expiredAt" to null
             ),
             mapOf(
@@ -489,6 +500,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
                 "publicCode" to sharing2.publicCode,
                 "sharingUrl" to "https://heartbeatlive.com/sharing/${sharing2.publicCode}",
                 "created" to sharing2.created.epochSecond.toInt(),
+                "locked" to false,
                 "expiredAt" to null
             ),
             mapOf(
@@ -496,6 +508,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
                 "publicCode" to sharing1.publicCode,
                 "sharingUrl" to "https://heartbeatlive.com/sharing/${sharing1.publicCode}",
                 "created" to sharing1.created.epochSecond.toInt(),
+                "locked" to false,
                 "expiredAt" to null
             )
         )
@@ -505,7 +518,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
                 query {
                     getProfile {
                         sharingCodes(page: 0, size: 10, sort: CREATED_DESC) {
-                            content { id, publicCode, sharingUrl, created, expiredAt }
+                            content { id, publicCode, sharingUrl, created, locked, expiredAt }
                             pageInfo { totalPages, totalItems, hasNext }
                         }
                     }
@@ -542,6 +555,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
                 "publicCode" to sharing1.publicCode,
                 "sharingUrl" to "https://heartbeatlive.com/sharing/${sharing1.publicCode}",
                 "created" to sharing1.created.epochSecond.toInt(),
+                "locked" to false,
                 "expiredAt" to null
             ),
             mapOf(
@@ -549,6 +563,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
                 "publicCode" to sharing2.publicCode,
                 "sharingUrl" to "https://heartbeatlive.com/sharing/${sharing2.publicCode}",
                 "created" to sharing2.created.epochSecond.toInt(),
+                "locked" to false,
                 "expiredAt" to null
             ),
             mapOf(
@@ -556,6 +571,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
                 "publicCode" to sharing3.publicCode,
                 "sharingUrl" to "https://heartbeatlive.com/sharing/${sharing3.publicCode}",
                 "created" to sharing3.created.epochSecond.toInt(),
+                "locked" to false,
                 "expiredAt" to null
             )
         )
@@ -565,7 +581,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
                 query {
                     getProfile {
                         sharingCodes(page: 0, size: 10, sort: CREATED_ASC) {
-                            content { id, publicCode, sharingUrl, created, expiredAt }
+                            content { id, publicCode, sharingUrl, created, locked, expiredAt }
                             pageInfo { totalPages, totalItems, hasNext }
                         }
                     }
@@ -593,7 +609,7 @@ internal class HeartBeatSharingProfileControllerTest : AbstractGraphqlHttpTest()
                 query {
                     getProfile {
                         sharingCodes(page: -1, size: 100, sort: CREATED_ASC) {
-                            content { id, publicCode, sharingUrl, created, expiredAt }
+                            content { id, publicCode, sharingUrl, created, locked, expiredAt }
                             pageInfo { totalPages, totalItems, hasNext }
                         }
                     }
