@@ -429,6 +429,139 @@ internal class SubscriptionServiceTest : AbstractTest() {
     }
 
     @Test
+    fun getAllActiveUserSubscribers(): Unit = runBlocking {
+        val subscription1 = repository.save(Subscription(userId = "user1", subscriberUserId = "user2",
+            receiveHeartRateMatchNotifications = false))
+        val subscription2 = repository.save(Subscription(userId = "user1", subscriberUserId = "user2",
+            receiveHeartRateMatchNotifications = false))
+        repository.save(Subscription(userId = "user1", subscriberUserId = "user2",
+            receiveHeartRateMatchNotifications = false, locked = true)) // should ignore as locked
+        repository.save(Subscription(userId = "user2", subscriberUserId = "user1",
+            receiveHeartRateMatchNotifications = false)) // should ignore as another user id
+
+        val expected = listOf(subscription1, subscription2)
+        val actual = service.getAllActiveUserSubscribers("user1").toList(arrayListOf())
+        assertThat(actual).usingRecursiveFieldByFieldElementComparatorIgnoringFields("created").isEqualTo(expected)
+    }
+
+    @Test
+    fun `maintainMaxSubscriptionLimit - lock limited`() {
+        val subscription1 = runBlocking {
+            repository.save(Subscription(
+                userId = "user1", subscriberUserId = "user2",
+                receiveHeartRateMatchNotifications = false, locked = false
+            ))
+        }
+        val subscription2 = runBlocking {
+            repository.save(Subscription(
+                userId = "user1", subscriberUserId = "user2",
+                receiveHeartRateMatchNotifications = false, locked = false,
+                created = Instant.now().minusSeconds(60)
+            ))
+        }
+        val subscription3 = runBlocking {
+            repository.save(Subscription(
+                userId = "user1", subscriberUserId = "user2",
+                receiveHeartRateMatchNotifications = false, locked = false,
+                created = Instant.now().minusSeconds(70)
+            ))
+        }
+        val subscription4 = runBlocking {
+            repository.save(Subscription(
+                userId = "user1", subscriberUserId = "user2",
+                receiveHeartRateMatchNotifications = false, locked = true,
+                created = Instant.now().minusSeconds(80)
+            ))
+        }
+
+        val expectedSubscription2 = subscription2.copy(locked = true)
+        val expectedSubscription3 = subscription3.copy(locked = true)
+
+        runBlocking { service.maintainMaxSubscriptionLimit("user2", 1) }
+
+        val actual = runBlocking { repository.findAll().toList(arrayListOf()) }
+        val expected = listOf(subscription1, expectedSubscription2, expectedSubscription3, subscription4)
+        assertThat(actual).usingRecursiveFieldByFieldElementComparatorIgnoringFields("created").isEqualTo(expected)
+    }
+
+    @Test
+    fun `maintainMaxSubscriptionLimit - unlock limited`() {
+        val subscription1 = runBlocking {
+            repository.save(Subscription(
+                userId = "user1", subscriberUserId = "user2",
+                receiveHeartRateMatchNotifications = false, locked = false
+            ))
+        }
+        val subscription2 = runBlocking {
+            repository.save(Subscription(
+                userId = "user1", subscriberUserId = "user2",
+                receiveHeartRateMatchNotifications = false, locked = true,
+                created = Instant.now().minusSeconds(60)
+            ))
+        }
+        val subscription3 = runBlocking {
+            repository.save(Subscription(
+                userId = "user1", subscriberUserId = "user2",
+                receiveHeartRateMatchNotifications = false, locked = true,
+                created = Instant.now().minusSeconds(70)
+            ))
+        }
+        val subscription4 = runBlocking {
+            repository.save(Subscription(
+                userId = "user1", subscriberUserId = "user2",
+                receiveHeartRateMatchNotifications = false, locked = true,
+                created = Instant.now().minusSeconds(80)
+            ))
+        }
+
+        val expectedSubscription2 = subscription2.copy(locked = false)
+        val expectedSubscription3 = subscription3.copy(locked = false)
+
+        runBlocking { service.maintainMaxSubscriptionLimit("user2", 3) }
+
+        val actual = runBlocking { repository.findAll().toList(arrayListOf()) }
+        val expected = listOf(subscription1, expectedSubscription2, expectedSubscription3, subscription4)
+        assertThat(actual).usingRecursiveFieldByFieldElementComparatorIgnoringFields("created").isEqualTo(expected)
+    }
+
+    @Test
+    fun `maintainMaxSubscriptionLimit - no action need`() {
+        val subscription1 = runBlocking {
+            repository.save(Subscription(
+                userId = "user1", subscriberUserId = "user2",
+                receiveHeartRateMatchNotifications = false, locked = false
+            ))
+        }
+        val subscription2 = runBlocking {
+            repository.save(Subscription(
+                userId = "user1", subscriberUserId = "user2",
+                receiveHeartRateMatchNotifications = false, locked = false,
+                created = Instant.now().minusSeconds(60)
+            ))
+        }
+        val subscription3 = runBlocking {
+            repository.save(Subscription(
+                userId = "user1", subscriberUserId = "user2",
+                receiveHeartRateMatchNotifications = false, locked = true,
+                created = Instant.now().minusSeconds(70)
+            ))
+        }
+        val subscription4 = runBlocking {
+            repository.save(Subscription(
+                userId = "user1", subscriberUserId = "user2",
+                receiveHeartRateMatchNotifications = false, locked = true,
+                created = Instant.now().minusSeconds(80)
+            ))
+        }
+
+        runBlocking { service.maintainMaxSubscriptionLimit("user2", 2) }
+
+        val actual = runBlocking { repository.findAll().toList(arrayListOf()) }
+        val expected = listOf(subscription1, subscription2, subscription3, subscription4)
+        assertThat(actual).usingRecursiveFieldByFieldElementComparatorIgnoringFields("created").isEqualTo(expected)
+    }
+
+    @Test
     fun handleUserDeletedEvent() {
         every { userBanService.handleUserDeletedEvent(any()) } returns Unit
         every { heartBeatSharingService.handleUserDeletedEvent(any()) } returns Unit

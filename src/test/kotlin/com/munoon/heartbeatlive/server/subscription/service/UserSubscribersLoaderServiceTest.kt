@@ -2,7 +2,6 @@ package com.munoon.heartbeatlive.server.subscription.service
 
 import com.munoon.heartbeatlive.server.config.properties.CacheProperties
 import com.munoon.heartbeatlive.server.subscription.Subscription
-import com.munoon.heartbeatlive.server.subscription.repository.SubscriptionRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -32,20 +31,20 @@ internal class UserSubscribersLoaderServiceTest {
 
     @Test
     fun load() {
-        val repository = mockk<SubscriptionRepository>() {
-            coEvery { findAllByUserId(any()) } returns flowOf(
+        val service = mockk<SubscriptionService>() {
+            coEvery { getAllActiveUserSubscribers(any()) } returns flowOf(
                 Subscription(id = "subscription1", userId = "user1", subscriberUserId = "user2",
                     receiveHeartRateMatchNotifications = false),
                 Subscription(id = "subscription2", userId = "user1", subscriberUserId = "user3",
                     receiveHeartRateMatchNotifications = false)
             )
         }
-        val service = UserSubscribersLoaderService(repository, cacheProperties)
+        val loader = UserSubscribersLoaderService(service, cacheProperties)
 
         listOf(
-            service.load("user1"),
-            service.load("user1"), // should be cached
-            service.load("user1") // should be cached
+            loader.load("user1"),
+            loader.load("user1"), // should be cached
+            loader.load("user1") // should be cached
         ).forEach {
             assertThat(it).usingRecursiveComparison().isEqualTo(mapOf(
                 "subscription1" to "user2",
@@ -53,25 +52,25 @@ internal class UserSubscribersLoaderServiceTest {
             ))
         }
 
-        coVerify(exactly = 1) { repository.findAllByUserId("user1") }
+        coVerify(exactly = 1) { service.getAllActiveUserSubscribers("user1") }
     }
 
     @Test
     fun `load - repository exception`() {
-        val repository = mockk<SubscriptionRepository>() {
-            coEvery { findAllByUserId(any()) } throws RuntimeException("Repository exception")
+        val service = mockk<SubscriptionService>() {
+            coEvery { getAllActiveUserSubscribers(any()) } throws RuntimeException("Repository exception")
         }
-        val service = UserSubscribersLoaderService(repository, cacheProperties)
+        val loader = UserSubscribersLoaderService(service, cacheProperties)
 
         listOf(
-            service.load("user1"),
-            service.load("user1"), // should be cached
-            service.load("user1") // should be cached
+            loader.load("user1"),
+            loader.load("user1"), // should be cached
+            loader.load("user1") // should be cached
         ).forEach {
             assertThat(it).usingRecursiveComparison()
                 .isEqualTo(emptyMap<String, String>())
         }
 
-        coVerify(exactly = 1) { repository.findAllByUserId("user1") }
+        coVerify(exactly = 1) { service.getAllActiveUserSubscribers("user1") }
     }
 }

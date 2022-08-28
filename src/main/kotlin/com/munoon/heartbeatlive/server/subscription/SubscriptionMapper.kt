@@ -7,6 +7,7 @@ object SubscriptionMapper {
         id = id!!,
         subscribeTime = created,
         userId = userId,
-        subscriberUserId = subscriberUserId
+        subscriberUserId = subscriberUserId,
+        locked = locked
     )
 }

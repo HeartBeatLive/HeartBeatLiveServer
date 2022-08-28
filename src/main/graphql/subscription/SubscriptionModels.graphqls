@@ -11,6 +11,12 @@ type SubscriptionInfo {
 
     "Time, when this subscription was created."
     subscribeTime: EpochSecondsTime!
+
+    """
+    Weather subscription is locked.
+    Currently, the only reason why subscription could be locked is account subscription plan limit.
+    """
+    locked: Boolean
 }
 
 "Algorithm, that specify how subscriptions pages should be sorted."

@@ -10,13 +10,14 @@ import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingUtils
 import com.munoon.heartbeatlive.server.sharing.model.GraphqlCreateSharingCodeInput
 import com.munoon.heartbeatlive.server.sharing.repository.HeartBeatSharingRepository
 import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
+import com.munoon.heartbeatlive.server.subscription.account.limit.AccountSubscriptionLimitRepository
+import com.munoon.heartbeatlive.server.subscription.account.limit.AccountSubscriptionLimitUtils
 import com.munoon.heartbeatlive.server.subscription.account.limit.MaxSharingCodesAccountSubscriptionLimit
 import com.munoon.heartbeatlive.server.user.UserEvents
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.runBlocking
 import org.springframework.context.annotation.Lazy
 import org.springframework.context.event.EventListener
-import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.scheduling.annotation.Async
@@ -89,30 +90,24 @@ class HeartBeatSharingService(
         )
     }
 
-    suspend fun maintainUserLimit(userId: String, newLimit: Int) {
-        val currentCount = repository.countAllByUserId(userId)
+    suspend fun maintainUserLimit(userId: String, newLimit: Int) =
+        AccountSubscriptionLimitUtils.maintainALimit(
+            userId, newLimit,
+            baseSort = Sort.by("created"),
+            repository = object : AccountSubscriptionLimitRepository<String> {
+                override suspend fun countAllByUserId(userId: String) =
+                    repository.countAllByUserId(userId)
 
-        // locking out of limits
-        if (currentCount > newLimit) {
-            val shouldBeLockedCount = currentCount - newLimit
-            if (shouldBeLockedCount > 0) {
-                val pageRequest = PageRequest.of(0, shouldBeLockedCount, Sort.by("created").ascending())
-                val itemsToLock = repository.findIdsByUserId(userId, pageRequest)
+                override suspend fun countAllByUserIdAndLockedTrue(userId: String) =
+                    repository.countAllByUserIdAndLockedTrue(userId)
 
-                repository.lockAllById(itemsToLock, lock = true)
+                override suspend fun findIdsByUserId(userId: String, locked: Boolean, pageable: Pageable) =
+                    repository.findIdsByUserId(userId, locked, pageable)
+
+                override suspend fun lockAllById(ids: Set<String>, lock: Boolean) =
+                    repository.lockAllById(ids, lock)
             }
-        }
-
-        // unlocking previously locked
-        val currentlyLockedCount = repository.countAllByUserIdAndLockedTrue(userId)
-        val canBeUnlockedCount = newLimit - (currentCount - currentlyLockedCount)
-        if (canBeUnlockedCount > 0) {
-            val pageRequest = PageRequest.of(0, canBeUnlockedCount, Sort.by("created").descending())
-            val itemsToUnlock = repository.findIdsByUserId(userId, pageRequest)
-
-            repository.lockAllById(itemsToUnlock, lock = false)
-        }
-    }
+        )
 
     @Async
     @EventListener

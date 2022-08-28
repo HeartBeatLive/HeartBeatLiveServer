@@ -245,7 +245,8 @@ internal class UserPushNotificationsControllerTest : AbstractGraphqlHttpTest() {
             created = Arb.instant().bind(),
             userId = Arb.string(codepoints = Codepoint.alphanumeric(), size = 20).bind(),
             subscriberUserId = Arb.string(codepoints = Codepoint.alphanumeric(), size = 20).bind(),
-            receiveHeartRateMatchNotifications = Arb.boolean().bind()
+            receiveHeartRateMatchNotifications = Arb.boolean().bind(),
+            locked = Arb.boolean().bind()
         ) }
 
         checkAll(5, subscriptionArbitrary) { subscription ->
@@ -264,7 +265,8 @@ internal class UserPushNotificationsControllerTest : AbstractGraphqlHttpTest() {
                             ... on NewSubscriberPushNotificationData {
                                 subscription {
                                     id,
-                                    subscribeTime
+                                    subscribeTime,
+                                    locked
                                 }
                             }
                         }
@@ -276,6 +278,7 @@ internal class UserPushNotificationsControllerTest : AbstractGraphqlHttpTest() {
                 .path("getPushNotificationById.data.subscription.id").isEqualsTo(subscription.id!!)
                 .path("getPushNotificationById.data.subscription.subscribeTime")
                     .isEqualsTo(subscription.created.epochSecond)
+                .path("getPushNotificationById.data.subscription.locked").isEqualsTo(subscription.locked)
 
             coVerify(exactly = 1) { subscriptionService.getAllByIds(setOf(subscription.id!!)) }
         }
@@ -298,7 +301,8 @@ internal class UserPushNotificationsControllerTest : AbstractGraphqlHttpTest() {
                             ... on NewSubscriberPushNotificationData {
                                 subscription {
                                     id,
-                                    subscribeTime
+                                    subscribeTime,
+                                    locked
                                 }
                             }
                         }

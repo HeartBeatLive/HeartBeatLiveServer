@@ -16,6 +16,9 @@ import com.munoon.heartbeatlive.server.subscription.SubscriptionUtils.validateUs
 import com.munoon.heartbeatlive.server.subscription.SubscriptionUtils.validateUserSubscriptionsCount
 import com.munoon.heartbeatlive.server.subscription.account.AccountSubscriptionUtils.getActiveSubscriptionPlan
 import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
+import com.munoon.heartbeatlive.server.subscription.account.limit.AccountSubscriptionLimitRepository
+import com.munoon.heartbeatlive.server.subscription.account.limit.AccountSubscriptionLimitUtils
+import com.munoon.heartbeatlive.server.subscription.account.limit.MaxSubscribersAccountSubscriptionLimit
 import com.munoon.heartbeatlive.server.subscription.model.GraphqlSubscribeOptionsInput
 import com.munoon.heartbeatlive.server.subscription.repository.SubscriptionRepository
 import com.munoon.heartbeatlive.server.user.UserEvents
@@ -23,8 +26,10 @@ import com.munoon.heartbeatlive.server.user.service.UserService
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.runBlocking
 import org.springframework.context.ApplicationEventPublisher
+import org.springframework.context.annotation.Lazy
 import org.springframework.context.event.EventListener
 import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 
@@ -34,6 +39,7 @@ class SubscriptionService(
     private val heartBeatSharingService: HeartBeatSharingService,
     private val userService: UserService,
     private val subscriptionProperties: SubscriptionProperties,
+    @Lazy private val maxSubscribersAccountSubscriptionLimit: MaxSubscribersAccountSubscriptionLimit,
     private val userBanService: UserBanService,
     private val eventPublisher: ApplicationEventPublisher
 ) {
@@ -100,7 +106,7 @@ class SubscriptionService(
     suspend fun checkUserHaveMaximumSubscribers(userId: String): Boolean {
         val subscribersCount = repository.countAllByUserId(userId)
         val userSubscriptionPlan = userService.getUserById(userId).getActiveSubscriptionPlan()
-        return subscribersCount >= subscriptionProperties[userSubscriptionPlan].limits.maxSubscribersLimit
+        return subscribersCount >= maxSubscribersAccountSubscriptionLimit.getCurrentLimit(userSubscriptionPlan)
     }
 
     suspend fun checkUserHaveMaximumSubscriptions(userId: String, subscriptionPlan: UserSubscriptionPlan): Boolean {
@@ -109,6 +115,28 @@ class SubscriptionService(
     }
 
     fun getAllByIds(ids: Set<String>) = repository.findAllById(ids)
+
+    suspend fun getAllActiveUserSubscribers(userId: String) =
+        repository.findAllByUserIdAndLockedFalse(userId)
+
+    suspend fun maintainMaxSubscriptionLimit(userId: String, newLimit: Int) =
+        AccountSubscriptionLimitUtils.maintainALimit(
+            userId, newLimit,
+            baseSort = Sort.by("created"),
+            repository = object : AccountSubscriptionLimitRepository<String> {
+                override suspend fun countAllByUserId(userId: String) =
+                    repository.countAllBySubscriberUserId(userId)
+
+                override suspend fun countAllByUserIdAndLockedTrue(userId: String) =
+                    repository.countAllBySubscriberUserIdAndLockedTrue(userId)
+
+                override suspend fun findIdsByUserId(userId: String, locked: Boolean, pageable: Pageable) =
+                    repository.findIdsBySubscriberUserId(userId, locked, pageable)
+
+                override suspend fun lockAllById(ids: Set<String>, lock: Boolean) =
+                    repository.lockAllById(ids, lock)
+            }
+        )
 
     @Async
     @EventListener

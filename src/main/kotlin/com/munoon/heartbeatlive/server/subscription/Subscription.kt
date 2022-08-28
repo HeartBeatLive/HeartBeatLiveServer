@@ -15,7 +15,9 @@ data class Subscription(
 
     val created: Instant = Instant.now(),
 
-    val receiveHeartRateMatchNotifications: Boolean
+    val receiveHeartRateMatchNotifications: Boolean,
+
+    val locked: Boolean = false
 ) {
     companion object {
         const val UNIQUE_USER_ID_AND_SUBSCRIBER_USER_ID_INDEX = "subscription_unique_userId_subscriberUserId_index"

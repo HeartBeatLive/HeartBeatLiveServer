@@ -207,7 +207,7 @@ internal class StripeAccountSubscriptionControllerTest : AbstractGraphqlHttpTest
     @Test
     fun `createStripeSubscription - user doesnt have verified email address`() {
         coEvery { userService.getUserById(any()) } returns User(
-            id = "userId",
+            id = "user1",
             displayName = null,
             email = "email@example.com",
             emailVerified = false
@@ -228,7 +228,8 @@ internal class StripeAccountSubscriptionControllerTest : AbstractGraphqlHttpTest
             .errors().expectSingleError(
                 errorType = ErrorType.FORBIDDEN,
                 code = "user.no_verified_email_address",
-                path = "createStripeSubscription"
+                path = "createStripeSubscription",
+                extensions = mapOf("id" to "user1")
             )
 
         coVerify(exactly = 0) { service.createSubscription(any(), any(), any()) }

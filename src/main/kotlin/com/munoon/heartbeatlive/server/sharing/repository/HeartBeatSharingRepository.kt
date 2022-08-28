@@ -1,19 +1,10 @@
 package com.munoon.heartbeatlive.server.sharing.repository
 
-import com.mongodb.client.result.UpdateResult
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharing
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.toSet
-import kotlinx.coroutines.reactive.asFlow
-import kotlinx.coroutines.reactor.awaitSingle
-import org.bson.Document
+import com.munoon.heartbeatlive.server.subscription.account.limit.AccountSubscriptionLimitUtils.findIdsByUserId
+import com.munoon.heartbeatlive.server.subscription.account.limit.AccountSubscriptionLimitUtils.lockAllById
 import org.springframework.data.domain.Pageable
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate
-import org.springframework.data.mongodb.core.query.BasicUpdate
-import org.springframework.data.mongodb.core.query.Criteria
-import org.springframework.data.mongodb.core.query.Query
-import org.springframework.data.mongodb.core.query.inValues
-import org.springframework.data.mongodb.core.query.isEqualTo
 import org.springframework.data.repository.kotlin.CoroutineSortingRepository
 import org.springframework.stereotype.Repository
 import reactor.core.publisher.Flux
@@ -39,28 +30,25 @@ interface HeartBeatSharingRepository : CoroutineSortingRepository<HeartBeatShari
 }
 
 interface CustomHeartBeatSharingRepository {
-    suspend fun lockAllById(ids: Set<String>, lock: Boolean): UpdateResult
+    suspend fun lockAllById(ids: Set<String>, lock: Boolean)
 
-    suspend fun findIdsByUserId(userId: String, pageable: Pageable): Set<String>
+    suspend fun findIdsByUserId(userId: String, locked: Boolean, pageable: Pageable): Set<String>
 }
 
 @Repository
 private class CustomHeartBeatSharingRepositoryImpl(
     private val mongoTemplate: ReactiveMongoTemplate
 ) : CustomHeartBeatSharingRepository {
-    override suspend fun lockAllById(ids: Set<String>, lock: Boolean): UpdateResult {
-        val query = Query.query(Criteria.where("_id").inValues(ids))
-        val update = BasicUpdate.update("locked", lock)
-        return mongoTemplate.updateMulti(query, update, HeartBeatSharing::class.java)
-            .awaitSingle()
+    override suspend fun lockAllById(ids: Set<String>, lock: Boolean) {
+        mongoTemplate.lockAllById<HeartBeatSharing>(lockFieldName = "locked", ids, lock)
     }
 
-    override suspend fun findIdsByUserId(userId: String, pageable: Pageable): Set<String> {
-        val query = Query.query(Criteria.where("userId").isEqualTo(userId))
-            .with(pageable)
-            .apply { fields().include("_id") }
-
-        return mongoTemplate.find(query, Document::class.java, HeartBeatSharing.COLLECTION_NAME)
-            .asFlow().map { it.getObjectId("_id").toHexString() }.toSet(hashSetOf())
+    override suspend fun findIdsByUserId(userId: String, locked: Boolean, pageable: Pageable): Set<String> {
+        return mongoTemplate.findIdsByUserId(
+            collectionName = HeartBeatSharing.COLLECTION_NAME,
+            userIdFieldName = "userId",
+            lockedFieldName = "locked",
+            userId, locked, pageable
+        )
     }
 }
