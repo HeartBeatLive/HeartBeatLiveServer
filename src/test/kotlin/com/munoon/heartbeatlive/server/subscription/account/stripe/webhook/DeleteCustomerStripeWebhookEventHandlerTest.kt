@@ -1,7 +1,7 @@
 package com.munoon.heartbeatlive.server.subscription.account.stripe.webhook
 
 import com.google.gson.JsonObject
-import com.munoon.heartbeatlive.server.subscription.account.stripe.service.StripeAccountSubscriptionService
+import com.munoon.heartbeatlive.server.subscription.account.stripe.service.StripeAccountService
 import com.stripe.Stripe
 import com.stripe.model.Customer
 import com.stripe.model.Event
@@ -28,12 +28,12 @@ internal class DeleteCustomerStripeWebhookEventHandlerTest : FreeSpec({
                 }
             }
 
-            val service = mockk<StripeAccountSubscriptionService>() {
+            val service = mockk<StripeAccountService>() {
                 coEvery { deleteCustomerByStripeId(any()) } returns Unit
             }
 
             ApplicationContextRunner()
-                .withBean(StripeAccountSubscriptionService::class.java, { service })
+                .withBean(StripeAccountService::class.java, { service })
                 .withBean(DeleteCustomerStripeWebhookEventHandler::class.java)
                 .run { context ->
                     context.publishEvent(event)
@@ -54,9 +54,9 @@ internal class DeleteCustomerStripeWebhookEventHandlerTest : FreeSpec({
                 }
             }
 
-            val service = mockk<StripeAccountSubscriptionService>()
+            val service = mockk<StripeAccountService>()
             ApplicationContextRunner()
-                .withBean(StripeAccountSubscriptionService::class.java, { service })
+                .withBean(StripeAccountService::class.java, { service })
                 .withBean(DeleteCustomerStripeWebhookEventHandler::class.java)
                 .run { context ->
                     context.publishEvent(event)
@@ -77,9 +77,9 @@ internal class DeleteCustomerStripeWebhookEventHandlerTest : FreeSpec({
                 }
             }
 
-            val service = mockk<StripeAccountSubscriptionService>()
+            val service = mockk<StripeAccountService>()
             ApplicationContextRunner()
-                .withBean(StripeAccountSubscriptionService::class.java, { service })
+                .withBean(StripeAccountService::class.java, { service })
                 .withBean(DeleteCustomerStripeWebhookEventHandler::class.java)
                 .run { context ->
                     context.publishEvent(event)

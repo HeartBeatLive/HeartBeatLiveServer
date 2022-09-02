@@ -35,12 +35,14 @@ class FailedRecurringPaymentStripeWebhookEventHandler(
 
         val userId = StripeMetadata.Subscription.USER_ID.getValue(subscription.metadata)
         if (userId == null) {
-            logger.warn("Ignoring 'customer.subscription.updated' stripe event as no user id found in subscription metadata")
+            logger.warn("Ignoring 'customer.subscription.updated' stripe event " +
+                    "as no user id found in subscription metadata")
             return
         }
 
         if (subscription.latestInvoice == null) {
-            logger.warn("Ignoring 'customer.subscription.updated' stripe event as no latest invoice id found in subscription info")
+            logger.warn("Ignoring 'customer.subscription.updated' stripe event " +
+                    "as no latest invoice id found in subscription info")
             return
         }
 

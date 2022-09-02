@@ -1,6 +1,6 @@
 package com.munoon.heartbeatlive.server.subscription.account.stripe.webhook
 
-import com.munoon.heartbeatlive.server.subscription.account.stripe.service.StripeAccountSubscriptionService
+import com.munoon.heartbeatlive.server.subscription.account.stripe.service.StripeAccountService
 import com.stripe.model.Customer
 import com.stripe.model.Event
 import kotlinx.coroutines.runBlocking
@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class DeleteCustomerStripeWebhookEventHandler(
-    private val service: StripeAccountSubscriptionService
+    private val service: StripeAccountService
 ) {
     private val logger = LoggerFactory.getLogger(UpdateUserSubscriptionStripeWebhookEventHandler::class.java)
 

@@ -1,9 +1,6 @@
 package com.munoon.heartbeatlive.server.subscription.account.limit
 
 import com.mongodb.client.result.UpdateResult
-import com.munoon.heartbeatlive.server.sharing.HeartBeatSharing
-import com.munoon.heartbeatlive.server.subscription.account.limit.AccountSubscriptionLimitUtils.findIdsByUserId
-import com.munoon.heartbeatlive.server.subscription.account.limit.AccountSubscriptionLimitUtils.lockAllById
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
@@ -217,46 +214,64 @@ internal class AccountSubscriptionLimitUtilsTest : FreeSpec({
         }
     }
 
-    "ReactiveMongoTemplate.lockAllById" {
-        val expectedQuery = Query.query(Criteria.where("_id").inValues(setOf("a", "b", "c")))
-        val expectedUpdate = BasicUpdate.update("lockFieldName", true)
-        val updateResult = UpdateResult.acknowledged(1, 1, null)
+    "SimpleAccountSubscriptionLimitRepository" - {
+        "lockAllById" {
+            val expectedQuery = Query.query(Criteria.where("_id").inValues(setOf("a", "b", "c")))
+            val expectedUpdate = BasicUpdate.update("lockedFieldName", true)
+            val updateResult = UpdateResult.acknowledged(1, 1, null)
 
-        val mongoTemplate = mockk<ReactiveMongoTemplate>() {
-            every { updateMulti(any(), any(), any<Class<*>>()) } returns updateResult.toMono()
+            val mongoTemplate = mockk<ReactiveMongoTemplate>() {
+                every { updateMulti(any(), any(), any<String>()) } returns updateResult.toMono()
+            }
+
+            val repository = object : SimpleAccountSubscriptionLimitRepository(
+                mongoTemplate,
+                collectionName = "testCollection",
+                userIdFieldName = "userId",
+                lockedFieldName = "lockedFieldName"
+            ) {
+                override suspend fun countAllByUserId(userId: String) = 0
+                override suspend fun countAllByUserIdAndLockedTrue(userId: String) = 0
+            }
+
+            repository.lockAllById(
+                ids = setOf("a", "b", "c"),
+                lock = true
+            )
+
+            verify(exactly = 1) { mongoTemplate.updateMulti(expectedQuery, expectedUpdate, "testCollection") }
         }
 
-        mongoTemplate.lockAllById<HeartBeatSharing>(
-            lockFieldName = "lockFieldName",
-            ids = setOf("a", "b", "c"),
-            lock = true
-        )
+        "findIdsByUserId" {
+            val expectedIds = setOf(ObjectId(), ObjectId(), ObjectId()).map { it.toHexString() }.toSet()
+            val expectedQuery = Query.query(Criteria.where("userIdField").isEqualTo("user1")
+                .and("lockedField").isEqualTo(true))
+                .with(PageRequest.of(0, 20))
+            expectedQuery.fields().include("_id")
 
-        verify(exactly = 1) { mongoTemplate.updateMulti(expectedQuery, expectedUpdate, HeartBeatSharing::class.java) }
-    }
+            val mongoTemplate = mockk<ReactiveMongoTemplate>() {
+                every { find(any(), any<Class<*>>(), any()) } returns Flux.fromIterable(expectedIds)
+                    .map { Document(mapOf("_id" to ObjectId(it))) }
+            }
 
-    "ReactiveMongoTemplate.findIdsByUserId" {
-        val expectedIds = setOf(ObjectId(), ObjectId(), ObjectId()).map { it.toHexString() }.toSet()
-        val expectedQuery = Query.query(Criteria.where("userIdField").isEqualTo("user1")
-            .and("lockedField").isEqualTo(true))
-            .with(PageRequest.of(0, 20))
-        expectedQuery.fields().include("_id")
+            val repository = object : SimpleAccountSubscriptionLimitRepository(
+                mongoTemplate,
+                collectionName = "testCollection",
+                userIdFieldName = "userIdField",
+                lockedFieldName = "lockedField"
+            ) {
+                override suspend fun countAllByUserId(userId: String) = 0
+                override suspend fun countAllByUserIdAndLockedTrue(userId: String) = 0
+            }
 
-        val mongoTemplate = mockk<ReactiveMongoTemplate>() {
-            every { find(any(), any<Class<*>>(), any()) } returns Flux.fromIterable(expectedIds)
-                .map { Document(mapOf("_id" to ObjectId(it))) }
+            val result = repository.findIdsByUserId(
+                userId = "user1",
+                pageable = PageRequest.of(0, 20),
+                locked = true
+            )
+            result shouldBe expectedIds
+
+            verify(exactly = 1) { mongoTemplate.find(expectedQuery, Document::class.java, "testCollection") }
         }
-
-        val result = mongoTemplate.findIdsByUserId(
-            collectionName = "testCollection",
-            userIdFieldName = "userIdField",
-            lockedFieldName = "lockedField",
-            userId = "user1",
-            pageable = PageRequest.of(0, 20),
-            locked = true
-        )
-        result shouldBe expectedIds
-
-        verify(exactly = 1) { mongoTemplate.find(expectedQuery, Document::class.java, "testCollection") }
     }
 })

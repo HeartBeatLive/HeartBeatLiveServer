@@ -72,10 +72,17 @@ class SendHeartRateMatchHeartRateInfoHandler(
         val userAWantToReceiveNotificationsOfUserB =
             userASubscription.getBoolean("receiveHeartRateMatchNotifications")
 
-        if (userAWantToReceiveNotificationsOfUserB && !usersThatReceivedNotification.contains(userAId)
-            && checkIsAccountSubscriptionAllow(userA.get("subscription", Document::class.java))
-            && checkSubscriptionIsUnlocked(userASubscription)) {
+        val sendHeartRateToUserA = userAWantToReceiveNotificationsOfUserB
+                && !usersThatReceivedNotification.contains(userAId)
+                && checkIsAccountSubscriptionAllow(userA.get("subscription", Document::class.java))
+                && checkSubscriptionIsUnlocked(userASubscription)
 
+        val sendHeartRateToUserB = userBWantToReceiveNotificationsOfUserA
+                && !usersThatReceivedNotification.contains(userBId)
+                && checkIsAccountSubscriptionAllow(userB.get("subscription", Document::class.java))
+                && checkSubscriptionIsUnlocked(document)
+
+        if (sendHeartRateToUserA) {
             result += HeartRateMatchPushNotificationData(
                 heartRate = heartRate,
                 userId = userAId,
@@ -84,10 +91,7 @@ class SendHeartRateMatchHeartRateInfoHandler(
             )
         }
 
-        if (userBWantToReceiveNotificationsOfUserA && !usersThatReceivedNotification.contains(userBId)
-            && checkIsAccountSubscriptionAllow(userB.get("subscription", Document::class.java))
-            && checkSubscriptionIsUnlocked(document)) {
-
+        if (sendHeartRateToUserB) {
             result += HeartRateMatchPushNotificationData(
                 heartRate = heartRate,
                 userId = userBId,

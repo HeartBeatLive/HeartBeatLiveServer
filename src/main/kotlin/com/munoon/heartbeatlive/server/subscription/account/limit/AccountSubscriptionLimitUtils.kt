@@ -48,37 +48,6 @@ object AccountSubscriptionLimitUtils {
             }
         }
     }
-
-    suspend inline fun <reified T> ReactiveMongoTemplate.lockAllById(
-        lockFieldName: String,
-        ids: Set<String>,
-        lock: Boolean
-    ) {
-        val query = Query.query(Criteria.where("_id").inValues(ids))
-        val update = BasicUpdate.update(lockFieldName, lock)
-        updateMulti(query, update, T::class.java).awaitSingle()
-    }
-
-    suspend fun ReactiveMongoTemplate.findIdsByUserId(
-        collectionName: String,
-        userIdFieldName: String,
-        lockedFieldName: String,
-        userId: String,
-        locked: Boolean,
-        pageable: Pageable
-    ): Set<String> {
-        val criteria = Criteria.where(userIdFieldName).isEqualTo(userId)
-            .and(lockedFieldName).isEqualTo(locked)
-
-        val query = Query.query(criteria)
-            .with(pageable)
-            .apply { fields().include("_id") }
-
-        return find(query, Document::class.java, collectionName)
-            .asFlow()
-            .map { it.getObjectId("_id").toHexString() }
-            .toSet(hashSetOf())
-    }
 }
 
 interface AccountSubscriptionLimitRepository<I> {
@@ -89,4 +58,33 @@ interface AccountSubscriptionLimitRepository<I> {
     suspend fun findIdsByUserId(userId: String, locked: Boolean, pageable: Pageable): Set<I>
 
     suspend fun lockAllById(ids: Set<I>, lock: Boolean)
+}
+
+abstract class SimpleAccountSubscriptionLimitRepository(
+    private val mongoTemplate: ReactiveMongoTemplate,
+    private val collectionName: String,
+    private val userIdFieldName: String,
+    private val lockedFieldName: String,
+    private val idFieldName: String = "_id"
+) : AccountSubscriptionLimitRepository<String> {
+    override suspend fun findIdsByUserId(userId: String, locked: Boolean, pageable: Pageable): Set<String> {
+        val criteria = Criteria.where(userIdFieldName).isEqualTo(userId)
+            .and(lockedFieldName).isEqualTo(locked)
+
+        val query = Query.query(criteria)
+            .with(pageable)
+            .apply { fields().include(idFieldName) }
+
+        return mongoTemplate.find(query, Document::class.java, collectionName)
+            .asFlow()
+            .map { it.getObjectId(idFieldName).toHexString() }
+            .toSet(hashSetOf())
+
+    }
+
+    override suspend fun lockAllById(ids: Set<String>, lock: Boolean) {
+        val query = Query.query(Criteria.where(idFieldName).inValues(ids))
+        val update = BasicUpdate.update(lockedFieldName, lock)
+        mongoTemplate.updateMulti(query, update, collectionName).awaitSingle()
+    }
 }

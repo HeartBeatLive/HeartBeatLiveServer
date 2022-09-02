@@ -61,7 +61,7 @@ class AccountSubscriptionService(
 
     private fun getPaymentProvider(providerName: PaymentProviderName) =
         providers.find { it.providerName == providerName }
-            ?: throw RuntimeException("Payment provider '$providerName' is not found!")
+            ?: throw IllegalArgumentException("Payment provider '$providerName' is not found!")
 
     @Async
     @EventListener

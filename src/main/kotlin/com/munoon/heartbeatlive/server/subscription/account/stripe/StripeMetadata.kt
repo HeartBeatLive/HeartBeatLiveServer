@@ -10,7 +10,8 @@ object StripeMetadata {
 
     object Subscription {
         val REFUND_DURATION: StripeMetadata<Duration> = DurationMetadata("refundSeconds")
-        val SUBSCRIPTION_PLAN: StripeMetadata<UserSubscriptionPlan> = EnumMetadata("subscriptionPlan", UserSubscriptionPlan::class)
+        val SUBSCRIPTION_PLAN: StripeMetadata<UserSubscriptionPlan> =
+            EnumMetadata("subscriptionPlan", UserSubscriptionPlan::class)
         val USER_ID: StripeMetadata<String> = USER_ID_METADATA
     }
 

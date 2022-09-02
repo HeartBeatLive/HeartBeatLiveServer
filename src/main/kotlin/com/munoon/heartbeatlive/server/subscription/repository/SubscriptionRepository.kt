@@ -1,8 +1,7 @@
 package com.munoon.heartbeatlive.server.subscription.repository
 
 import com.munoon.heartbeatlive.server.subscription.Subscription
-import com.munoon.heartbeatlive.server.subscription.account.limit.AccountSubscriptionLimitUtils.findIdsByUserId
-import com.munoon.heartbeatlive.server.subscription.account.limit.AccountSubscriptionLimitUtils.lockAllById
+import com.munoon.heartbeatlive.server.subscription.account.limit.SimpleAccountSubscriptionLimitRepository
 import kotlinx.coroutines.flow.Flow
 import org.springframework.data.domain.Pageable
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate
@@ -11,7 +10,8 @@ import org.springframework.data.repository.kotlin.CoroutineSortingRepository
 import org.springframework.stereotype.Repository
 import reactor.core.publisher.Flux
 
-interface SubscriptionRepository : CoroutineSortingRepository<Subscription, String>, CustomSubscriptionRepository {
+@Suppress("TooManyFunctions")
+interface SubscriptionRepository : CoroutineSortingRepository<Subscription, String> {
     suspend fun countAllByUserId(userId: String): Int
 
     suspend fun findByUserIdAndSubscriberUserId(userId: String, subscriberUserId: String): Subscription?
@@ -42,43 +42,36 @@ interface SubscriptionRepository : CoroutineSortingRepository<Subscription, Stri
     suspend fun countAllLockedSubscribers(userId: String): Int
 }
 
-interface CustomSubscriptionRepository {
-    suspend fun findIdsBySubscriberUserId(userId: String, locked: Boolean, pageable: Pageable): Set<String>
+@Repository
+class SubscriptionMaxSubscriptionsLimitRepository(
+    mongoTemplate: ReactiveMongoTemplate,
+    private val subscriptionRepository: SubscriptionRepository
+) : SimpleAccountSubscriptionLimitRepository(
+    mongoTemplate,
+    collectionName = "subscription",
+    userIdFieldName = "subscriberUserId",
+    lockedFieldName = "lock.bySubscriber"
+) {
+    override suspend fun countAllByUserId(userId: String) =
+        subscriptionRepository.countAllBySubscriberUserId(userId)
 
-    suspend fun findIdsByUserId(userId: String, locked: Boolean, pageable: Pageable): Set<String>
-
-    suspend fun lockAllSubscriptionsWithIdByPublisher(ids: Set<String>, lock: Boolean)
-
-    suspend fun lockAllSubscriptionsWithIdBySubscriber(ids: Set<String>, lock: Boolean)
+    override suspend fun countAllByUserIdAndLockedTrue(userId: String) =
+        subscriptionRepository.countAllLockedSubscriptions(userId)
 }
 
 @Repository
-class CustomSubscriptionRepositoryImpl(
-    private val mongoTemplate: ReactiveMongoTemplate
-) : CustomSubscriptionRepository {
-    override suspend fun findIdsBySubscriberUserId(userId: String, locked: Boolean, pageable: Pageable): Set<String> {
-        return mongoTemplate.findIdsByUserId(
-            collectionName = "subscription",
-            userIdFieldName = "subscriberUserId",
-            lockedFieldName = "lock.bySubscriber",
-            userId, locked, pageable
-        )
-    }
+class SubscriptionMaxSubscribersLimitRepository(
+    mongoTemplate: ReactiveMongoTemplate,
+    private val subscriptionRepository: SubscriptionRepository
+) : SimpleAccountSubscriptionLimitRepository(
+    mongoTemplate,
+    collectionName = "subscription",
+    userIdFieldName = "userId",
+    lockedFieldName = "lock.byPublisher"
+) {
+    override suspend fun countAllByUserId(userId: String) =
+        subscriptionRepository.countAllByUserId(userId)
 
-    override suspend fun findIdsByUserId(userId: String, locked: Boolean, pageable: Pageable): Set<String> {
-        return mongoTemplate.findIdsByUserId(
-            collectionName = "subscription",
-            userIdFieldName = "userId",
-            lockedFieldName = "lock.byPublisher",
-            userId, locked, pageable
-        )
-    }
-
-    override suspend fun lockAllSubscriptionsWithIdByPublisher(ids: Set<String>, lock: Boolean) {
-        return mongoTemplate.lockAllById<Subscription>(lockFieldName = "lock.byPublisher", ids, lock)
-    }
-
-    override suspend fun lockAllSubscriptionsWithIdBySubscriber(ids: Set<String>, lock: Boolean) {
-        return mongoTemplate.lockAllById<Subscription>(lockFieldName = "lock.bySubscriber", ids, lock)
-    }
+    override suspend fun countAllByUserIdAndLockedTrue(userId: String) =
+        subscriptionRepository.countAllLockedSubscribers(userId)
 }

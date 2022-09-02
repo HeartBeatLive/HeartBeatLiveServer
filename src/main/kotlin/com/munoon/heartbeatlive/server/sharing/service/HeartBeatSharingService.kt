@@ -8,9 +8,9 @@ import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingNotFoundByIdExcep
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingNotFoundByPublicCodeException
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingUtils
 import com.munoon.heartbeatlive.server.sharing.model.GraphqlCreateSharingCodeInput
+import com.munoon.heartbeatlive.server.sharing.repository.HeartBeatSharingLimitRepository
 import com.munoon.heartbeatlive.server.sharing.repository.HeartBeatSharingRepository
 import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
-import com.munoon.heartbeatlive.server.subscription.account.limit.AccountSubscriptionLimitRepository
 import com.munoon.heartbeatlive.server.subscription.account.limit.AccountSubscriptionLimitUtils
 import com.munoon.heartbeatlive.server.subscription.account.limit.MaxSharingCodesAccountSubscriptionLimit
 import com.munoon.heartbeatlive.server.user.UserEvents
@@ -27,7 +27,8 @@ import java.time.Instant
 @Service
 class HeartBeatSharingService(
     private val repository: HeartBeatSharingRepository,
-    @Lazy private val maxSharingCodesAccountSubscriptionLimit: MaxSharingCodesAccountSubscriptionLimit
+    @Lazy private val maxSharingCodesAccountSubscriptionLimit: MaxSharingCodesAccountSubscriptionLimit,
+    private val heartBeatSharingLimitRepository: HeartBeatSharingLimitRepository
 ) {
     suspend fun createSharing(
         input: GraphqlCreateSharingCodeInput,
@@ -94,19 +95,7 @@ class HeartBeatSharingService(
         AccountSubscriptionLimitUtils.maintainALimit(
             userId, newLimit,
             baseSort = Sort.by("created"),
-            repository = object : AccountSubscriptionLimitRepository<String> {
-                override suspend fun countAllByUserId(userId: String) =
-                    repository.countAllByUserId(userId)
-
-                override suspend fun countAllByUserIdAndLockedTrue(userId: String) =
-                    repository.countAllByUserIdAndLockedTrue(userId)
-
-                override suspend fun findIdsByUserId(userId: String, locked: Boolean, pageable: Pageable) =
-                    repository.findIdsByUserId(userId, locked, pageable)
-
-                override suspend fun lockAllById(ids: Set<String>, lock: Boolean) =
-                    repository.lockAllById(ids, lock)
-            }
+            repository = heartBeatSharingLimitRepository
         )
 
     @Async

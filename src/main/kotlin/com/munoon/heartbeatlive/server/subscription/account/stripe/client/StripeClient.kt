@@ -54,12 +54,14 @@ class StripeClient(
         return makeStripeRequest(SUBSCRIPTIONS_PATH, HttpMethod.POST, subscription, idempotentKey)
     }
 
-    suspend fun updateSubscription(subscriptionId: String, subscription: SubscriptionUpdateParams, idempotentKey: String): Subscription {
+    suspend fun updateSubscription(subscriptionId: String, subscription: SubscriptionUpdateParams,
+                                   idempotentKey: String): Subscription {
         val uriSuffix = SUBSCRIPTIONS_PATH + "/" + ApiResource.urlEncodeId(subscriptionId)
         return makeStripeRequest(uriSuffix, HttpMethod.POST, subscription, idempotentKey)
     }
 
-    suspend fun cancelSubscription(subscriptionId: String, params: SubscriptionCancelParams?, idempotentKey: String): Subscription {
+    suspend fun cancelSubscription(subscriptionId: String, params: SubscriptionCancelParams?,
+                                   idempotentKey: String): Subscription {
         val uriSuffix = SUBSCRIPTIONS_PATH + "/" + ApiResource.urlEncodeId(subscriptionId)
         return makeStripeRequest(uriSuffix, HttpMethod.DELETE, params, idempotentKey)
     }

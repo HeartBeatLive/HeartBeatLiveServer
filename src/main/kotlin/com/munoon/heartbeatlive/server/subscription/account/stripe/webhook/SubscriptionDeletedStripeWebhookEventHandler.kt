@@ -31,14 +31,15 @@ class SubscriptionDeletedStripeWebhookEventHandler(private val userService: User
 
         val userId = StripeMetadata.Subscription.USER_ID.getValue(subscription.metadata)
         if (userId == null) {
-            logger.info("Ignoring 'customer.subscription.deleted' stripe event because no user id in metadata has found")
+            logger.info("Ignoring 'customer.subscription.deleted' stripe event " +
+                    "because no user id in metadata has found")
             return
         }
 
         runBlocking {
             val user = try {
                 userService.getUserById(userId)
-            } catch (e: UserNotFoundByIdException) {
+            } catch (_: UserNotFoundByIdException) {
                 return@runBlocking
             }
             val subscriptionDetails = user.subscription?.details

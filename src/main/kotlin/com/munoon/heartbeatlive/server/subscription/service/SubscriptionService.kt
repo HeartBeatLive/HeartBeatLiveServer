@@ -15,11 +15,12 @@ import com.munoon.heartbeatlive.server.subscription.SubscriptionUtils.validateUs
 import com.munoon.heartbeatlive.server.subscription.SubscriptionUtils.validateUserSubscriptionsCount
 import com.munoon.heartbeatlive.server.subscription.account.AccountSubscriptionUtils.getActiveSubscriptionPlan
 import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
-import com.munoon.heartbeatlive.server.subscription.account.limit.AccountSubscriptionLimitRepository
 import com.munoon.heartbeatlive.server.subscription.account.limit.AccountSubscriptionLimitUtils
 import com.munoon.heartbeatlive.server.subscription.account.limit.MaxSubscribersAccountSubscriptionLimit
 import com.munoon.heartbeatlive.server.subscription.account.limit.MaxSubscriptionsAccountSubscriptionLimit
 import com.munoon.heartbeatlive.server.subscription.model.GraphqlSubscribeOptionsInput
+import com.munoon.heartbeatlive.server.subscription.repository.SubscriptionMaxSubscribersLimitRepository
+import com.munoon.heartbeatlive.server.subscription.repository.SubscriptionMaxSubscriptionsLimitRepository
 import com.munoon.heartbeatlive.server.subscription.repository.SubscriptionRepository
 import com.munoon.heartbeatlive.server.user.UserEvents
 import com.munoon.heartbeatlive.server.user.service.UserService
@@ -34,12 +35,15 @@ import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 
 @Service
+@Suppress("LongParameterList", "TooManyFunctions")
 class SubscriptionService(
     private val repository: SubscriptionRepository,
     private val heartBeatSharingService: HeartBeatSharingService,
     private val userService: UserService,
     @Lazy private val maxSubscribersAccountSubscriptionLimit: MaxSubscribersAccountSubscriptionLimit,
     @Lazy private val maxSubscriptionsAccountSubscriptionLimit: MaxSubscriptionsAccountSubscriptionLimit,
+    private val subscriptionMaxSubscriptionsLimitRepository: SubscriptionMaxSubscriptionsLimitRepository,
+    private val subscriptionMaxSubscribersLimitRepository: SubscriptionMaxSubscribersLimitRepository,
     private val userBanService: UserBanService,
     private val eventPublisher: ApplicationEventPublisher
 ) {
@@ -123,38 +127,14 @@ class SubscriptionService(
         AccountSubscriptionLimitUtils.maintainALimit(
             userId, newLimit,
             baseSort = Sort.by("created"),
-            repository = object : AccountSubscriptionLimitRepository<String> {
-                override suspend fun countAllByUserId(userId: String) =
-                    repository.countAllByUserId(userId)
-
-                override suspend fun countAllByUserIdAndLockedTrue(userId: String) =
-                    repository.countAllLockedSubscribers(userId)
-
-                override suspend fun findIdsByUserId(userId: String, locked: Boolean, pageable: Pageable) =
-                    repository.findIdsByUserId(userId, locked, pageable)
-
-                override suspend fun lockAllById(ids: Set<String>, lock: Boolean) =
-                    repository.lockAllSubscriptionsWithIdByPublisher(ids, lock)
-            }
+            repository = subscriptionMaxSubscribersLimitRepository
         )
 
     suspend fun maintainMaxSubscriptionsLimit(userId: String, newLimit: Int) =
         AccountSubscriptionLimitUtils.maintainALimit(
             userId, newLimit,
             baseSort = Sort.by("created"),
-            repository = object : AccountSubscriptionLimitRepository<String> {
-                override suspend fun countAllByUserId(userId: String) =
-                    repository.countAllBySubscriberUserId(userId)
-
-                override suspend fun countAllByUserIdAndLockedTrue(userId: String) =
-                    repository.countAllLockedSubscriptions(userId)
-
-                override suspend fun findIdsByUserId(userId: String, locked: Boolean, pageable: Pageable) =
-                    repository.findIdsBySubscriberUserId(userId, locked, pageable)
-
-                override suspend fun lockAllById(ids: Set<String>, lock: Boolean) =
-                    repository.lockAllSubscriptionsWithIdBySubscriber(ids, lock)
-            }
+            repository = subscriptionMaxSubscriptionsLimitRepository
         )
 
     @Async

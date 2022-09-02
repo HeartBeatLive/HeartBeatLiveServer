@@ -20,8 +20,11 @@ class AccountSubscriptionController(
     private val logger = LoggerFactory.getLogger(AccountSubscriptionController::class.java)
 
     @QueryMapping
-    suspend fun getPaymentProvider(@Argument supportedProviders: List<GraphqlPaymentProviderName>): GraphqlPaymentProvider {
-        logger.info("User '${authUserIdOrAnonymous()}' request payment provider (supported providers: $supportedProviders)")
+    suspend fun getPaymentProvider(
+        @Argument supportedProviders: List<GraphqlPaymentProviderName>
+    ): GraphqlPaymentProvider {
+        logger.info("User '${authUserIdOrAnonymous()}' request payment provider " +
+                "(supported providers: $supportedProviders)")
         return accountSubscriptionService.getPaymentProviderInfo(supportedProviders.toSet()).asGraphqlProviderInfo()
     }
 

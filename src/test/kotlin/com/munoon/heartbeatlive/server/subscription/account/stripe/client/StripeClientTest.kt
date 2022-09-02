@@ -225,6 +225,7 @@ internal class StripeClientTest : FreeSpec({
     })
 })
 
+@Suppress("LongParameterList")
 fun <T> testMethod(
     methodName: String,
     responseJson: String,
@@ -245,6 +246,7 @@ fun <T> testMethod(
     }
 }
 
+@Suppress("LongParameterList")
 suspend fun <T> testSuccessful(
         responseJson: String,
         expectMethodResponse: T,

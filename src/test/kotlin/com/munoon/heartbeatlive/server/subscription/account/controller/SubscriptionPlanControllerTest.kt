@@ -100,13 +100,15 @@ class SubscriptionPlanControllerTest : AbstractGraphqlHttpTest() {
             .satisfyNoErrors()
             .path("getSubscriptionPlanByCodeName.codeName").isEqualsTo("pro")
             .path("getSubscriptionPlanByCodeName.displayName").isEqualsTo("Премиум")
-            .path("getSubscriptionPlanByCodeName.prices[0].id").entity(String::class.java).satisfies { it.shouldNotBeBlank() }
+            .path("getSubscriptionPlanByCodeName.prices[0].id").entity(String::class.java)
+                .satisfies { it.shouldNotBeBlank() }
             .path("getSubscriptionPlanByCodeName.prices[0].price.amount").isEqualsTo("5")
             .path("getSubscriptionPlanByCodeName.prices[0].price.currency").isEqualsTo("USD")
             .path("getSubscriptionPlanByCodeName.prices[0].oldPrice.amount").isEqualsTo("10")
             .path("getSubscriptionPlanByCodeName.prices[0].oldPrice.currency").isEqualsTo("USD")
             .path("getSubscriptionPlanByCodeName.prices[0].duration").isEqualsTo(Duration.ofDays(31).toSeconds())
-            .path("getSubscriptionPlanByCodeName.prices[1].id").entity(String::class.java).satisfies { it.shouldNotBeBlank() }
+            .path("getSubscriptionPlanByCodeName.prices[1].id").entity(String::class.java)
+                .satisfies { it.shouldNotBeBlank() }
             .path("getSubscriptionPlanByCodeName.prices[1].price.amount").isEqualsTo("2")
             .path("getSubscriptionPlanByCodeName.prices[1].price.currency").isEqualsTo("USD")
             .path("getSubscriptionPlanByCodeName.prices[1].oldPrice.amount").isEqualsTo("5")

@@ -30,6 +30,7 @@ class UpdateUserSubscriptionStripeWebhookEventHandler(
         )
     }
 
+    @Suppress("LongMethod", "ComplexMethod", "ReturnCount")
     @EventListener(condition = "#event.type == 'invoice.paid'")
     fun handleEvent(event: Event) {
         val invoice = event.dataObjectDeserializer?.`object`?.takeIf { it.isPresent }?.get() as? Invoice
@@ -49,7 +50,8 @@ class UpdateUserSubscriptionStripeWebhookEventHandler(
         }
 
         if (!REQUIRE_BILLING_REASON.contains(invoice.billingReason)) {
-            logger.warn("Ignoring 'invoice.paid' stripe event as invoice billing reason is '${invoice.billingReason}' (should be one of: $REQUIRE_BILLING_REASON)")
+            logger.warn("Ignoring 'invoice.paid' stripe event as invoice billing reason " +
+                    "is '${invoice.billingReason}' (should be one of: $REQUIRE_BILLING_REASON)")
             return
         }
 

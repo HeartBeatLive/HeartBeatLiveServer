@@ -16,7 +16,8 @@ object AccountSubscriptionUtils {
 
     fun User.getActiveSubscriptionPlan() = asSubscriptionJwt().getActiveSubscriptionPlan()
 
-    fun SubscriptionProperties.findSubscriptionPriceById(id: String): Pair<UserSubscriptionPlan, SubscriptionProperties.SubscriptionPrice> {
+    fun SubscriptionProperties.findSubscriptionPriceById(id: String):
+            Pair<UserSubscriptionPlan, SubscriptionProperties.SubscriptionPrice> {
         subscription.entries.forEach { (plan, subscription) ->
             subscription.prices.forEach { price ->
                 if (price.getId(plan) == id) return plan to price

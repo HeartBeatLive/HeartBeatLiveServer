@@ -15,6 +15,7 @@ import com.munoon.heartbeatlive.server.subscription.account.stripe.StripeAccount
 import com.munoon.heartbeatlive.server.subscription.account.stripe.model.GraphqlStripeRecurringChargeFailureInfo
 import com.munoon.heartbeatlive.server.subscription.account.stripe.model.GraphqlStripeSubscription
 import com.munoon.heartbeatlive.server.subscription.account.stripe.service.StripeAccountSubscriptionService
+import com.munoon.heartbeatlive.server.user.User
 import com.munoon.heartbeatlive.server.user.UserUtils.getVerifiedEmailAddress
 import com.munoon.heartbeatlive.server.user.service.UserService
 import org.slf4j.LoggerFactory
@@ -45,7 +46,12 @@ class StripeAccountSubscriptionController(
         if (price.stripePriceId == null) {
             throw SubscriptionPlanPriceIsNotFoundByIdException(subscriptionPlanPriceId)
         }
+        val user = validateUserBeforeCreatingSubscription()
 
+        return service.createSubscription(plan, price, user).asGraphql()
+    }
+
+    private suspend fun validateUserBeforeCreatingSubscription(): User {
         if (authUserSubscription() != UserSubscriptionPlan.FREE) {
             throw UserAlreadyHaveActiveSubscriptionException()
         }
@@ -55,8 +61,7 @@ class StripeAccountSubscriptionController(
         if (user.getActiveSubscriptionPlan() != UserSubscriptionPlan.FREE) {
             throw UserAlreadyHaveActiveSubscriptionException()
         }
-
-        return service.createSubscription(plan, price, user).asGraphql()
+        return user
     }
 
     @QueryMapping

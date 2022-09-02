@@ -115,9 +115,15 @@ internal class UpdateUserSubscriptionStripeWebhookEventHandlerTest : FreeSpec({
                 .run { context ->
                     context.publishEvent(event)
 
-                    coVerify(exactly = 1) { userService.updateUserSubscription("user1", expectedUserSubscription) }
-                    coVerify(exactly = 1) { emailService.send(SubscriptionInvoicePaidEmailMessage("email@example.com")) }
-                    coVerify(exactly = 1) { stripeAccountSubscriptionService.cleanUserFailedRecurringCharge("user1") }
+                    coVerify(exactly = 1) {
+                        userService.updateUserSubscription("user1", expectedUserSubscription)
+                    }
+                    coVerify(exactly = 1) {
+                        emailService.send(SubscriptionInvoicePaidEmailMessage("email@example.com"))
+                    }
+                    coVerify(exactly = 1) {
+                        stripeAccountSubscriptionService.cleanUserFailedRecurringCharge("user1")
+                    }
                 }
         }
 
@@ -189,9 +195,15 @@ internal class UpdateUserSubscriptionStripeWebhookEventHandlerTest : FreeSpec({
                         context.publishEvent(event)
                     } shouldBe NoUserVerifiedEmailAddressException("user1")
 
-                    coVerify(exactly = 1) { userService.updateUserSubscription("user1", expectedUserSubscription) }
-                    coVerify(exactly = 0) { emailService.send(any()) }
-                    coVerify(exactly = 1) { stripeAccountSubscriptionService.cleanUserFailedRecurringCharge("user1") }
+                    coVerify(exactly = 1) {
+                        userService.updateUserSubscription("user1", expectedUserSubscription)
+                    }
+                    coVerify(exactly = 0) {
+                        emailService.send(any())
+                    }
+                    coVerify(exactly = 1) {
+                        stripeAccountSubscriptionService.cleanUserFailedRecurringCharge("user1")
+                    }
                 }
         }
 
