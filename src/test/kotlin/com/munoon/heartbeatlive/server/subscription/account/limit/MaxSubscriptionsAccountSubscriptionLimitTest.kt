@@ -5,37 +5,40 @@ import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
 import com.munoon.heartbeatlive.server.subscription.service.SubscriptionService
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 
-internal class MaxSubscribersAccountSubscriptionLimitTest : FreeSpec({
-    val service = mockk<SubscriptionService>(relaxUnitFun = true)
+internal class MaxSubscriptionsAccountSubscriptionLimitTest : FreeSpec({
     val properties = SubscriptionProperties().apply {
         subscription = mapOf(
-            UserSubscriptionPlan.PRO to SubscriptionProperties.Subscription().apply {
-                limits = SubscriptionProperties.SubscriptionLimits().apply {
-                    maxSubscribersLimit = 5
-                }
-            },
             UserSubscriptionPlan.FREE to SubscriptionProperties.Subscription().apply {
                 limits = SubscriptionProperties.SubscriptionLimits().apply {
-                    maxSubscribersLimit = 3
+                    maxSubscriptionsLimit = 1
+                }
+            },
+            UserSubscriptionPlan.PRO to SubscriptionProperties.Subscription().apply {
+                limits = SubscriptionProperties.SubscriptionLimits().apply {
+                    maxSubscriptionsLimit = 5
                 }
             }
         )
     }
-    val limit = MaxSubscribersAccountSubscriptionLimit(properties, service)
+    val service = mockk<SubscriptionService>()
+    val limit = MaxSubscriptionsAccountSubscriptionLimit(properties, service)
 
     "getCurrentLimit" {
+        limit.getCurrentLimit(UserSubscriptionPlan.FREE) shouldBe 1
         limit.getCurrentLimit(UserSubscriptionPlan.PRO) shouldBe 5
-        limit.getCurrentLimit(UserSubscriptionPlan.FREE) shouldBe 3
     }
 
     "maintainALimit" {
-        limit.maintainALimit("user1", UserSubscriptionPlan.PRO)
-        coVerify(exactly = 1) { service.maintainMaxSubscribersLimit("user1", 5) }
+        coEvery { service.maintainMaxSubscriptionsLimit(any(), any()) } returns Unit
 
-        limit.maintainALimit("user1", UserSubscriptionPlan.FREE)
-        coVerify(exactly = 1) { service.maintainMaxSubscribersLimit("user1", 3) }
+        limit.maintainALimit("user1", UserSubscriptionPlan.PRO)
+        coVerify(exactly = 1) { service.maintainMaxSubscriptionsLimit("user1", 5) }
+
+        limit.maintainALimit("user2", UserSubscriptionPlan.FREE)
+        coVerify(exactly = 1) { service.maintainMaxSubscriptionsLimit("user2", 1) }
     }
 })

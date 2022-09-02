@@ -6,15 +6,15 @@ import com.munoon.heartbeatlive.server.subscription.service.SubscriptionService
 import org.springframework.stereotype.Component
 
 @Component
-class MaxSubscribersAccountSubscriptionLimit(
+class MaxSubscriptionsAccountSubscriptionLimit(
     private val subscriptionProperties: SubscriptionProperties,
     private val subscriptionService: SubscriptionService
 ) : AccountSubscriptionLimit<Int> {
     override fun getCurrentLimit(subscriptionPlan: UserSubscriptionPlan): Int {
-        return subscriptionProperties[subscriptionPlan].limits.maxSubscribersLimit
+        return subscriptionProperties[subscriptionPlan].limits.maxSubscriptionsLimit
     }
 
     override suspend fun maintainALimit(userId: String, newSubscriptionPlan: UserSubscriptionPlan) {
-        subscriptionService.maintainMaxSubscribersLimit(userId, getCurrentLimit(newSubscriptionPlan))
+        subscriptionService.maintainMaxSubscriptionsLimit(userId, getCurrentLimit(newSubscriptionPlan))
     }
 }

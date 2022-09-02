@@ -5,7 +5,7 @@ import java.time.Instant
 data class GraphqlSubscriptionInfo(
     val id: String,
     val subscribeTime: Instant,
-    val locked: Boolean,
+    val lock: GraphqlSubscriptionLockInfo,
 
     // for mapping only
     val userId: String,

@@ -26,7 +26,8 @@ interface SubscriptionRepository : CoroutineSortingRepository<Subscription, Stri
 
     suspend fun countAllBySubscriberUserId(subscriberUserId: String): Int
 
-    fun findAllByUserIdAndLockedFalse(userId: String): Flow<Subscription>
+    @Query("{ userId: ?0, lock: { byPublisher: false, bySubscriber: false } }")
+    fun findAllByUserIdAndUnlocked(userId: String): Flow<Subscription>
 
     @Query("{ \$or: [ { userId: ?0 }, { subscriberUserId: ?0 } ] }", delete = true)
     suspend fun deleteAllByUserIdOrSubscriberUserId(userId: String)
@@ -34,13 +35,21 @@ interface SubscriptionRepository : CoroutineSortingRepository<Subscription, Stri
     @Query("{ subscriberUserId: ?0, userId: ?1 }", delete = true)
     suspend fun deleteAllBySubscriberUserIdAndUserId(subscriberUserId: String, userId: String)
 
-    suspend fun countAllBySubscriberUserIdAndLockedTrue(userId: String): Int
+    @Query("{ subscriberUserId: ?0, 'lock.bySubscriber': true }", count = true)
+    suspend fun countAllLockedSubscriptions(subscriberUserId: String): Int
+
+    @Query("{ userId: ?0, 'lock.byPublisher': true }", count = true)
+    suspend fun countAllLockedSubscribers(userId: String): Int
 }
 
 interface CustomSubscriptionRepository {
     suspend fun findIdsBySubscriberUserId(userId: String, locked: Boolean, pageable: Pageable): Set<String>
 
-    suspend fun lockAllById(ids: Set<String>, lock: Boolean)
+    suspend fun findIdsByUserId(userId: String, locked: Boolean, pageable: Pageable): Set<String>
+
+    suspend fun lockAllSubscriptionsWithIdByPublisher(ids: Set<String>, lock: Boolean)
+
+    suspend fun lockAllSubscriptionsWithIdBySubscriber(ids: Set<String>, lock: Boolean)
 }
 
 @Repository
@@ -51,12 +60,25 @@ class CustomSubscriptionRepositoryImpl(
         return mongoTemplate.findIdsByUserId(
             collectionName = "subscription",
             userIdFieldName = "subscriberUserId",
-            lockedFieldName = "locked",
+            lockedFieldName = "lock.bySubscriber",
             userId, locked, pageable
         )
     }
 
-    override suspend fun lockAllById(ids: Set<String>, lock: Boolean) {
-        return mongoTemplate.lockAllById<Subscription>(lockFieldName = "locked", ids, lock)
+    override suspend fun findIdsByUserId(userId: String, locked: Boolean, pageable: Pageable): Set<String> {
+        return mongoTemplate.findIdsByUserId(
+            collectionName = "subscription",
+            userIdFieldName = "userId",
+            lockedFieldName = "lock.byPublisher",
+            userId, locked, pageable
+        )
+    }
+
+    override suspend fun lockAllSubscriptionsWithIdByPublisher(ids: Set<String>, lock: Boolean) {
+        return mongoTemplate.lockAllById<Subscription>(lockFieldName = "lock.byPublisher", ids, lock)
+    }
+
+    override suspend fun lockAllSubscriptionsWithIdBySubscriber(ids: Set<String>, lock: Boolean) {
+        return mongoTemplate.lockAllById<Subscription>(lockFieldName = "lock.bySubscriber", ids, lock)
     }
 }

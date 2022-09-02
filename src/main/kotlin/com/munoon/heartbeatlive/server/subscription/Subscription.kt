@@ -17,8 +17,13 @@ data class Subscription(
 
     val receiveHeartRateMatchNotifications: Boolean,
 
-    val locked: Boolean = false
+    val lock: Lock = Lock()
 ) {
+    data class Lock(
+        val byPublisher: Boolean = false,
+        val bySubscriber: Boolean = false
+    )
+
     companion object {
         const val UNIQUE_USER_ID_AND_SUBSCRIBER_USER_ID_INDEX = "subscription_unique_userId_subscriberUserId_index"
     }

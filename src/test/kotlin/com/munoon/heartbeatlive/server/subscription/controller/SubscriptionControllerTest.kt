@@ -58,7 +58,7 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
             subscriberUserId = "user1",
             created = created,
             receiveHeartRateMatchNotifications = false,
-            locked = true
+            lock = Subscription.Lock(bySubscriber = true)
         )
 
         val subscription = JwtUserSubscription(UserSubscriptionPlan.PRO, Instant.now().plusSeconds(60))
@@ -68,14 +68,24 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
                     subscribeBySharingCode(
                         sharingCode: "ABC123",
                         options: { receiveHeartRateMatchNotifications: true }
-                    ) { id, subscribeTime, locked }
+                    ) {
+                        id,
+                        subscribeTime,
+                        lock {
+                            locked,
+                            byPublisher,
+                            bySubscriber
+                        }
+                    }
                 }
             """.trimIndent())
             .execute()
             .satisfyNoErrors()
             .path("subscribeBySharingCode.id").isEqualsTo("subscription1")
             .path("subscribeBySharingCode.subscribeTime").isEqualsTo(Instant.ofEpochSecond(created.epochSecond))
-            .path("subscribeBySharingCode.locked").isEqualsTo(true)
+            .path("subscribeBySharingCode.lock.locked").isEqualsTo(true)
+            .path("subscribeBySharingCode.lock.byPublisher").isEqualsTo(false)
+            .path("subscribeBySharingCode.lock.bySubscriber").isEqualsTo(true)
 
         coVerify(exactly = 1) {
             service.subscribeBySharingCode("ABC123", "user1", UserSubscriptionPlan.PRO, expectedOptions)
@@ -91,7 +101,13 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
             .document("""
                 mutation {
                     subscribeBySharingCode(sharingCode: "ABC123") {
-                        id, subscribeTime, locked
+                        id,
+                        subscribeTime,
+                        lock {
+                            locked,
+                            byPublisher,
+                            bySubscriber
+                        }
                     }
                 }
             """.trimIndent())
@@ -114,7 +130,13 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
             .document("""
                 mutation {
                     subscribeBySharingCode(sharingCode: "ABC123") {
-                        id, subscribeTime, locked
+                        id,
+                        subscribeTime,
+                        lock {
+                            locked,
+                            byPublisher,
+                            bySubscriber
+                        }
                     }
                 }
             """.trimIndent())
@@ -134,7 +156,13 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
             .document("""
                 mutation {
                     subscribeBySharingCode(sharingCode: "") {
-                        id, subscribeTime, locked
+                        id,
+                        subscribeTime,
+                        lock {
+                            locked,
+                            byPublisher,
+                            bySubscriber
+                        }
                     }
                 }
             """.trimIndent())
@@ -153,7 +181,13 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
             .document("""
                 mutation {
                     subscribeBySharingCode(sharingCode: "ABC123") {
-                        id, subscribeTime, locked
+                        id,
+                        subscribeTime,
+                        lock {
+                            locked,
+                            byPublisher,
+                            bySubscriber
+                        }
                     }
                 }
             """.trimIndent())
@@ -176,7 +210,13 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
             .document("""
                 mutation {
                     subscribeBySharingCode(sharingCode: "ABC123") {
-                        id, subscribeTime, locked
+                        id,
+                        subscribeTime,
+                        lock {
+                            locked,
+                            byPublisher,
+                            bySubscriber
+                        }
                     }
                 }
             """.trimIndent())
@@ -196,7 +236,13 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
             .document("""
                 mutation {
                     subscribeBySharingCode(sharingCode: "ABC123") {
-                        id, subscribeTime, locked
+                        id,
+                        subscribeTime,
+                        lock {
+                            locked,
+                            byPublisher,
+                            bySubscriber
+                        }
                     }
                 }
             """.trimIndent())
@@ -268,14 +314,20 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
             subscriberUserId = "user2",
             created = created,
             receiveHeartRateMatchNotifications = false,
-            locked = true
+            lock = Subscription.Lock(bySubscriber = true)
         )
 
         graphqlTester.withUser(id = "user2")
             .document("""
                 query {
                     getSubscriptionById(id: "subscriptionId") {
-                        id, subscribeTime, locked
+                        id,
+                        subscribeTime,
+                        lock {
+                            locked,
+                            byPublisher,
+                            bySubscriber
+                        }
                     }
                 }
             """.trimIndent())
@@ -283,7 +335,9 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
             .satisfyNoErrors()
             .path("getSubscriptionById.id").isEqualsTo("subscriptionId")
             .path("getSubscriptionById.subscribeTime").isEqualsTo(Instant.ofEpochSecond(created.epochSecond))
-            .path("getSubscriptionById.locked").isEqualsTo(true)
+            .path("getSubscriptionById.lock.locked").isEqualsTo(true)
+            .path("getSubscriptionById.lock.byPublisher").isEqualsTo(false)
+            .path("getSubscriptionById.lock.bySubscriber").isEqualsTo(true)
 
         coVerify(exactly = 1) { service.getSubscriptionById(any()) }
     }
@@ -297,14 +351,20 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
             subscriberUserId = "user2",
             created = created,
             receiveHeartRateMatchNotifications = false,
-            locked = true
+            lock = Subscription.Lock(bySubscriber = true)
         )
 
         graphqlTester.withUser(id = "user1")
             .document("""
                 query {
                     getSubscriptionById(id: "subscriptionId") {
-                        id, subscribeTime, locked
+                        id,
+                        subscribeTime,
+                        lock {
+                            locked,
+                            byPublisher,
+                            bySubscriber
+                        }
                     }
                 }
             """.trimIndent())
@@ -312,7 +372,9 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
             .satisfyNoErrors()
             .path("getSubscriptionById.id").isEqualsTo("subscriptionId")
             .path("getSubscriptionById.subscribeTime").isEqualsTo(Instant.ofEpochSecond(created.epochSecond))
-            .path("getSubscriptionById.locked").isEqualsTo(true)
+            .path("getSubscriptionById.lock.locked").isEqualsTo(true)
+            .path("getSubscriptionById.lock.byPublisher").isEqualsTo(false)
+            .path("getSubscriptionById.lock.bySubscriber").isEqualsTo(true)
 
         coVerify(exactly = 1) { service.getSubscriptionById(any()) }
     }
@@ -326,7 +388,13 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
             .document("""
                 query {
                     getSubscriptionById(id: "subscriptionId") {
-                        id, subscribeTime, locked
+                        id,
+                        subscribeTime,
+                        lock {
+                            locked,
+                            byPublisher,
+                            bySubscriber
+                        }
                     }
                 }
             """.trimIndent())
@@ -355,7 +423,13 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
             .document("""
                 query {
                     getSubscriptionById(id: "subscriptionId") {
-                        id, subscribeTime, locked
+                        id,
+                        subscribeTime,
+                        lock {
+                            locked,
+                            byPublisher,
+                            bySubscriber
+                        }
                     }
                 }
             """.trimIndent())
@@ -376,7 +450,13 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
             .document("""
                 query {
                     getSubscriptionById(id: "subscriptionId") {
-                        id, subscribeTime, locked
+                        id,
+                        subscribeTime,
+                        lock {
+                            locked,
+                            byPublisher,
+                            bySubscriber
+                        }
                     }
                 }
             """.trimIndent())
@@ -402,25 +482,37 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
 
         val subscription1 = runBlocking {
             repository.save(Subscription(userId = "user1", subscriberUserId = "user2", created = created1,
-                receiveHeartRateMatchNotifications = false, locked = true))
+                receiveHeartRateMatchNotifications = false, lock = Subscription.Lock(bySubscriber = true)))
         }
         val subscription2 = runBlocking {
             repository.save(Subscription(userId = "user1", subscriberUserId = "user3", created = created2,
-                receiveHeartRateMatchNotifications = false, locked = false))
+                receiveHeartRateMatchNotifications = false))
         }
 
         val expectedItem1 = mapOf("id" to subscription1.id, "subscribeTime" to created1.epochSecond.toInt(),
-            "locked" to true)
+            "lock" to mapOf("locked" to true, "byPublisher" to false, "bySubscriber" to true))
         val expectedItem2 = mapOf("id" to subscription2.id, "subscribeTime" to created2.epochSecond.toInt(),
-            "locked" to false)
+            "lock" to mapOf("locked" to false, "byPublisher" to false, "bySubscriber" to false))
 
         graphqlTester.withUser(id = "user1")
             .document("""
                 query {
                     getProfile {
                         subscribers(page: 0, size: 10, sort: CREATED_ASC) {
-                            content { id, subscribeTime, locked }
-                            pageInfo { totalPages, totalItems, hasNext }
+                            content {
+                                id,
+                                subscribeTime,
+                                lock {
+                                    locked,
+                                    byPublisher,
+                                    bySubscriber
+                                }
+                            }
+                            pageInfo {
+                                totalPages,
+                                totalItems,
+                                hasNext
+                            }
                         }
                     }
                 }
@@ -450,25 +542,37 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
 
         val subscription1 = runBlocking {
             repository.save(Subscription(userId = "user1", subscriberUserId = "user2", created = created1,
-                receiveHeartRateMatchNotifications = false, locked = true))
+                receiveHeartRateMatchNotifications = false, lock = Subscription.Lock(bySubscriber = true)))
         }
         val subscription2 = runBlocking {
             repository.save(Subscription(userId = "user1", subscriberUserId = "user3", created = created2,
-                receiveHeartRateMatchNotifications = false, locked = false))
+                receiveHeartRateMatchNotifications = false))
         }
 
         val expectedItem1 = mapOf("id" to subscription1.id, "subscribeTime" to created1.epochSecond.toInt(),
-            "locked" to true)
+            "lock" to mapOf("locked" to true, "byPublisher" to false, "bySubscriber" to true))
         val expectedItem2 = mapOf("id" to subscription2.id, "subscribeTime" to created2.epochSecond.toInt(),
-            "locked" to false)
+            "lock" to mapOf("locked" to false, "byPublisher" to false, "bySubscriber" to false))
 
         graphqlTester.withUser(id = "user1")
             .document("""
                 query {
                     getProfile {
                         subscribers(page: 0, size: 10, sort: CREATED_DESC) {
-                            content { id, subscribeTime, locked }
-                            pageInfo { totalPages, totalItems, hasNext }
+                            content {
+                                id,
+                                subscribeTime,
+                                lock {
+                                    locked,
+                                    byPublisher,
+                                    bySubscriber
+                                }
+                            }
+                            pageInfo {
+                                totalPages,
+                                totalItems,
+                                hasNext
+                            }
                         }
                     }
                 }
@@ -498,25 +602,37 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
 
         val subscription1 = runBlocking {
             repository.save(Subscription(userId = "user2", subscriberUserId = "user1", created = created1,
-                receiveHeartRateMatchNotifications = false, locked = true))
+                receiveHeartRateMatchNotifications = false, lock = Subscription.Lock(bySubscriber = true)))
         }
         val subscription2 = runBlocking {
             repository.save(Subscription(userId = "user3", subscriberUserId = "user1", created = created2,
-                receiveHeartRateMatchNotifications = false, locked = false))
+                receiveHeartRateMatchNotifications = false))
         }
 
         val expectedItem1 = mapOf("id" to subscription1.id, "subscribeTime" to created1.epochSecond.toInt(),
-            "locked" to true)
+            "lock" to mapOf("locked" to true, "byPublisher" to false, "bySubscriber" to true))
         val expectedItem2 = mapOf("id" to subscription2.id, "subscribeTime" to created2.epochSecond.toInt(),
-            "locked" to false)
+            "lock" to mapOf("locked" to false, "byPublisher" to false, "bySubscriber" to false))
 
         graphqlTester.withUser(id = "user1")
             .document("""
                 query {
                     getProfile {
                         subscriptions(page: 0, size: 10, sort: CREATED_ASC) {
-                            content { id, subscribeTime, locked }
-                            pageInfo { totalPages, totalItems, hasNext }
+                            content {
+                                id,
+                                subscribeTime,
+                                lock {
+                                    locked,
+                                    byPublisher,
+                                    bySubscriber
+                                }
+                            }
+                                pageInfo {
+                                totalPages,
+                                totalItems,
+                                hasNext
+                            }
                         }
                     }
                 }
@@ -546,25 +662,37 @@ internal class SubscriptionControllerTest : AbstractGraphqlHttpTest() {
 
         val subscription1 = runBlocking {
             repository.save(Subscription(userId = "user2", subscriberUserId = "user1", created = created1,
-                receiveHeartRateMatchNotifications = false, locked = true))
+                receiveHeartRateMatchNotifications = false, lock = Subscription.Lock(bySubscriber = true)))
         }
         val subscription2 = runBlocking {
             repository.save(Subscription(userId = "user3", subscriberUserId = "user1", created = created2,
-                receiveHeartRateMatchNotifications = false, locked = false))
+                receiveHeartRateMatchNotifications = false))
         }
 
         val expectedItem1 = mapOf("id" to subscription1.id, "subscribeTime" to created1.epochSecond.toInt(),
-            "locked" to true)
+            "lock" to mapOf("locked" to true, "byPublisher" to false, "bySubscriber" to true))
         val expectedItem2 = mapOf("id" to subscription2.id, "subscribeTime" to created2.epochSecond.toInt(),
-            "locked" to false)
+            "lock" to mapOf("locked" to false, "byPublisher" to false, "bySubscriber" to false))
 
         graphqlTester.withUser(id = "user1")
             .document("""
                 query {
                     getProfile {
                         subscriptions(page: 0, size: 10, sort: CREATED_DESC) {
-                            content { id, subscribeTime, locked }
-                            pageInfo { totalPages, totalItems, hasNext }
+                            content {
+                                id,
+                                subscribeTime,
+                                lock {
+                                    locked,
+                                    byPublisher,
+                                    bySubscriber
+                                }
+                            }
+                            pageInfo {
+                                totalPages,
+                                totalItems,
+                                hasNext
+                            }
                         }
                     }
                 }
