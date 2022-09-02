@@ -6,11 +6,13 @@ import com.munoon.heartbeatlive.server.common.LookupAggregation
 import com.munoon.heartbeatlive.server.common.MapExpression
 import com.munoon.heartbeatlive.server.common.MongodbUtils.getList
 import com.munoon.heartbeatlive.server.config.properties.HeartRateStreamProperties
+import com.munoon.heartbeatlive.server.config.properties.SubscriptionProperties
 import com.munoon.heartbeatlive.server.heartrate.HeartRateUtils.mapHeartRateToInteger
 import com.munoon.heartbeatlive.server.push.HeartRateMatchPushNotificationData
 import com.munoon.heartbeatlive.server.push.PushNotification
 import com.munoon.heartbeatlive.server.push.PushNotificationData
 import com.munoon.heartbeatlive.server.push.service.PushNotificationService
+import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactive.asFlow
 import org.bson.Document
@@ -27,17 +29,20 @@ import org.springframework.data.mongodb.core.aggregation.ConvertOperators.ToDate
 import org.springframework.data.mongodb.core.aggregation.ConvertOperators.ToInt.toInt
 import org.springframework.data.mongodb.core.aggregation.ConvertOperators.ToString.toString
 import org.springframework.data.mongodb.core.aggregation.EvaluationOperators.EvaluationOperatorFactory.Expr
-import org.springframework.data.mongodb.core.query.Criteria
+import org.springframework.data.mongodb.core.aggregation.MatchOperation
+import org.springframework.data.mongodb.core.query.Criteria.where
 import org.springframework.data.mongodb.core.query.isEqualTo
 import org.springframework.stereotype.Component
 import java.time.Instant
+import java.util.*
 import kotlin.reflect.jvm.jvmName
 
 @Component
 class SendHeartRateMatchHeartRateInfoHandler(
     private val mongoTemplate: ReactiveMongoTemplate,
     private val pushNotificationService: PushNotificationService,
-    private val heartRateStreamProperties: HeartRateStreamProperties
+    private val heartRateStreamProperties: HeartRateStreamProperties,
+    private val subscriptionProperties: SubscriptionProperties
 ) : HeartRateInfoHandler {
     override suspend fun handleHeartRateInfo(userId: String, heartRate: Float) {
         val aggregation = buildAggregation(userId, heartRate)
@@ -67,7 +72,10 @@ class SendHeartRateMatchHeartRateInfoHandler(
         val userAWantToReceiveNotificationsOfUserB =
             userASubscription.getBoolean("receiveHeartRateMatchNotifications")
 
-        if (userAWantToReceiveNotificationsOfUserB && !usersThatReceivedNotification.contains(userAId)) {
+        if (userAWantToReceiveNotificationsOfUserB && !usersThatReceivedNotification.contains(userAId)
+            && checkIsAccountSubscriptionAllow(userA.get("subscription", Document::class.java))
+            && checkSubscriptionIsUnlocked(userASubscription)) {
+
             result += HeartRateMatchPushNotificationData(
                 heartRate = heartRate,
                 userId = userAId,
@@ -76,7 +84,10 @@ class SendHeartRateMatchHeartRateInfoHandler(
             )
         }
 
-        if (userBWantToReceiveNotificationsOfUserA && !usersThatReceivedNotification.contains(userBId)) {
+        if (userBWantToReceiveNotificationsOfUserA && !usersThatReceivedNotification.contains(userBId)
+            && checkIsAccountSubscriptionAllow(userB.get("subscription", Document::class.java))
+            && checkSubscriptionIsUnlocked(document)) {
+
             result += HeartRateMatchPushNotificationData(
                 heartRate = heartRate,
                 userId = userBId,
@@ -88,14 +99,14 @@ class SendHeartRateMatchHeartRateInfoHandler(
         return result
     }
 
-    private fun buildAggregation(userId: String, heartRate: Float) = Aggregation.newAggregation(
+    private fun buildAggregation(userId: String, heartRate: Float) = Aggregation.newAggregation(listOfNotNull(
         // {..Subscription}
         matchSubscriptionsByUserId(userId),
 
         // {..Subscription, userB = [{..Subscription}]}
         findTwoWaySubscriptions(userId),
 
-        filterWithNotificationsOn,
+        filterWithNotificationsOnAndUnlocked,
 
         // {..Subscription, userB = [{..Subscription}], userBInfo=[{..User}]}
         getUserBInfo,
@@ -119,11 +130,13 @@ class SendHeartRateMatchHeartRateInfoHandler(
         //   ..Subscription, userB = [{..Subscription}], userBInfo=[{..User}],
         //   usersThatReceivedNotification=[repeated {_id: `userId`}], userAInfo=[{..User}]
         // }
-        getUserAInfo
-    )
+        getUserAInfo,
+
+        filterIfBothAccountSubscriptionUnsupported
+    ))
 
     private fun matchSubscriptionsByUserId(userId: String) =
-        Aggregation.match(Criteria.where("userId").isEqualTo(userId))
+        Aggregation.match(where("userId").isEqualTo(userId))
 
     private fun findTwoWaySubscriptions(userId: String) = LookupAggregation(
         from = "subscription",
@@ -131,7 +144,7 @@ class SendHeartRateMatchHeartRateInfoHandler(
         foreignField = "userId",
         asField = "userB",
         pipeline = Aggregation.newAggregation(
-            Aggregation.match(Criteria.where("subscriberUserId").isEqualTo(userId)),
+            Aggregation.match(where("subscriberUserId").isEqualTo(userId)),
             Aggregation.limit(1)
         )
     )
@@ -192,6 +205,43 @@ class SendHeartRateMatchHeartRateInfoHandler(
     private val heartRateMatchPush: HeartRateStreamProperties.HeartRateMatchPushSettings
         get() = heartRateStreamProperties.heartRateMatchPush
 
+    private val filterIfBothAccountSubscriptionUnsupported: MatchOperation?
+        get() {
+            if (subscriptionProperties[UserSubscriptionPlan.FREE].limits.receiveHeartRateMatchNotification) {
+                return null
+            }
+
+            val subscriptionPlansThatCouldReceiveNotification = subscriptionProperties.subscription.keys
+                .filter { subscriptionProperties[it].limits.receiveHeartRateMatchNotification }
+
+            return Aggregation.match(
+                or(
+                    and(
+                        mapOf("userAInfo.0.subscription.plan" to
+                                mapOf("\$in" to subscriptionPlansThatCouldReceiveNotification)),
+                        mapOf("userAInfo.0.subscription.expiresAt" to
+                                mapOf("\$gt" to Instant.now()))
+
+                    ),
+                    and(
+                        mapOf("userBInfo.0.subscription.plan" to
+                                mapOf("\$in" to subscriptionPlansThatCouldReceiveNotification)),
+                        mapOf("userBInfo.0.subscription.expiresAt" to
+                                mapOf("\$gt" to Instant.now()))
+                    )
+                )
+            )
+        }
+
+    private fun checkIsAccountSubscriptionAllow(accountSubscription: Document?): Boolean {
+        if (accountSubscription == null || accountSubscription.getDate("expiresAt") < Date()) {
+            return subscriptionProperties[UserSubscriptionPlan.FREE].limits.receiveHeartRateMatchNotification
+        }
+
+        val userSubscriptionPlan = UserSubscriptionPlan.valueOf(accountSubscription.getString("plan"))
+        return subscriptionProperties[userSubscriptionPlan].limits.receiveHeartRateMatchNotification
+    }
+
     private companion object {
         val HEART_RATE_MATCH_NOTIFICATION_DATA_CLASS_NAME =
             toString(PushNotification.Data.HeartRateMatchData::class.jvmName)
@@ -210,10 +260,22 @@ class SendHeartRateMatchHeartRateInfoHandler(
             asField = "userBInfo"
         )
 
-        val filterWithNotificationsOn = Aggregation.match(
-            or(
-                mapOf("receiveHeartRateMatchNotifications" to true),
-                mapOf("userB.receiveHeartRateMatchNotifications" to true)
+        val filterWithNotificationsOnAndUnlocked = Aggregation.match(
+            and(
+                or(
+                    and(
+                        mapOf("lock.byPublisher" to false),
+                        mapOf("lock.bySubscriber" to false)
+                    ),
+                    and(
+                        mapOf("userB.lock.byPublisher" to false),
+                        mapOf("userB.lock.bySubscriber" to false)
+                    )
+                ),
+                or(
+                    mapOf("receiveHeartRateMatchNotifications" to true),
+                    mapOf("userB.receiveHeartRateMatchNotifications" to true)
+                )
             )
         )
 
@@ -229,5 +291,10 @@ class SendHeartRateMatchHeartRateInfoHandler(
                 ).equalTo(toInt(-1))
             ))
         )
+
+        fun checkSubscriptionIsUnlocked(subscription: Document): Boolean {
+            val lock = subscription.get("lock", Document::class.java)
+            return !lock.getBoolean("byPublisher") && !lock.getBoolean("bySubscriber")
+        }
     }
 }

@@ -46,6 +46,7 @@ app:
         max-sharing-codes-limit: 2
         max-subscribers-limit: 1
         max-subscriptions-limit: 1
+        receive-heart-rate-match-notification: false
       info:
         description-items:
           en:
@@ -64,6 +65,7 @@ app:
         max-sharing-codes-limit: 20
         max-subscribers-limit: 30
         max-subscriptions-limit: 30
+        receive-heart-rate-match-notification: true
       prices:
         - price: 5
           currency: USD

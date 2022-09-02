@@ -23,6 +23,7 @@ class SubscriptionProperties {
         var maxSharingCodesLimit: Int = 100
         var maxSubscribersLimit: Int = 10
         var maxSubscriptionsLimit: Int = 15
+        var receiveHeartRateMatchNotification: Boolean = false
     }
 
     class SubscriptionInfo {
