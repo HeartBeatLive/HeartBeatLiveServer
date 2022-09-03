@@ -1,0 +1,14 @@
+app:
+  subscription:
+    pro:
+      prices:
+        - price: 5
+          currency: USD
+          duration: P31D
+          old-price: 10
+          stripe-price-id: "stripe_price_1"
+        - price: 2
+          currency: USD
+          duration: P7D
+          old-price: 5
+          stripe-price-id: "stripe_price_2"

@@ -4,8 +4,8 @@ import com.munoon.heartbeatlive.server.ban.UserBanEvents
 import com.munoon.heartbeatlive.server.ban.UserBanUtils.validateUserBanned
 import com.munoon.heartbeatlive.server.ban.service.UserBanService
 import com.munoon.heartbeatlive.server.common.PageResult
-import com.munoon.heartbeatlive.server.config.properties.SubscriptionProperties
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingUtils.checkExpired
+import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingUtils.checkUnlocked
 import com.munoon.heartbeatlive.server.sharing.service.HeartBeatSharingService
 import com.munoon.heartbeatlive.server.subscription.SelfSubscriptionAttemptException
 import com.munoon.heartbeatlive.server.subscription.Subscription
@@ -13,30 +13,44 @@ import com.munoon.heartbeatlive.server.subscription.SubscriptionEvent
 import com.munoon.heartbeatlive.server.subscription.SubscriptionNotFoundByIdException
 import com.munoon.heartbeatlive.server.subscription.SubscriptionUtils.validateUserSubscribersCount
 import com.munoon.heartbeatlive.server.subscription.SubscriptionUtils.validateUserSubscriptionsCount
-import com.munoon.heartbeatlive.server.subscription.account.service.AccountSubscriptionService
+import com.munoon.heartbeatlive.server.subscription.account.AccountSubscriptionUtils.getActiveSubscriptionPlan
+import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
+import com.munoon.heartbeatlive.server.subscription.account.limit.AccountSubscriptionLimitUtils
+import com.munoon.heartbeatlive.server.subscription.account.limit.MaxSubscribersAccountSubscriptionLimit
+import com.munoon.heartbeatlive.server.subscription.account.limit.MaxSubscriptionsAccountSubscriptionLimit
 import com.munoon.heartbeatlive.server.subscription.model.GraphqlSubscribeOptionsInput
+import com.munoon.heartbeatlive.server.subscription.repository.SubscriptionMaxSubscribersLimitRepository
+import com.munoon.heartbeatlive.server.subscription.repository.SubscriptionMaxSubscriptionsLimitRepository
 import com.munoon.heartbeatlive.server.subscription.repository.SubscriptionRepository
 import com.munoon.heartbeatlive.server.user.UserEvents
+import com.munoon.heartbeatlive.server.user.service.UserService
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.runBlocking
 import org.springframework.context.ApplicationEventPublisher
+import org.springframework.context.annotation.Lazy
 import org.springframework.context.event.EventListener
 import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 
 @Service
+@Suppress("LongParameterList", "TooManyFunctions")
 class SubscriptionService(
     private val repository: SubscriptionRepository,
     private val heartBeatSharingService: HeartBeatSharingService,
-    private val accountSubscriptionService: AccountSubscriptionService,
-    private val subscriptionProperties: SubscriptionProperties,
+    private val userService: UserService,
+    @Lazy private val maxSubscribersAccountSubscriptionLimit: MaxSubscribersAccountSubscriptionLimit,
+    @Lazy private val maxSubscriptionsAccountSubscriptionLimit: MaxSubscriptionsAccountSubscriptionLimit,
+    private val subscriptionMaxSubscriptionsLimitRepository: SubscriptionMaxSubscriptionsLimitRepository,
+    private val subscriptionMaxSubscribersLimitRepository: SubscriptionMaxSubscribersLimitRepository,
     private val userBanService: UserBanService,
     private val eventPublisher: ApplicationEventPublisher
 ) {
     suspend fun subscribeBySharingCode(
         code: String,
         userId: String,
+        userSubscriptionPlan: UserSubscriptionPlan,
         options: GraphqlSubscribeOptionsInput
     ): Subscription {
         val sharingCode = heartBeatSharingService.getSharingCodeByPublicCode(code)
@@ -45,9 +59,10 @@ class SubscriptionService(
         if (sharingCode.userId == userId) {
             throw SelfSubscriptionAttemptException()
         }
+        sharingCode.checkUnlocked()
         sharingCode.checkExpired()
+        validateUserSubscriptionsCount(userId, userSubscriptionPlan)
         validateUserSubscribersCount(sharingCode.userId)
-        validateUserSubscriptionsCount(userId)
         userBanService.validateUserBanned(userId, sharingCode.userId)
 
         // return existing subscription if it exists
@@ -94,17 +109,33 @@ class SubscriptionService(
 
     suspend fun checkUserHaveMaximumSubscribers(userId: String): Boolean {
         val subscribersCount = repository.countAllByUserId(userId)
-        val userSubscriptionPlan = accountSubscriptionService.getAccountSubscriptionByUserId(userId).subscriptionPlan
-        return subscribersCount >= subscriptionProperties[userSubscriptionPlan].maxSubscribersLimit
+        val userSubscriptionPlan = userService.getUserById(userId).getActiveSubscriptionPlan()
+        return subscribersCount >= maxSubscribersAccountSubscriptionLimit.getCurrentLimit(userSubscriptionPlan)
     }
 
-    suspend fun checkUserHaveMaximumSubscriptions(userId: String): Boolean {
+    suspend fun checkUserHaveMaximumSubscriptions(userId: String, subscriptionPlan: UserSubscriptionPlan): Boolean {
         val subscribersCount = repository.countAllBySubscriberUserId(userId)
-        val userSubscriptionPlan = accountSubscriptionService.getAccountSubscriptionByUserId(userId).subscriptionPlan
-        return subscribersCount >= subscriptionProperties[userSubscriptionPlan].maxSubscriptionsLimit
+        return subscribersCount >= maxSubscriptionsAccountSubscriptionLimit.getCurrentLimit(subscriptionPlan)
     }
 
     fun getAllByIds(ids: Set<String>) = repository.findAllById(ids)
+
+    suspend fun getAllActiveUserSubscribers(userId: String) =
+        repository.findAllByUserIdAndUnlocked(userId)
+
+    suspend fun maintainMaxSubscribersLimit(userId: String, newLimit: Int) =
+        AccountSubscriptionLimitUtils.maintainALimit(
+            userId, newLimit,
+            baseSort = Sort.by("created"),
+            repository = subscriptionMaxSubscribersLimitRepository
+        )
+
+    suspend fun maintainMaxSubscriptionsLimit(userId: String, newLimit: Int) =
+        AccountSubscriptionLimitUtils.maintainALimit(
+            userId, newLimit,
+            baseSort = Sort.by("created"),
+            repository = subscriptionMaxSubscriptionsLimitRepository
+        )
 
     @Async
     @EventListener

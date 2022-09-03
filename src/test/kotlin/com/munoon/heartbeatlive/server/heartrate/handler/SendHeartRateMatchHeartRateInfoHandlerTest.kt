@@ -6,6 +6,7 @@ import com.munoon.heartbeatlive.server.push.PushNotification
 import com.munoon.heartbeatlive.server.push.repository.PushNotificationRepository
 import com.munoon.heartbeatlive.server.push.service.PushNotificationService
 import com.munoon.heartbeatlive.server.subscription.Subscription
+import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
 import com.munoon.heartbeatlive.server.subscription.repository.SubscriptionRepository
 import com.munoon.heartbeatlive.server.user.User
 import com.munoon.heartbeatlive.server.user.repository.UserRepository
@@ -16,6 +17,7 @@ import io.mockk.coVerify
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import java.time.Duration
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
@@ -53,6 +55,11 @@ internal class SendHeartRateMatchHeartRateInfoHandlerTest : AbstractTest() {
          * user1 + user9 (notification was recently sent to both)
          * user1 + user10 (notification was recently sent to user1, user10 should receive)
          * user1 + user11 (notification was recently sent to user11, user1 should receive)
+         * user1 + user13 (user1 subscription is locked by publisher)
+         * user1 + user14 (user1 subscription is locked by subscriber)
+         * user1 + user15 (user15 subscription is locked by publisher)
+         * user1 + user16 (user16 subscription is locked by subscriber)
+         * user1 + user17 (both subscriptions are locked)
          */
 
         createUser(id = "user1", "User 1")
@@ -72,6 +79,11 @@ internal class SendHeartRateMatchHeartRateInfoHandlerTest : AbstractTest() {
         createUser(id = "user9", "User 9", User.HeartRate(50, Instant.now()))
         createUser(id = "user10", "User 10", User.HeartRate(50, Instant.now()))
         createUser(id = "user11", "User 11", User.HeartRate(50, Instant.now()))
+        createUser(id = "user13", "User 13", User.HeartRate(50, Instant.now()))
+        createUser(id = "user14", "User 14", User.HeartRate(50, Instant.now()))
+        createUser(id = "user15", "User 15", User.HeartRate(50, Instant.now()))
+        createUser(id = "user16", "User 16", User.HeartRate(50, Instant.now()))
+        createUser(id = "user17", "User 17", User.HeartRate(50, Instant.now()))
 
         createSubscription(userId = "user1", subscriberUserId = "user2", receiveNotification = true)
         createSubscription(userId = "user2", subscriberUserId = "user1", receiveNotification = true)
@@ -102,6 +114,27 @@ internal class SendHeartRateMatchHeartRateInfoHandlerTest : AbstractTest() {
 
         createSubscription(userId = "user1", subscriberUserId = "user11", receiveNotification = true)
         createSubscription(userId = "user11", subscriberUserId = "user1", receiveNotification = true)
+
+        createSubscription(userId = "user1", subscriberUserId = "user13", receiveNotification = true)
+        createSubscription(userId = "user13", subscriberUserId = "user1", receiveNotification = true,
+            lock = Subscription.Lock(byPublisher = true))
+
+        createSubscription(userId = "user1", subscriberUserId = "user14", receiveNotification = true)
+        createSubscription(userId = "user14", subscriberUserId = "user1", receiveNotification = true,
+            lock = Subscription.Lock(bySubscriber = true))
+
+        createSubscription(userId = "user1", subscriberUserId = "user15", receiveNotification = true,
+            lock = Subscription.Lock(byPublisher = true))
+        createSubscription(userId = "user15", subscriberUserId = "user1", receiveNotification = true)
+
+        createSubscription(userId = "user1", subscriberUserId = "user16", receiveNotification = true,
+            lock = Subscription.Lock(bySubscriber = true))
+        createSubscription(userId = "user16", subscriberUserId = "user1", receiveNotification = true)
+
+        createSubscription(userId = "user1", subscriberUserId = "user17", receiveNotification = true,
+            lock = Subscription.Lock(bySubscriber = true))
+        createSubscription(userId = "user17", subscriberUserId = "user1", receiveNotification = true,
+            lock = Subscription.Lock(byPublisher = true))
 
         val expectedNotifications = listOf(
             HeartRateMatchPushNotificationData(
@@ -139,6 +172,30 @@ internal class SendHeartRateMatchHeartRateInfoHandlerTest : AbstractTest() {
                 userId = "user1",
                 matchWithUserId = "user11",
                 matchWithUserDisplayName = "User 11"
+            ),
+            HeartRateMatchPushNotificationData(
+                heartRate = 50f,
+                userId = "user13",
+                matchWithUserId = "user1",
+                matchWithUserDisplayName = "User 1"
+            ),
+            HeartRateMatchPushNotificationData(
+                heartRate = 50f,
+                userId = "user14",
+                matchWithUserId = "user1",
+                matchWithUserDisplayName = "User 1"
+            ),
+            HeartRateMatchPushNotificationData(
+                heartRate = 50f,
+                userId = "user1",
+                matchWithUserId = "user15",
+                matchWithUserDisplayName = "User 15"
+            ),
+            HeartRateMatchPushNotificationData(
+                heartRate = 50f,
+                userId = "user1",
+                matchWithUserId = "user16",
+                matchWithUserDisplayName = "User 16"
             )
         )
 
@@ -162,16 +219,303 @@ internal class SendHeartRateMatchHeartRateInfoHandlerTest : AbstractTest() {
         coVerify(exactly = 1) { pushNotificationService.sendNotifications(expectedNotifications) }
     }
 
-    private suspend fun createUser(id: String, displayName: String, vararg heartRates: User.HeartRate): User {
+    @Test
+    fun `handleHeartRateInfo - userA subscription plan is null`(): Unit = runBlocking {
+        coEvery { pushNotificationService.sendNotifications(any()) } returns Unit
+
+        val expectedNotifications = listOf(
+            HeartRateMatchPushNotificationData(
+                heartRate = 50f,
+                userId = "userB",
+                matchWithUserId = "userA",
+                matchWithUserDisplayName = "User A"
+            )
+        )
+
+        createUser("userA", "User A", subscription = null)
+        createUser("userB", "User B", User.HeartRate(50, Instant.now()),
+            subscription = User.Subscription(
+                plan = UserSubscriptionPlan.PRO,
+                expiresAt = Instant.now().plusSeconds(60),
+                startAt = Instant.now(),
+                details = User.Subscription.StripeSubscriptionDetails("", ""),
+                refundDuration = Duration.ofDays(1)
+            ))
+
+        createSubscription(userId = "userA", subscriberUserId = "userB", receiveNotification = true)
+        createSubscription(userId = "userB", subscriberUserId = "userA", receiveNotification = true)
+
+        handler.handleHeartRateInfo(userId = "userA", heartRate = 50f)
+
+        coVerify(exactly = 1) { pushNotificationService.sendNotifications(expectedNotifications) }
+    }
+
+    @Test
+    fun `handleHeartRateInfo - userA subscription plan is FREE`(): Unit = runBlocking {
+        coEvery { pushNotificationService.sendNotifications(any()) } returns Unit
+
+        val expectedNotifications = listOf(
+            HeartRateMatchPushNotificationData(
+                heartRate = 50f,
+                userId = "userB",
+                matchWithUserId = "userA",
+                matchWithUserDisplayName = "User A"
+            )
+        )
+
+        createUser("userA", "User A",
+            subscription = User.Subscription(
+                plan = UserSubscriptionPlan.FREE,
+                expiresAt = Instant.now().plusSeconds(600000),
+                startAt = Instant.now(),
+                details = User.Subscription.StripeSubscriptionDetails("", ""),
+                refundDuration = Duration.ofDays(1)
+            ))
+        createUser("userB", "User B", User.HeartRate(50, Instant.now()),
+            subscription = User.Subscription(
+                plan = UserSubscriptionPlan.PRO,
+                expiresAt = Instant.now().plusSeconds(600000),
+                startAt = Instant.now(),
+                details = User.Subscription.StripeSubscriptionDetails("", ""),
+                refundDuration = Duration.ofDays(1)
+            ))
+
+        createSubscription(userId = "userA", subscriberUserId = "userB", receiveNotification = true)
+        createSubscription(userId = "userB", subscriberUserId = "userA", receiveNotification = true)
+
+        handler.handleHeartRateInfo(userId = "userA", heartRate = 50f)
+
+        coVerify(exactly = 1) { pushNotificationService.sendNotifications(expectedNotifications) }
+    }
+
+    @Test
+    fun `handleHeartRateInfo - userA subscription plan is expired`(): Unit = runBlocking {
+        coEvery { pushNotificationService.sendNotifications(any()) } returns Unit
+
+        val expectedNotifications = listOf(
+            HeartRateMatchPushNotificationData(
+                heartRate = 50f,
+                userId = "userB",
+                matchWithUserId = "userA",
+                matchWithUserDisplayName = "User A"
+            )
+        )
+
+        createUser("userA", "User A",
+            subscription = User.Subscription(
+                plan = UserSubscriptionPlan.PRO,
+                expiresAt = Instant.now().minusSeconds(600000),
+                startAt = Instant.now(),
+                details = User.Subscription.StripeSubscriptionDetails("", ""),
+                refundDuration = Duration.ofDays(1)
+            ))
+        createUser("userB", "User B", User.HeartRate(50, Instant.now()),
+            subscription = User.Subscription(
+                plan = UserSubscriptionPlan.PRO,
+                expiresAt = Instant.now().plusSeconds(600000),
+                startAt = Instant.now(),
+                details = User.Subscription.StripeSubscriptionDetails("", ""),
+                refundDuration = Duration.ofDays(1)
+            ))
+
+        createSubscription(userId = "userA", subscriberUserId = "userB", receiveNotification = true)
+        createSubscription(userId = "userB", subscriberUserId = "userA", receiveNotification = true)
+
+        handler.handleHeartRateInfo(userId = "userA", heartRate = 50f)
+
+        coVerify(exactly = 1) { pushNotificationService.sendNotifications(expectedNotifications) }
+    }
+
+    @Test
+    fun `handleHeartRateInfo - userB subscription plan is null`(): Unit = runBlocking {
+        coEvery { pushNotificationService.sendNotifications(any()) } returns Unit
+
+        val expectedNotifications = listOf(
+            HeartRateMatchPushNotificationData(
+                heartRate = 50f,
+                userId = "userA",
+                matchWithUserId = "userB",
+                matchWithUserDisplayName = "User B"
+            )
+        )
+
+        createUser("userA", "User A",
+            subscription = User.Subscription(
+                plan = UserSubscriptionPlan.PRO,
+                expiresAt = Instant.now().plusSeconds(600000),
+                startAt = Instant.now(),
+                details = User.Subscription.StripeSubscriptionDetails("", ""),
+                refundDuration = Duration.ofDays(1)
+            ))
+        createUser("userB", "User B", User.HeartRate(50, Instant.now()),
+            subscription = null)
+
+        createSubscription(userId = "userA", subscriberUserId = "userB", receiveNotification = true)
+        createSubscription(userId = "userB", subscriberUserId = "userA", receiveNotification = true)
+
+        handler.handleHeartRateInfo(userId = "userA", heartRate = 50f)
+
+        coVerify(exactly = 1) { pushNotificationService.sendNotifications(expectedNotifications) }
+    }
+
+    @Test
+    fun `handleHeartRateInfo - userB subscription plan is FREE`(): Unit = runBlocking {
+        coEvery { pushNotificationService.sendNotifications(any()) } returns Unit
+
+        val expectedNotifications = listOf(
+            HeartRateMatchPushNotificationData(
+                heartRate = 50f,
+                userId = "userA",
+                matchWithUserId = "userB",
+                matchWithUserDisplayName = "User B"
+            )
+        )
+
+        createUser("userA", "User A",
+            subscription = User.Subscription(
+                plan = UserSubscriptionPlan.PRO,
+                expiresAt = Instant.now().plusSeconds(600000),
+                startAt = Instant.now(),
+                details = User.Subscription.StripeSubscriptionDetails("", ""),
+                refundDuration = Duration.ofDays(1)
+            ))
+        createUser("userB", "User B", User.HeartRate(50, Instant.now()),
+            subscription = User.Subscription(
+                plan = UserSubscriptionPlan.FREE,
+                expiresAt = Instant.now().plusSeconds(600000),
+                startAt = Instant.now(),
+                details = User.Subscription.StripeSubscriptionDetails("", ""),
+                refundDuration = Duration.ofDays(1)
+            ))
+
+        createSubscription(userId = "userA", subscriberUserId = "userB", receiveNotification = true)
+        createSubscription(userId = "userB", subscriberUserId = "userA", receiveNotification = true)
+
+        handler.handleHeartRateInfo(userId = "userA", heartRate = 50f)
+
+        coVerify(exactly = 1) { pushNotificationService.sendNotifications(expectedNotifications) }
+    }
+
+    @Test
+    fun `handleHeartRateInfo - userB subscription plan is expired`(): Unit = runBlocking {
+        coEvery { pushNotificationService.sendNotifications(any()) } returns Unit
+
+        val expectedNotifications = listOf(
+            HeartRateMatchPushNotificationData(
+                heartRate = 50f,
+                userId = "userA",
+                matchWithUserId = "userB",
+                matchWithUserDisplayName = "User B"
+            )
+        )
+
+        createUser("userA", "User A",
+            subscription = User.Subscription(
+                plan = UserSubscriptionPlan.PRO,
+                expiresAt = Instant.now().plusSeconds(600000),
+                startAt = Instant.now(),
+                details = User.Subscription.StripeSubscriptionDetails("", ""),
+                refundDuration = Duration.ofDays(1)
+            ))
+        createUser("userB", "User B", User.HeartRate(50, Instant.now()),
+            subscription = User.Subscription(
+                plan = UserSubscriptionPlan.PRO,
+                expiresAt = Instant.now().minusSeconds(600000),
+                startAt = Instant.now(),
+                details = User.Subscription.StripeSubscriptionDetails("", ""),
+                refundDuration = Duration.ofDays(1)
+            ))
+
+        createSubscription(userId = "userA", subscriberUserId = "userB", receiveNotification = true)
+        createSubscription(userId = "userB", subscriberUserId = "userA", receiveNotification = true)
+
+        handler.handleHeartRateInfo(userId = "userA", heartRate = 50f)
+
+        coVerify(exactly = 1) { pushNotificationService.sendNotifications(expectedNotifications) }
+    }
+
+    @Test
+    fun `handleHeartRateInfo - both subscription plans are null`(): Unit = runBlocking {
+        coEvery { pushNotificationService.sendNotifications(any()) } returns Unit
+
+        createUser("userA", "User A", subscription = null)
+        createUser("userB", "User B", User.HeartRate(50, Instant.now()), subscription = null)
+
+        createSubscription(userId = "userA", subscriberUserId = "userB", receiveNotification = true)
+        createSubscription(userId = "userB", subscriberUserId = "userA", receiveNotification = true)
+
+        handler.handleHeartRateInfo(userId = "userA", heartRate = 50f)
+
+        coVerify(exactly = 1) { pushNotificationService.sendNotifications(emptyList()) }
+    }
+
+    @Test
+    fun `handleHeartRateInfo - both subscription plan are FREE`(): Unit = runBlocking {
+        coEvery { pushNotificationService.sendNotifications(any()) } returns Unit
+
+        val accountSubscription = User.Subscription(
+            plan = UserSubscriptionPlan.FREE,
+            expiresAt = Instant.now().plusSeconds(60),
+            startAt = Instant.now(),
+            details = User.Subscription.StripeSubscriptionDetails("", ""),
+            refundDuration = Duration.ofDays(1)
+        )
+
+        createUser("userA", "User A", subscription = accountSubscription)
+        createUser("userB", "User B", User.HeartRate(50, Instant.now()),
+            subscription = accountSubscription)
+
+        createSubscription(userId = "userA", subscriberUserId = "userB", receiveNotification = true)
+        createSubscription(userId = "userB", subscriberUserId = "userA", receiveNotification = true)
+
+        handler.handleHeartRateInfo(userId = "userA", heartRate = 50f)
+
+        coVerify(exactly = 1) { pushNotificationService.sendNotifications(emptyList()) }
+    }
+
+    @Test
+    fun `handleHeartRateInfo - both subscription plan are expired`(): Unit = runBlocking {
+        coEvery { pushNotificationService.sendNotifications(any()) } returns Unit
+
+        val accountSubscription = User.Subscription(
+            plan = UserSubscriptionPlan.PRO,
+            expiresAt = Instant.now().minusSeconds(60),
+            startAt = Instant.now(), details = User.Subscription.StripeSubscriptionDetails("", ""),
+            refundDuration = Duration.ofDays(1)
+        )
+
+        createUser("userA", "User A", subscription = accountSubscription)
+        createUser("userB", "User B", User.HeartRate(50, Instant.now()),
+            subscription = accountSubscription)
+
+        createSubscription(userId = "userA", subscriberUserId = "userB", receiveNotification = true)
+        createSubscription(userId = "userB", subscriberUserId = "userA", receiveNotification = true)
+
+        handler.handleHeartRateInfo(userId = "userA", heartRate = 50f)
+
+        coVerify(exactly = 1) { pushNotificationService.sendNotifications(emptyList()) }
+    }
+
+    private suspend fun createUser(
+        id: String, displayName: String, vararg heartRates: User.HeartRate,
+        subscription: User.Subscription? = User.Subscription(
+            plan = UserSubscriptionPlan.PRO,
+            expiresAt = Instant.now().plusSeconds(60),
+            startAt = Instant.now(), details = User.Subscription.StripeSubscriptionDetails("", ""),
+            refundDuration = Duration.ofSeconds(60)
+        )
+    ): User {
         return userRepository.save(User(id, displayName = displayName, email = null,
-            emailVerified = false, heartRates = heartRates.toList()))
+            emailVerified = false, heartRates = heartRates.toList(), subscription = subscription))
     }
 
     private suspend fun createSubscription(
-        userId: String, subscriberUserId: String, receiveNotification: Boolean): Subscription {
+        userId: String, subscriberUserId: String, receiveNotification: Boolean,
+        lock: Subscription.Lock = Subscription.Lock()
+    ): Subscription {
         return subscriptionRepository.save(Subscription(
             userId = userId, subscriberUserId = subscriberUserId,
-            receiveHeartRateMatchNotifications = receiveNotification))
+            receiveHeartRateMatchNotifications = receiveNotification, lock = lock))
     }
 
     private suspend fun createHeartRateMatchNotification(userA: String, userB: String, created: Instant) {

@@ -1,0 +1,19 @@
+extend type Query {
+    """
+    Return payment provider to use. \
+    Single application may support multiple payment providers, this API will specify which one to use.
+    """
+    getPaymentProvider(
+        "Supported payment providers by app." supportedProviders: [PaymentProviderName!]!
+    ): PaymentProvider
+}
+
+interface PaymentProvider {
+    name: PaymentProviderName!
+}
+
+"All supported payment providers names."
+enum PaymentProviderName {
+    "[Stripe](https://stripe.com/) payment provider."
+    STRIPE
+}

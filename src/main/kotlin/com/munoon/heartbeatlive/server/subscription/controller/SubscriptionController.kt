@@ -1,5 +1,6 @@
 package com.munoon.heartbeatlive.server.subscription.controller
 
+import com.munoon.heartbeatlive.server.auth.utils.AuthUtils.authUser
 import com.munoon.heartbeatlive.server.auth.utils.AuthUtils.authUserId
 import com.munoon.heartbeatlive.server.common.CommonUtils.asGraphqlPage
 import com.munoon.heartbeatlive.server.common.GraphqlPageResult
@@ -35,9 +36,11 @@ class SubscriptionController(private val service: SubscriptionService) {
         @Argument @NotNull @Length(min = 6, max = 6) sharingCode: String,
         @Argument @Valid options: GraphqlSubscribeOptionsInput?
     ): GraphqlSubscriptionInfo {
-        val actualOptions = options ?: GraphqlSubscribeOptionsInput()
         logger.info("User '${authUserId()}' create subscription using sharing code '$sharingCode'")
-        return service.subscribeBySharingCode(sharingCode, authUserId(), actualOptions).asGraphQL()
+
+        val actualOptions = options ?: GraphqlSubscribeOptionsInput()
+        val subscriptionPlan = authUser()!!.actualUserSubscriptionPlan
+        return service.subscribeBySharingCode(sharingCode, authUserId(), subscriptionPlan, actualOptions).asGraphQL()
     }
 
     @MutationMapping

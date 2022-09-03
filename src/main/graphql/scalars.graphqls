@@ -1,2 +1,14 @@
 "Time representation in epoch format (up to seconds)."
 scalar EpochSecondsTime
+
+"Alphabetic currency name in ISO 4217 format."
+scalar Currency
+
+"Decimal number, which supports arbitrary precision and is serialized as a string."
+scalar Decimal
+
+"""
+Duration, represented in seconds. \
+Example values: `60` = 1 minute; `90` = 1 minute 30 seconds;
+"""
+scalar Duration

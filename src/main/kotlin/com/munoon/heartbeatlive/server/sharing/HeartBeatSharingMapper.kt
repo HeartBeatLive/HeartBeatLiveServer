@@ -19,6 +19,7 @@ object HeartBeatSharingMapper {
         sharingUrl = buildSharingUrl(properties),
         created = created,
         expiredAt = expiredAt,
+        locked = locked,
         userId = userId
     )
 

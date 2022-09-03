@@ -17,3 +17,6 @@ data class HeartBeatSharingLimitExceededException(val limit: Int)
 
 @ConvertExceptionToError(type = ErrorType.FORBIDDEN, code = "heart_beat_sharing.expired")
 class HeartBeatSharingExpiredException : RuntimeException("Heart beat sharing code has expired!")
+
+@ConvertExceptionToError(type = ErrorType.FORBIDDEN, code = "heart_beat_sharing.locked")
+class HeartBeatSharingLockedException : RuntimeException("Heart beat sharing code is locked!")

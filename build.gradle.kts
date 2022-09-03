@@ -48,6 +48,8 @@ dependencies {
 	implementation("org.cache2k:cache2k-addon:2.6.1.Final")
 	runtimeOnly("org.cache2k:cache2k-core:2.6.1.Final")
 
+	implementation("com.stripe:stripe-java:20.129.0")
+
 	testImplementation("org.springframework.boot:spring-boot-starter-test") {
 		exclude(module = "mockito-core")
 	}

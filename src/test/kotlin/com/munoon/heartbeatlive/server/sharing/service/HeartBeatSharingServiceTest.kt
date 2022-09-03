@@ -269,6 +269,81 @@ internal class HeartBeatSharingServiceTest : AbstractTest() {
     }
 
     @Test
+    fun `maintainUserLimit - lock old sharing codes`() {
+        val userId = "user1"
+        val input = GraphqlCreateSharingCodeInput(expiredAt = null)
+        val oldSharingCodeCreateTime = OffsetDateTime.now().minusDays(1).toInstant()
+
+        val sharingCode1 = runBlocking { service.createSharing(input, userId, UserSubscriptionPlan.PRO) }
+        val sharingCode2 = runBlocking {
+            service.createSharing(input, userId, UserSubscriptionPlan.PRO)
+                .let { repository.save(it.copy(created = oldSharingCodeCreateTime)) }
+        }
+        val sharingCode3 = runBlocking {
+            service.createSharing(input, userId, UserSubscriptionPlan.PRO)
+                .let { repository.save(it.copy(created = oldSharingCodeCreateTime)) }
+        }
+        val sharingCode4 = runBlocking {
+            service.createSharing(input, userId, UserSubscriptionPlan.PRO)
+                .let { repository.save(it.copy(locked = true, created = oldSharingCodeCreateTime)) }
+        }
+
+        val expectedSharingCode2 = sharingCode2.copy(locked = true)
+        val expectedSharingCode3 = sharingCode3.copy(locked = true)
+
+        runBlocking { service.maintainUserLimit(userId, 1) }
+
+        val actual = runBlocking { repository.findAll().toList(arrayListOf()) }
+        val expected = listOf(sharingCode1, expectedSharingCode2, expectedSharingCode3, sharingCode4)
+        assertThat(actual).usingRecursiveFieldByFieldElementComparatorIgnoringFields("created").isEqualTo(expected)
+    }
+
+    @Test
+    fun `maintainUserLimit - unlock old sharing codes`() {
+        val userId = "user1"
+        val input = GraphqlCreateSharingCodeInput(expiredAt = null)
+
+        val sharingCode1 = runBlocking { service.createSharing(input, userId, UserSubscriptionPlan.PRO) }
+        val sharingCode2 = runBlocking {
+            service.createSharing(input, userId, UserSubscriptionPlan.PRO)
+                .let { repository.save(it.copy(locked = true)) }
+        }
+        val sharingCode3 = runBlocking {
+            service.createSharing(input, userId, UserSubscriptionPlan.PRO)
+                .let { repository.save(it.copy(locked = true)) }
+        }
+        val sharingCode4 = runBlocking {
+            val sharingCode = service.createSharing(input, userId, UserSubscriptionPlan.PRO)
+
+            val codeCreationTime = OffsetDateTime.now().minusDays(1).toInstant()
+            repository.save(sharingCode.copy(locked = true, created = codeCreationTime))
+        }
+
+        val expectedSharingCode2 = sharingCode2.copy(locked = false)
+        val expectedSharingCode3 = sharingCode3.copy(locked = false)
+
+        runBlocking { service.maintainUserLimit(userId, 3) }
+
+        val actual = runBlocking { repository.findAll().toList(arrayListOf()) }
+        val expected = listOf(sharingCode1, expectedSharingCode2, expectedSharingCode3, sharingCode4)
+        assertThat(actual).usingRecursiveFieldByFieldElementComparatorIgnoringFields("created").isEqualTo(expected)
+    }
+
+    @Test
+    fun `maintainUserLimit - no action`() {
+        val userId = "user1"
+        val input = GraphqlCreateSharingCodeInput(expiredAt = null)
+
+        val sharingCode1 = runBlocking { service.createSharing(input, userId, UserSubscriptionPlan.PRO) }
+        val sharingCode2 = runBlocking { service.createSharing(input, userId, UserSubscriptionPlan.PRO) }
+        runBlocking { service.maintainUserLimit(userId, 3) }
+
+        val actual = runBlocking { repository.findAll().toList(arrayListOf()) }
+        val expected = listOf(sharingCode1, sharingCode2)
+        assertThat(actual).usingRecursiveFieldByFieldElementComparatorIgnoringFields("created").isEqualTo(expected)
+    }
+
+    @Test
     fun handleUserDeletedEvent() {
         val input = GraphqlCreateSharingCodeInput(expiredAt = null)
         runBlocking { service.createSharing(input, "user1", UserSubscriptionPlan.FREE) }

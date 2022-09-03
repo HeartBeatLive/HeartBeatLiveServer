@@ -245,7 +245,11 @@ internal class UserPushNotificationsControllerTest : AbstractGraphqlHttpTest() {
             created = Arb.instant().bind(),
             userId = Arb.string(codepoints = Codepoint.alphanumeric(), size = 20).bind(),
             subscriberUserId = Arb.string(codepoints = Codepoint.alphanumeric(), size = 20).bind(),
-            receiveHeartRateMatchNotifications = Arb.boolean().bind()
+            receiveHeartRateMatchNotifications = Arb.boolean().bind(),
+            lock = Subscription.Lock(
+                byPublisher = Arb.boolean().bind(),
+                bySubscriber = Arb.boolean().bind()
+            )
         ) }
 
         checkAll(5, subscriptionArbitrary) { subscription ->
@@ -264,7 +268,12 @@ internal class UserPushNotificationsControllerTest : AbstractGraphqlHttpTest() {
                             ... on NewSubscriberPushNotificationData {
                                 subscription {
                                     id,
-                                    subscribeTime
+                                    subscribeTime,
+                                    lock {
+                                        locked,
+                                        byPublisher,
+                                        bySubscriber
+                                    }
                                 }
                             }
                         }
@@ -276,6 +285,12 @@ internal class UserPushNotificationsControllerTest : AbstractGraphqlHttpTest() {
                 .path("getPushNotificationById.data.subscription.id").isEqualsTo(subscription.id!!)
                 .path("getPushNotificationById.data.subscription.subscribeTime")
                     .isEqualsTo(subscription.created.epochSecond)
+                .path("getPushNotificationById.data.subscription.lock.locked")
+                    .isEqualsTo(subscription.lock.byPublisher || subscription.lock.bySubscriber)
+                .path("getPushNotificationById.data.subscription.lock.byPublisher")
+                    .isEqualsTo(subscription.lock.byPublisher)
+                .path("getPushNotificationById.data.subscription.lock.bySubscriber")
+                    .isEqualsTo(subscription.lock.bySubscriber)
 
             coVerify(exactly = 1) { subscriptionService.getAllByIds(setOf(subscription.id!!)) }
         }
@@ -298,7 +313,12 @@ internal class UserPushNotificationsControllerTest : AbstractGraphqlHttpTest() {
                             ... on NewSubscriberPushNotificationData {
                                 subscription {
                                     id,
-                                    subscribeTime
+                                    subscribeTime,
+                                    lock {
+                                        locked,
+                                        byPublisher,
+                                        bySubscriber
+                                    }
                                 }
                             }
                         }

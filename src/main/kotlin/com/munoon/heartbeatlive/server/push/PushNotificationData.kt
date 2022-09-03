@@ -85,3 +85,10 @@ data class HeartRateMatchPushNotificationData(
     override val message = HeartRateMatchPushNotificationMessage(heartRate, matchWithUserDisplayName)
     override val notification = PushNotification.Data.HeartRateMatchData(heartRate, matchWithUserId)
 }
+
+data class RefundFailedPushNotificationData(
+    override val userId: String
+) : SingleUserPushNotificationData {
+    override val message: PushNotificationMessage = FailedToRefundPushNotificationMessage
+    override val notification: PushNotification.Data? = PushNotification.Data.FailedToRefundData
+}

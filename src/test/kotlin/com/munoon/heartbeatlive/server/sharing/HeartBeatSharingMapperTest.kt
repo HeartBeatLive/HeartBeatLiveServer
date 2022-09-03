@@ -45,6 +45,7 @@ internal class HeartBeatSharingMapperTest {
             sharingUrl = "https://heartbeatsharing.com/sharing/ABC123",
             created = created,
             expiredAt = expiresAt,
+            locked = true,
             userId = "user1"
         )
 
@@ -53,6 +54,7 @@ internal class HeartBeatSharingMapperTest {
             publicCode = "ABC123",
             userId = "user1",
             expiredAt = expiresAt,
+            locked = true,
             created = created
         )
 

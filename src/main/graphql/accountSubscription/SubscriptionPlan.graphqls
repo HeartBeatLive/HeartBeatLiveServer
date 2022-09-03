@@ -1,0 +1,75 @@
+extend type Query {
+    "Method to get current subscription plans info."
+    getSubscriptionPlans: [SubscriptionPlan!]!
+
+    "Method to get subscription plan by code name."
+    getSubscriptionPlanByCodeName("Subscription plan's code name." codeName: String!): SubscriptionPlan!
+}
+
+extend type Mutation {
+    """
+    Method to prevent subscription from renewing. User will have subscription until the end of period. \
+    Authenticated user must have active subscription.
+    """
+    stopRenewingSubscription: Boolean
+
+    """
+    Method to request a refund. User will lost his current subscription. \
+    Authenticated user must have active subscription.
+    """
+    requestARefundForSubscription: Boolean
+}
+
+"Subscription plan info."
+type SubscriptionPlan {
+    "Code name, used in API."
+    codeName: String!
+
+    "Display name. Show this display name to user."
+    displayName: String!
+
+    "Subscription plan prices."
+    prices: [SubscriptionPlanPrice!]!
+
+    "Limits, that applied to this subscription plan."
+    limits: SubscriptionPlanLimits!
+
+    "Additional information of this subscription plan."
+    info: SubscriptionPlanInfo!
+}
+
+"Limits info of subscription plan."
+type SubscriptionPlanLimits {
+    "Total count of possible user's sharing codes."
+    maxSharingCodesLimit: Int!
+
+    "Total count of possible user's subscribers."
+    maxSubscribersLimit: Int!
+
+    "Total count of possible user's subscriptions."
+    maxSubscriptionsLimit: Int!
+}
+
+"Additional info of subscription plan."
+type SubscriptionPlanInfo {
+    "Descriptions list. Contains subscription descriptions in markdown format."
+    descriptionItems: [String!]!
+}
+
+"Subscription price info."
+type SubscriptionPlanPrice {
+    "Price identifier to use in API."
+    id: ID!
+
+    "Current price."
+    price: Money!
+
+    "Old price. Display it to user, if specified."
+    oldPrice: Money
+
+    "Price duration. Answering question: How long I will be subscribed after paying this price?"
+    duration: Duration!
+
+    "Duration, while user is able to make a refund after paying this price."
+    refundDuration: Duration!
+}

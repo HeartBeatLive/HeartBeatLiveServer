@@ -61,6 +61,19 @@ class UserService(
         return updatedUser
     }
 
+    suspend fun updateUserSubscription(userId: String, subscription: User.Subscription?): User {
+        val user = getUserById(userId)
+        val updatedUser = userRepository.save(user.copy(subscription = subscription))
+
+        eventPublisher.publishEvent(UserEvents.UserUpdatedEvent(
+            newUser = updatedUser,
+            oldUser = user,
+            updateFirebaseState = true
+        ))
+
+        return updatedUser
+    }
+
     suspend fun getUserById(userId: String): User = userRepository.findById(userId)
         ?: throw UserNotFoundByIdException(userId)
 

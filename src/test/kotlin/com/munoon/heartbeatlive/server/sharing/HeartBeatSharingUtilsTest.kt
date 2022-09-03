@@ -1,7 +1,10 @@
 package com.munoon.heartbeatlive.server.sharing
 
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingUtils.checkExpired
+import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingUtils.checkUnlocked
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingUtils.isExpired
+import io.kotest.assertions.throwables.shouldNotThrowAny
+import io.kotest.assertions.throwables.shouldThrowExactly
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatNoException
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -70,5 +73,21 @@ internal class HeartBeatSharingUtilsTest {
         val sharing = HeartBeatSharing(id = null, publicCode = "ABC", userId = "userId", expiredAt = null)
 
         assertThatNoException().isThrownBy { sharing.checkExpired() }
+    }
+
+    @Test
+    fun `checkUnlocked - unlocked`() {
+        val sharing = HeartBeatSharing(id = null, publicCode = "ABC", userId = "userId", expiredAt = null,
+            locked = false)
+
+        shouldNotThrowAny { sharing.checkUnlocked() }
+    }
+
+    @Test
+    fun `checkUnlocked - locked`() {
+        val sharing = HeartBeatSharing(id = null, publicCode = "ABC", userId = "userId", expiredAt = null,
+            locked = true)
+
+        shouldThrowExactly<HeartBeatSharingLockedException> { sharing.checkUnlocked() }
     }
 }

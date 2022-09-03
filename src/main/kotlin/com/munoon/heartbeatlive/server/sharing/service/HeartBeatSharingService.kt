@@ -1,7 +1,6 @@
 package com.munoon.heartbeatlive.server.sharing.service
 
 import com.munoon.heartbeatlive.server.common.PageResult
-import com.munoon.heartbeatlive.server.config.properties.SubscriptionProperties
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharing
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingLimitExceededException
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingMapper.create
@@ -9,13 +8,18 @@ import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingNotFoundByIdExcep
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingNotFoundByPublicCodeException
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharingUtils
 import com.munoon.heartbeatlive.server.sharing.model.GraphqlCreateSharingCodeInput
+import com.munoon.heartbeatlive.server.sharing.repository.HeartBeatSharingLimitRepository
 import com.munoon.heartbeatlive.server.sharing.repository.HeartBeatSharingRepository
 import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
+import com.munoon.heartbeatlive.server.subscription.account.limit.AccountSubscriptionLimitUtils
+import com.munoon.heartbeatlive.server.subscription.account.limit.MaxSharingCodesAccountSubscriptionLimit
 import com.munoon.heartbeatlive.server.user.UserEvents
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.runBlocking
+import org.springframework.context.annotation.Lazy
 import org.springframework.context.event.EventListener
 import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import java.time.Instant
@@ -23,7 +27,8 @@ import java.time.Instant
 @Service
 class HeartBeatSharingService(
     private val repository: HeartBeatSharingRepository,
-    private val subscriptionProperties: SubscriptionProperties
+    @Lazy private val maxSharingCodesAccountSubscriptionLimit: MaxSharingCodesAccountSubscriptionLimit,
+    private val heartBeatSharingLimitRepository: HeartBeatSharingLimitRepository
 ) {
     suspend fun createSharing(
         input: GraphqlCreateSharingCodeInput,
@@ -31,7 +36,7 @@ class HeartBeatSharingService(
         userSubscriptionPlan: UserSubscriptionPlan
     ): HeartBeatSharing {
         val totalUserSharingCodeCount = repository.countAllByUserId(userId)
-        val limit = subscriptionProperties[userSubscriptionPlan].maxSharingCodesLimit
+        val limit = maxSharingCodesAccountSubscriptionLimit.getCurrentLimit(userSubscriptionPlan)
         if (totalUserSharingCodeCount >= limit) {
             throw HeartBeatSharingLimitExceededException(limit)
         }
@@ -85,6 +90,13 @@ class HeartBeatSharingService(
             totalItemsCount = repository.countAllByUserId(userId)
         )
     }
+
+    suspend fun maintainUserLimit(userId: String, newLimit: Int) =
+        AccountSubscriptionLimitUtils.maintainALimit(
+            userId, newLimit,
+            baseSort = Sort.by("created"),
+            repository = heartBeatSharingLimitRepository
+        )
 
     @Async
     @EventListener

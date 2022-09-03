@@ -2,6 +2,7 @@ package com.munoon.heartbeatlive.server.push.controller
 
 import com.munoon.heartbeatlive.server.AbstractGraphqlHttpTest
 import com.munoon.heartbeatlive.server.push.BanPushNotificationMessage
+import com.munoon.heartbeatlive.server.push.FailedToRefundPushNotificationMessage
 import com.munoon.heartbeatlive.server.push.HeartRateMatchPushNotificationMessage
 import com.munoon.heartbeatlive.server.push.HighHeartRatePushNotificationMessage
 import com.munoon.heartbeatlive.server.push.LowHeartRatePushNotificationMessage
@@ -481,5 +482,36 @@ internal class PushNotificationInfoControllerTest : AbstractGraphqlHttpTest() {
         verify(exactly = 1) { messageSource.getMessageText(message.title, PushNotificationLocale.EN) }
         verify(exactly = 1) { messageSource.getMessageText(message.content, PushNotificationLocale.EN) }
         coVerify(exactly = 1) { userService.getUsersByIds(setOf("userId")) }
+    }
+
+    @Test
+    fun `getPushNotificationInfo - failed to refund`() {
+        val pushNotification = PushNotification(
+            userId = "user1",
+            data = PushNotification.Data.FailedToRefundData
+        )
+
+        coEvery { service.getPushNotificationById(any()) } returns pushNotification
+
+        graphqlTester.withUser(id = "user1")
+            .document("""
+                query {
+                    getPushNotificationById(id: "pushNotificationId") {
+                        info {
+                            title,
+                            content
+                        }
+                    }
+                }
+            """.trimIndent())
+            .execute()
+            .satisfyNoErrors()
+            .path("getPushNotificationById.info").isEqualsTo(expectedInfo)
+
+        verify(exactly = 1) { messageSource.getMessageText(
+            FailedToRefundPushNotificationMessage.title, PushNotificationLocale.EN) }
+
+        verify(exactly = 1) { messageSource.getMessageText(
+            FailedToRefundPushNotificationMessage.content, PushNotificationLocale.EN) }
     }
 }

@@ -4,7 +4,6 @@ import com.munoon.heartbeatlive.server.AbstractGraphqlHttpTest
 import com.munoon.heartbeatlive.server.sharing.HeartBeatSharing
 import com.munoon.heartbeatlive.server.sharing.service.HeartBeatSharingService
 import com.munoon.heartbeatlive.server.user.User
-import com.munoon.heartbeatlive.server.user.UserRole
 import com.munoon.heartbeatlive.server.user.model.GraphqlPublicProfileTo
 import com.munoon.heartbeatlive.server.user.service.UserService
 import com.munoon.heartbeatlive.server.utils.AuthTestUtils.withUser
@@ -13,7 +12,6 @@ import com.munoon.heartbeatlive.server.utils.GraphqlTestUtils.satisfyNoErrors
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.coEvery
 import io.mockk.coVerify
-import io.mockk.every
 import io.mockk.verify
 import kotlinx.coroutines.flow.flowOf
 import org.junit.jupiter.api.Test
@@ -41,7 +39,7 @@ internal class HeartBeatSharingUserControllerTest : AbstractGraphqlHttpTest() {
             displayName = "Test User",
             email = "email@example.com",
             emailVerified = true,
-            roles = setOf(UserRole.ADMIN)
+            roles = setOf(User.Role.ADMIN)
         ))
 
         graphqlTester.withUser(id = "user1")
@@ -80,12 +78,18 @@ internal class HeartBeatSharingUserControllerTest : AbstractGraphqlHttpTest() {
             userId = "user1",
             expiredAt = null
         )
-        every { userService.getUsersByIds(any()) } returns flowOf(User(
+        coEvery { userService.getUsersByIds(any()) } returns flowOf(User(
             id = "user1",
             displayName = "Test User",
             email = null,
             emailVerified = false
         ))
+        coEvery { userService.getUserById(any()) } returns User(
+            id = "user2",
+            displayName = "Test User",
+            email = null,
+            emailVerified = false
+        )
 
         graphqlTester.document("""
             query {

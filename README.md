@@ -42,3 +42,24 @@ You may use this metadata to map received push notification with notifications f
 
 To set user's external id, client should provide OneSignal identifier authentication token.
 Along with OneSignal app id, you can receive an identifier authentication token using GraphQL API.
+
+### Payment
+This server accepts payments using [Stripe](https://stripe.com/).
+You need to specify Stripe public API key, private API key and WebHook endpoint secret in configuration file.
+
+You must set up Stripe to send WebHook events on endpoint `/api/stripe/webhook`.
+Here is list of events, that this server handle:
+* `customer.deleted`
+* `customer.subscription.updated`
+* `customer.subscription.deleted`
+* `invoice.paid`
+* `invoice.upcoming`
+* `charge.refunded`
+* `charge.refund.updated`
+
+You may handle route WebHook events to you local server, when developing, using following command:
+```bash
+$ stripe listen \
+  --events invoice.paid,customer.deleted,customer.subscription.deleted,customer.subscription.updated,charge.refund.updated,charge.refunded,invoice.upcoming \
+  --forward-to http://localhost:8080/api/stripe/webhook
+```

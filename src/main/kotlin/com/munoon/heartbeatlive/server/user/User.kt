@@ -1,8 +1,11 @@
 package com.munoon.heartbeatlive.server.user
 
+import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
+import org.springframework.security.core.GrantedAuthority
+import java.time.Duration
 import java.time.Instant
 
 @Document("users")
@@ -19,12 +22,35 @@ data class User(
 
     val created: Instant = Instant.now(),
 
-    val roles: Set<UserRole> = emptySet(),
+    val roles: Set<Role> = emptySet(),
+
+    val subscription: Subscription? = null,
 
     val heartRates: List<HeartRate> = emptyList()
 ) {
     companion object {
         const val UNIQUE_EMAIL_INDEX = "user_unique_email_index"
+    }
+
+    enum class Role : GrantedAuthority {
+        ADMIN;
+
+        override fun getAuthority() = name
+    }
+
+    data class Subscription(
+        val plan: UserSubscriptionPlan,
+        val expiresAt: Instant,
+        val startAt: Instant,
+        val details: SubscriptionDetails,
+        val refundDuration: Duration
+    ) {
+        sealed interface SubscriptionDetails
+
+        data class StripeSubscriptionDetails(
+            val subscriptionId: String,
+            val paymentIntentId: String
+        ) : SubscriptionDetails
     }
 
     data class HeartRate(

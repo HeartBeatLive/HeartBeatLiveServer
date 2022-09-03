@@ -54,6 +54,7 @@ class WebSecurityConfig {
             authorizeExchange {
                 authorize(graphqlEndpointWebExchangeMatcher(), permitAll)
                 authorize(graphqlWebsocketEndpointWebExchangeMatcher(), permitAll)
+                authorize("/api/stripe/**", permitAll)
                 authorize(anyExchange, denyAll)
             }
         }

@@ -108,6 +108,22 @@ internal class CustomDataFetcherExceptionResolverTest {
     }
 
     @Test
+    fun `resolve exception with @ConvertExceptionToError and message`() {
+        val expectedError = GraphqlErrorBuilder.newError()
+            .location(SourceLocation(1, 2))
+            .path(ResultPath.rootPath())
+            .errorType(ErrorType.BAD_REQUEST)
+            .extensions(mapOf("code" to "test_code", "a" to "testA", "b" to 123))
+            .message("Another message")
+            .build()
+
+        val exception = ConvertingToErrorUsingAnnotationWithMessageException(a = "testA", b = 123)
+
+        val errors = resolver.resolveException(exception, environment).block()
+        assertThat(errors).usingRecursiveComparison().isEqualTo(listOf(expectedError))
+    }
+
+    @Test
     fun `resolve GraphqlErrorBuildingException exception`() {
         val expectedError = GraphqlErrorBuilder.newError()
             .location(SourceLocation(1, 2))
@@ -126,6 +142,10 @@ internal class CustomDataFetcherExceptionResolverTest {
 
     @ConvertExceptionToError(type = ErrorType.BAD_REQUEST, code = "test_code")
     data class ConvertingToErrorUsingAnnotationException(val a: String, val b: Int) : Throwable("Test message")
+
+    @ConvertExceptionToError(type = ErrorType.BAD_REQUEST, code = "test_code", message = "Another message")
+    data class ConvertingToErrorUsingAnnotationWithMessageException(val a: String, val b: Int)
+        : Throwable("Test message")
 
     class ConvertingToErrorUsingBuilderException : Throwable(), GraphqlErrorBuildingException {
         override fun build(env: DataFetchingEnvironment): GraphQLError {

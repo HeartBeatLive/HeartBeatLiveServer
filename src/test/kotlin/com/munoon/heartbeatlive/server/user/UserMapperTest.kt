@@ -21,7 +21,7 @@ internal class UserMapperTest {
             displayName = "Test Name",
             email = "email@example.com",
             emailVerified = true,
-            roles = setOf(UserRole.ADMIN),
+            roles = setOf(User.Role.ADMIN),
             heartRates = listOf(User.HeartRate(10, lastHeartRateInfoReceiveTime))
         )
 
@@ -30,7 +30,7 @@ internal class UserMapperTest {
             displayName = "Test Name",
             email = "email@example.com",
             emailVerified = true,
-            roles = setOf(UserRole.ADMIN),
+            roles = setOf(User.Role.ADMIN),
             heartRates = listOf(User.HeartRate(10, lastHeartRateInfoReceiveTime))
         )
 
@@ -45,7 +45,7 @@ internal class UserMapperTest {
             displayName = "Test Name",
             email = "email@example.com",
             emailVerified = true,
-            roles = setOf(UserRole.ADMIN)
+            roles = setOf(User.Role.ADMIN)
         )
 
         val expected = GraphqlPublicProfileTo(displayName = "Test Name")
@@ -62,7 +62,7 @@ internal class UserMapperTest {
             displayName = "Test Name",
             email = "email@example.com",
             emailVerified = true,
-            roles = setOf(UserRole.ADMIN),
+            roles = setOf(User.Role.ADMIN),
             heartRates = listOf(User.HeartRate(10, lastHeartRateInfoReceiveTime))
         )
 

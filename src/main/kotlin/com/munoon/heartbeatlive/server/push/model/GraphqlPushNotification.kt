@@ -5,7 +5,7 @@ import java.time.Instant
 data class GraphqlPushNotification(
     val id: String,
     val created: Instant,
-    val data: GraphqlPushNotificationData
+    val data: GraphqlPushNotificationData?
 )
 
 data class GraphqlPushNotificationInfo(

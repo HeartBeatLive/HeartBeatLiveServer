@@ -21,6 +21,7 @@ Some errors contains additional fields in `extensions`, that are useful for erro
 | heart_beat_sharing.not_found.by_id | Heart beat sharing is not found by identifier. |
 | heart_beat_sharing.limit_exceeded | Heart beats sharing count limit is exceeded. |
 | heart_beat_sharing.expired | Heart beat sharing is expired. |
+| heart_beat_sharing.locked | Heart beat sharing is locked. |
 | subscription.subscribers_limit_exceeded | User have too many subscribers. |
 | subscription.subscriptions_limit_exceeded | User have too many subscriptions. |
 | subscription.self_subscribe | User is trying to subscribe to himself. |
@@ -28,3 +29,9 @@ Some errors contains additional fields in `extensions`, that are useful for erro
 | ban.banned | User was banned by another user. |
 | ban.not_found.by_id | User ban was not found by specified identifier. |
 | push_notification.not_found.by_id | Push notification with specified identifier is not found. |
+| payment.provider.not_found | No active payment provider found. |
+| payment.provider.unsupported | Payment provider that you are currently using is unsupported. |
+| account_subscription.subscription_plan.not_found.by_code_name | Account subscription plan is not found by specified code name. |
+| account_subscription.subscription_plan.price.not_found.by_id | Account subscription plan price is not found by specified identifier. |
+| account_subscription.subscription_plan.user_have_no_active_subscription | User do not have any active subscriptions. |
+| user.no_verified_email_address | User do not have verified email address. |

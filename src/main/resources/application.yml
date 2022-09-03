@@ -39,13 +39,56 @@ cache:
 app:
   subscription:
     free:
-      max-sharing-codes-limit: 2
-      max-subscribers-limit: 1
-      max-subscriptions-limit: 1
+      displayName:
+        en: Free
+        ru: Бесплатная
+      limits:
+        max-sharing-codes-limit: 2
+        max-subscribers-limit: 1
+        max-subscriptions-limit: 1
+        receive-heart-rate-match-notification: false
+      info:
+        description-items:
+          en:
+            - Fully free
+            - One free subscription
+            - One free subscriber
+          ru:
+            - Полностью бесплатно
+            - Одна бесплатная подписка
+            - Один бесплатный подписчик
     pro:
-      max-sharing-codes-limit: 20
-      max-subscribers-limit: 30
-      max-subscriptions-limit: 30
+      displayName:
+        en: Premium
+        ru: Премиум
+      limits:
+        max-sharing-codes-limit: 20
+        max-subscribers-limit: 30
+        max-subscriptions-limit: 30
+        receive-heart-rate-match-notification: true
+      prices:
+        - price: 5
+          currency: USD
+          duration: P31D
+          refund-duration: P3D
+          old-price: 10
+#          stripe-price-id: "price_1"
+        - price: 2
+          currency: USD
+          duration: P7D
+          refund-duration: P1D
+          old-price: 5
+#          stripe-price-id: "price_2"
+      info:
+        description-items:
+          en:
+            - Up to 30 subscriptions
+            - Up to 30 subscribers
+            - Heart rate match notifications
+          ru:
+            - До 30 подписчиков
+            - До 30 подписок
+            - Уведомления о совпадении сердцебиения
   sharing-code:
     sharing-url-template: "https://heartbeatlive.com/sharing/%s"
   heart-rate-stream:
@@ -60,3 +103,11 @@ app:
     heart-rate-match-push:
       send-push-timeout-duration: PT5M
       include-heart-rates-for-duration: PT30S
+
+payment:
+  stripe:
+    enabled: false
+    payment-requires-action-window: PT32H
+#    public-api-key: ""
+#    private-api-key: ""
+#    webhook-endpoint-secret: ""

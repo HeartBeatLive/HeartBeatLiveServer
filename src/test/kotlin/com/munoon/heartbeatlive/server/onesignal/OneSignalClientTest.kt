@@ -86,6 +86,7 @@ class OneSignalClientTest : FreeSpec({
                 it.headers().contentType shouldBe MediaType.APPLICATION_JSON
                 it.headers()[HttpHeaders.AUTHORIZATION]?.first() shouldBe "Basic super-secret-rest-api-key"
                 it.url().toString() shouldBe "https://onesignal.com/api/v1/notifications"
+                it.method() shouldBe HttpMethod.POST
 
                 val request = MockClientHttpRequest(HttpMethod.POST, "https://onesignal.com/api/v1/notifications")
                 it.body().insert(request, object : BodyInserter.Context {

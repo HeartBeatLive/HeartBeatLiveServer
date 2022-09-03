@@ -3,7 +3,7 @@ package com.munoon.heartbeatlive.server.auth.jwt
 import com.munoon.heartbeatlive.server.subscription.account.AccountSubscriptionUtils.getActiveSubscriptionPlan
 import com.munoon.heartbeatlive.server.subscription.account.JwtUserSubscription
 import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
-import com.munoon.heartbeatlive.server.user.UserRole
+import com.munoon.heartbeatlive.server.user.User.Role
 import org.slf4j.LoggerFactory
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
@@ -30,8 +30,8 @@ class CustomJwtAuthenticationToken(jwt: Jwt) : JwtAuthenticationToken(jwt, jwt.g
         const val EMAIL_CLAIM = "email"
         const val EMAIL_VERIFIED_CLAIM = "email_verified"
 
-        private fun Jwt.getAuthorities(): Set<UserRole> = (safeGetClaim<Set<String>>(ROLES_CLAIM) ?: emptySet())
-            .mapTo(EnumSet.noneOf(UserRole::class.java)) { UserRole.valueOf(it) }
+        private fun Jwt.getAuthorities(): Set<Role> = (safeGetClaim<Set<String>>(ROLES_CLAIM) ?: emptySet())
+            .mapTo(EnumSet.noneOf(Role::class.java)) { Role.valueOf(it) }
 
         private inline fun <reified T> Jwt.safeGetClaim(claimName: String): T? =
             try {

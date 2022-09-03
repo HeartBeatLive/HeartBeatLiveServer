@@ -1,0 +1,8 @@
+"Money representation."
+type Money {
+    "Amount of money."
+    amount: Decimal!
+
+    "Currency."
+    currency: Currency!
+}

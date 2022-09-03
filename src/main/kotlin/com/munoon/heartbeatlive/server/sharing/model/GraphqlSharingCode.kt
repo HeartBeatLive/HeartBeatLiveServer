@@ -8,5 +8,6 @@ data class GraphqlSharingCode(
     val sharingUrl: String,
     val created: Instant,
     val expiredAt: Instant?,
+    val locked: Boolean,
     val userId: String // for user mapping only
 )
