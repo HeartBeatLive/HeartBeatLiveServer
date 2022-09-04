@@ -1,5 +1,7 @@
 package com.munoon.heartbeatlive.server.utils
 
+import io.mockk.every
+import io.mockk.spyk
 import org.assertj.core.api.Assertions.assertThat
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.graphql.ResponseError
@@ -8,7 +10,9 @@ import org.springframework.graphql.execution.ErrorType
 import org.springframework.graphql.test.tester.GraphQlTester
 import org.springframework.graphql.test.tester.HttpGraphQlTester
 import org.springframework.http.HttpHeaders
+import org.springframework.web.server.WebFilter
 import reactor.test.StepVerifier
+import java.net.InetSocketAddress
 
 object GraphqlTestUtils {
     fun GraphQlTester.Response.satisfyNoErrors() = errors().satisfy { assertThat(it).isEmpty() }
@@ -26,6 +30,24 @@ object GraphqlTestUtils {
         assertThat(error.extensions).isEqualTo(extensions)
         assertThat(error.path).isEqualTo(expectedPath)
     }
+
+    fun HttpGraphQlTester.withRemoteAddress(address: InetSocketAddress) = mutate().webTestClient {
+        it.apply { _, httpHandlerBuilder, _ ->
+            httpHandlerBuilder?.filters { filters ->
+                filters.add(0, WebFilter { exchange, chain ->
+                    val mockRequest = spyk(exchange.request) {
+                        every { remoteAddress } returns address
+                    }
+
+                    val mockExchange = spyk(exchange) {
+                        every { request } returns mockRequest
+                    }
+
+                    chain.filter(mockExchange)
+                })
+            }
+        }
+    }.build()
 
     fun GraphQlTester.Errors.expectSingleError(
         errorType: ErrorType,

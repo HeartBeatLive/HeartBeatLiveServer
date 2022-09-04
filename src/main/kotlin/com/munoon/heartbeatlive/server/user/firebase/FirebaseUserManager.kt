@@ -33,6 +33,10 @@ class FirebaseUserManager(private val firebaseAuth: FirebaseAuth) {
         firebaseAuth.deleteUser(event.userId)
     }
 
+    fun generatePasswordResetLink(email: String): String {
+        return firebaseAuth.generatePasswordResetLink(email)
+    }
+
     private companion object {
         fun User.generateClaims() = mapOf(
             CustomJwtAuthenticationToken.ROLES_CLAIM to roles.map { it.name },

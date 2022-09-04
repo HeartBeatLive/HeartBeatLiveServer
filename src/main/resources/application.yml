@@ -89,6 +89,8 @@ app:
             - До 30 подписчиков
             - До 30 подписок
             - Уведомления о совпадении сердцебиения
+  user:
+    reset-password-request-timeout: PT1M
   sharing-code:
     sharing-url-template: "https://heartbeatlive.com/sharing/%s"
   heart-rate-stream:
