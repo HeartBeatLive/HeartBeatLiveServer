@@ -35,3 +35,5 @@ Some errors contains additional fields in `extensions`, that are useful for erro
 | account_subscription.subscription_plan.price.not_found.by_id | Account subscription plan price is not found by specified identifier. |
 | account_subscription.subscription_plan.user_have_no_active_subscription | User do not have any active subscriptions. |
 | user.no_verified_email_address | User do not have verified email address. |
+| user.not_found.by_email | User is not find with specified email address. |
+| user.reset_password_request.already_made | You have already requested a password reset email. Please, wait a bit before making a new request. |

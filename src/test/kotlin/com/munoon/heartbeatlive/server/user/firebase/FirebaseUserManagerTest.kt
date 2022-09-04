@@ -9,6 +9,7 @@ import com.munoon.heartbeatlive.server.subscription.account.UserSubscriptionPlan
 import com.munoon.heartbeatlive.server.user.User
 import com.munoon.heartbeatlive.server.user.UserEvents
 import com.ninjasquad.springmockk.MockkBean
+import io.kotest.matchers.shouldBe
 import io.mockk.MockKVerificationScope
 import io.mockk.every
 import io.mockk.mockk
@@ -29,6 +30,9 @@ internal class FirebaseUserManagerTest : AbstractTest() {
 
     @Autowired
     private lateinit var eventPublisher: ApplicationEventPublisher
+
+    @Autowired
+    private lateinit var firebaseUserManager: FirebaseUserManager
 
     @BeforeEach
     fun setUpFirebaseAuth() {
@@ -150,6 +154,17 @@ internal class FirebaseUserManagerTest : AbstractTest() {
         val userId = "abc"
         eventPublisher.publishEvent(UserEvents.UserDeletedEvent(userId, updateFirebaseState = false))
         verify(exactly = 0) { firebaseAuth.deleteUser(userId) }
+    }
+
+    @Test
+    fun generatePasswordResetLink() {
+        val expectedLink = "https://example.com/resetPasswordLink"
+        every { firebaseAuth.generatePasswordResetLink(any()) } returns expectedLink
+
+        val result = firebaseUserManager.generatePasswordResetLink("email@example.com")
+        result shouldBe expectedLink
+
+        verify(exactly = 1) { firebaseAuth.generatePasswordResetLink("email@example.com") }
     }
 
     private fun MockKVerificationScope.assertEq(expected: UserRecord.UpdateRequest) = match<UserRecord.UpdateRequest> {

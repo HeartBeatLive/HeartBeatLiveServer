@@ -23,3 +23,8 @@ data class SubscriptionInvoiceSuccessfullyRefundedEmailMessage(
 data class SubscriptionInvoiceFailedToRefundedEmailMessage(
     override val email: String
 ) : EmailMessage
+
+data class ResetPasswordEmailMessage(
+    override val email: String,
+    val resetPasswordLink: String
+) : EmailMessage

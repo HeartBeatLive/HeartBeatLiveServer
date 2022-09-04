@@ -8,6 +8,8 @@ type Mutation {
     updateProfileInfo: Profile!
     "Delete authenticated user. Require authentication."
     deleteProfile: Boolean!
+    "Send a _reset password_ email, so user will have opportunity to reset his password."
+    sendResetPasswordEmail("User's email address" email: String): Boolean
 
     "Run this method when user logged out. Require authentication."
     logout: Boolean!
