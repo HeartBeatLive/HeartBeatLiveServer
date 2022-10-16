@@ -113,3 +113,8 @@ payment:
 #    public-api-key: ""
 #    private-api-key: ""
 #    webhook-endpoint-secret: ""
+
+#apple:
+#  app-ids:
+#    - "XXX.com.munoon.heartbeatlive"
+#    - "YYY.com.munoon.heartbeatlive"

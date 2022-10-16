@@ -55,6 +55,7 @@ class WebSecurityConfig {
                 authorize(graphqlEndpointWebExchangeMatcher(), permitAll)
                 authorize(graphqlWebsocketEndpointWebExchangeMatcher(), permitAll)
                 authorize("/api/stripe/**", permitAll)
+                authorize("/.well-known/apple-app-site-association", permitAll)
                 authorize(anyExchange, denyAll)
             }
         }
